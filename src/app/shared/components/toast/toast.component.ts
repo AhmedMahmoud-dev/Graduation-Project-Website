@@ -1,4 +1,4 @@
-import { Component, inject, signal, HostListener, ElementRef } from '@angular/core';
+import { Component, inject, signal, HostListener, ElementRef, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { trigger, transition, style, animate } from '@angular/animations';
@@ -29,6 +29,15 @@ import { NotificationSettingsService } from '../../../core/services/notification
           paddingBottom: 0
         }))
       ])
+    ]),
+    trigger('backdropAnimation', [
+      transition(':enter', [
+        style({ opacity: 0 }),
+        animate('300ms ease-out', style({ opacity: 1 }))
+      ]),
+      transition(':leave', [
+        animate('200ms ease-in', style({ opacity: 0 }))
+      ])
     ])
   ]
 })
@@ -38,11 +47,19 @@ export class ToastComponent {
   toasts = this.toastService.toasts;
   settings = this.settingsService.settings;
 
+  // Track if any confirmation is active for the backdrop
+  hasConfirmation = computed(() => this.toasts().some(t => t.isConfirmation));
+
   // Track input values for confirmation toasts
   confirmInputs = signal<Record<string, string>>({});
 
   dismiss(id: string) {
     this.toastService.dismiss(id);
+  }
+
+  cancelAllConfirmations() {
+    const confirmations = this.toasts().filter(t => t.isConfirmation);
+    confirmations.forEach(toast => this.handleCancel(toast));
   }
 
   handleConfirm(toast: any) {
