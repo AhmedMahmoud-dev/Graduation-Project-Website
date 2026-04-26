@@ -84,6 +84,7 @@ export interface UnifiedFeedbackItem {
   id: number;
   feedback_type: FeedbackType;
   analysis_id: string | null; // Only present if type is 'analysis'
+  analysis_type: 'text' | 'audio' | null; // NEW: The type of analysis (text/audio)
   rating: number;
   comment: string | null;
   is_public: boolean | null; // Only present if type is 'system'

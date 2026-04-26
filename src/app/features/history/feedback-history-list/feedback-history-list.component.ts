@@ -198,7 +198,7 @@ export class FeedbackHistoryListComponent implements OnInit {
             if (res.is_success) {
               this.toastService.show('Deleted', 'Feedback removed successfully.', 'success', 'check');
               this.feedbackService.removeCachedAnalysisFeedback(item.analysisId!.toString());
-              
+
               const newItems = this.allItems().filter(i => i.id !== item.id);
               this.allItems.set(newItems);
               this.totalCount.update(t => Math.max(0, t - 1));
@@ -228,10 +228,10 @@ export class FeedbackHistoryListComponent implements OnInit {
 
     return entries.map(f => {
       let title = f.feedback_type === 'system' ? 'Platform Experience' : 'Analysis Review';
-      let analysisType: 'text' | 'audio' | null = null;
+      let analysisType: 'text' | 'audio' | null = f.analysis_type || null;
 
       if (f.feedback_type === 'analysis' && f.analysis_id) {
-        // Search in all session types for a match to get the correct type
+        // Search in all session types for a match to get metadata like titles
         const textSession = this.storageService.getSessions().find(s => s.id === f.analysis_id || s.cloudId === Number(f.analysis_id));
         const audioSession = this.storageService.getAudioSessions().find(s => s.id === f.analysis_id || s.cloudId === Number(f.analysis_id));
 
@@ -240,15 +240,19 @@ export class FeedbackHistoryListComponent implements OnInit {
 
         const session = textSession || audioSession;
 
-        if (session || historyItem) {
+        // If we don't have analysisType from server yet, fall back to resolved type
+        if (!analysisType && (session || historyItem)) {
           analysisType = (session?.type as any) || (historyItem?.type?.toLowerCase() as any) || 'text';
+        }
+
+        if (session || historyItem) {
           const rawTitle = (session as any)?.originalText
             || (session as any)?.original_text
             || (session as any)?.inputFileName
             || (session as any)?.file_name
             || (historyItem as any)?.summary_text
             || '';
-          title = rawTitle.length > 60 ? rawTitle.substring(0, 60) + '…' : (rawTitle || 'Analysis');
+          title = rawTitle.length > 60 ? rawTitle.substring(0, 60) + '…' : rawTitle;
         }
       }
 

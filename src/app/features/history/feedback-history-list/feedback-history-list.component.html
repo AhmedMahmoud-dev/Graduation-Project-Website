@@ -87,6 +87,10 @@
           <span class="type-badge" [attr.data-type]="item.feedbackType">
             {{ item.feedbackType === 'system' ? 'Platform' : (item.analysisType || 'text') }}
           </span>
+          <span class="type-badge"
+            style="background: color-mix(in srgb, var(--brand-primary) 15%, transparent); color: var(--brand-primary); text-transform: uppercase;">
+            {{ item.feedbackType }}
+          </span>
           @if (item.isPublic !== null) {
           <span class="visibility-badge" [attr.data-public]="item.isPublic">
             {{ item.isPublic ? 'Public' : 'Private' }}
@@ -103,7 +107,14 @@
             {{ item.feedbackType === 'system' ? 'Platform' : (item.analysisType || 'text') }}
           </span>
 
-          @if (item.title !== 'Platform Experience' && item.title !== 'Analysis Review') {
+          <span class="meta-divider !hidden md:!block"></span>
+          <span class="type-badge !hidden md:!inline-flex"
+            style="background: color-mix(in srgb, var(--brand-primary) 15%, transparent); color: var(--brand-primary); text-transform: uppercase;">
+            {{ item.feedbackType }}
+          </span>
+
+          @if (item.title && item.title !== 'Platform Experience' && item.title !== 'Analysis Review' &&
+          item.analysisType !== 'audio') {
           <span class="meta-divider !hidden md:!block"></span>
           <span class="type-badge"
             style="background: color-mix(in srgb, var(--brand-primary) 15%, transparent); color: var(--brand-primary); max-width: 250px; word-break: break-word; white-space: normal;">
