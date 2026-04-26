@@ -1,0 +1,279 @@
+<div class="w-full px-0 py-0 flex flex-col lg:flex-row">
+  <!-- TOC Sidebar (Left/Top) -->
+  <app-model-doc-toc class="sticky top-[64px] z-40 lg:static lg:z-auto" [items]="tocItems"
+    [activeId]="activeSection()" />
+
+  <!-- Main Content (Right) -->
+  <main class="flex-1 min-w-0 pt-12 lg:pt-0">
+
+    <!-- ==================== SECTIONS ==================== -->
+
+    <!-- 1. Overview -->
+    <app-model-doc-section sectionId="overview" title="Overview">
+      <div class="space-y-4">
+        <p class="text-[color:var(--text-secondary)] leading-relaxed text-sm sm:text-base">
+          The <strong class="text-[color:var(--text-primary)]">v5.0 Production Pipeline</strong> represents a massive leap in emotional accuracy and temporal stability. By moving to the state-of-the-art <strong class="text-[color:var(--text-primary)]">emotion2vec+</strong> acoustic engine and implementing bidirectional temporal smoothing, Emotra now delivers industry-leading multimodal emotion detection from raw audio signals.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6">
+          <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-5">
+            <div class="text-2xl sm:text-3xl font-black text-[color:var(--brand-primary)] mb-1">v5.0</div>
+            <div class="text-xs sm:text-sm font-bold text-[color:var(--text-muted)]">Pipeline Version</div>
+          </div>
+          <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-5">
+            <div class="text-2xl sm:text-3xl font-black text-[color:var(--brand-primary)] mb-1">biEMA</div>
+            <div class="text-xs sm:text-sm font-bold text-[color:var(--text-muted)]">Smoothing Tech</div>
+          </div>
+          <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-5">
+            <div class="text-2xl sm:text-3xl font-black text-[color:var(--brand-primary)] mb-1">Alpha</div>
+            <div class="text-xs sm:text-sm font-bold text-[color:var(--text-muted)]">Entropy Fusion</div>
+          </div>
+          <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-5">
+            <div class="text-2xl sm:text-3xl font-black text-[color:var(--brand-primary)] mb-1">0.25</div>
+            <div class="text-xs sm:text-sm font-bold text-[color:var(--text-muted)]">Conf. Gate</div>
+          </div>
+        </div>
+      </div>
+    </app-model-doc-section>
+
+    <!-- 2. Pipeline v5.0 -->
+    <app-model-doc-section sectionId="pipeline-v5" title="Production Pipeline v5.0"
+      subtitle="Advanced 8-stage multimodal architecture.">
+      <div class="space-y-4">
+        <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-6">
+              <div class="flex gap-3 items-start">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--brand-primary)] text-white flex items-center justify-center text-xs font-black shrink-0">1</div>
+                <div>
+                  <div class="text-sm font-bold text-[color:var(--text-primary)]">Pre-processing</div>
+                  <p class="text-xs text-[color:var(--text-muted)] mt-1">Noise reduction, normalization, and clipping check.</p>
+                </div>
+              </div>
+              <div class="flex gap-3 items-start">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--brand-primary)] text-white flex items-center justify-center text-xs font-black shrink-0">2</div>
+                <div>
+                  <div class="text-sm font-bold text-[color:var(--text-primary)]">VAD Segmentation</div>
+                  <p class="text-xs text-[color:var(--text-muted)] mt-1">2s sliding windows with Voice Activity Detection.</p>
+                </div>
+              </div>
+              <div class="flex gap-3 items-start">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--brand-primary)] text-white flex items-center justify-center text-xs font-black shrink-0">3</div>
+                <div>
+                  <div class="text-sm font-bold text-[color:var(--text-primary)]">Acoustic Inference</div>
+                  <p class="text-xs text-[color:var(--text-muted)] mt-1">Direct emotion detection via emotion2vec.</p>
+                </div>
+              </div>
+              <div class="flex gap-3 items-start">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--brand-primary)] text-white flex items-center justify-center text-xs font-black shrink-0">4</div>
+                <div>
+                  <div class="text-sm font-bold text-[color:var(--text-primary)]">biEMA Smoothing</div>
+                  <p class="text-xs text-[color:var(--text-muted)] mt-1">Forward-Backward EMA for stable transitions.</p>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-6">
+              <div class="flex gap-3 items-start">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--accent)] text-white flex items-center justify-center text-xs font-black shrink-0">5</div>
+                <div>
+                  <div class="text-sm font-bold text-[color:var(--text-primary)]">Transcription</div>
+                  <p class="text-xs text-[color:var(--text-muted)] mt-1">Whisper-powered speech-to-text conversion.</p>
+                </div>
+              </div>
+              <div class="flex gap-3 items-start">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--accent)] text-white flex items-center justify-center text-xs font-black shrink-0">6</div>
+                <div>
+                  <div class="text-sm font-bold text-[color:var(--text-primary)]">Linguistic Analysis</div>
+                  <p class="text-xs text-[color:var(--text-muted)] mt-1">Text-based emotion API lookup.</p>
+                </div>
+              </div>
+              <div class="flex gap-3 items-start">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--accent)] text-white flex items-center justify-center text-xs font-black shrink-0">7</div>
+                <div>
+                  <div class="text-sm font-bold text-[color:var(--text-primary)]">Entropy Fusion</div>
+                  <p class="text-xs text-[color:var(--text-muted)] mt-1">Inverse-entropy smart weighting of modalities.</p>
+                </div>
+              </div>
+              <div class="flex gap-3 items-start">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--accent)] text-white flex items-center justify-center text-xs font-black shrink-0">8</div>
+                <div>
+                  <div class="text-sm font-bold text-[color:var(--text-primary)]">Timeline Assembly</div>
+                  <p class="text-xs text-[color:var(--text-muted)] mt-1">Full multimodal log with transition events.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <app-python-code-block [code]="codePredictMultimodal" title="Multimodal Entry Point" />
+      </div>
+    </app-model-doc-section>
+
+    <!-- 3. Preprocessing -->
+    <app-model-doc-section sectionId="preprocessing" title="Noise & Quality Control"
+      subtitle="Ensuring a professional signal baseline.">
+      <div class="space-y-4">
+        <p class="text-[color:var(--text-secondary)] leading-relaxed text-sm sm:text-base">
+          Before analysis begins, the pipeline "cleans" the audio. We use <strong class="text-[color:var(--text-primary)]">adaptive noise reduction</strong> to subtract static hiss and environmental noise, followed by <strong class="text-[color:var(--text-primary)]">peak-normalization</strong>. The system also flags <strong class="text-[color:var(--text-primary)]">digital clipping</strong>, which could lead to "angry" false positives.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+          <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-full bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)] flex items-center justify-center shrink-0">
+               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-[color:var(--text-primary)]">Noise Reduction</div>
+              <div class="text-[10px] text-[color:var(--text-muted)]">Stationary & Non-stationary reduction</div>
+            </div>
+          </div>
+          <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-full bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)] flex items-center justify-center shrink-0">
+               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-[color:var(--text-primary)]">Clipping Check</div>
+              <div class="text-[10px] text-[color:var(--text-muted)]">Consecutive max-sample run detection</div>
+            </div>
+          </div>
+        </div>
+        <app-python-code-block [code]="codePreprocess" title="Audio Cleaning & Flags" />
+      </div>
+    </app-model-doc-section>
+
+    <!-- 4. Segmentation + VAD -->
+    <app-model-doc-section sectionId="segmentation-vad" title="Segmentation + VAD"
+      subtitle="Focusing on human speech, ignoring silence.">
+      <div class="space-y-4">
+        <p class="text-[color:var(--text-secondary)] leading-relaxed text-sm sm:text-base">
+          The pipeline segments raw audio into <strong class="text-[color:var(--text-primary)]">2.0s windows</strong> with a <strong class="text-[color:var(--text-primary)]">1.0s overlap</strong>. Instead of treating every chunk equally, we apply <strong class="text-[color:var(--text-primary)]">Voice Activity Detection (VAD)</strong> logic to weight "speech-clear" segments higher than whispers or background hums.
+        </p>
+        <app-python-code-block [code]="codeSegmentation" title="VAD-Gated Segmentation" />
+      </div>
+    </app-model-doc-section>
+
+    <!-- 5. emotion2vec Engine -->
+    <app-model-doc-section sectionId="emotion2vec" title="emotion2vec Engine"
+      subtitle="Industry-leading acoustic self-supervised learning.">
+      <div class="space-y-4">
+        <p class="text-[color:var(--text-secondary)] leading-relaxed text-sm sm:text-base">
+          We use <strong class="text-[color:var(--text-primary)]">emotion2vec+ base</strong> (from Alibaba FunASR), a model trained on massive amounts of unlabeled audio using self-supervised learning. Unlike HuBERT, it provides native high-fidelity detection for <strong class="text-[color:var(--text-primary)]">7 distinct emotion classes</strong> without synthetic mapping.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          @for (emotion of emotions; track emotion.label) {
+          <div class="flex items-start gap-3 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4">
+            <app-emotion-icon [emotion]="emotion.label" [size]="28" class="shrink-0 mt-0.5"></app-emotion-icon>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-sm font-bold capitalize text-[color:var(--text-primary)]">{{ emotion.label }}</span>
+                <span class="category-badge" [attr.data-category]="emotion.category">{{ emotion.category }}</span>
+              </div>
+              <p class="text-xs text-[color:var(--text-muted)] leading-relaxed">{{ emotion.description }}</p>
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+    </app-model-doc-section>
+
+    <!-- 6. Smoothing -->
+    <app-model-doc-section sectionId="smoothing" title="Bidirectional Smoothing"
+      subtitle="Eliminating causal lag for cinematic transitions.">
+      <div class="space-y-4">
+        <p class="text-[color:var(--text-secondary)] leading-relaxed text-sm sm:text-base">
+          Traditional real-time models suffer from a "causal lag" where the smoothed emotion trail is always 1-2 seconds behind reality. Emotra v5.0 uses <strong class="text-[color:var(--text-primary)]">Bidirectional EMA</strong>: it runs a forward pass and a backward pass simultaneously and averages them. This places emotion transitions <strong class="text-[color:var(--text-primary)]">exactly where they happen</strong> in time.
+        </p>
+        <app-python-code-block [code]="codeSmoothing" title="biEMA Algorithm" />
+      </div>
+    </app-model-doc-section>
+
+    <!-- 7. Entropy-Weighted Fusion -->
+    <app-model-doc-section sectionId="entropy-fusion" title="Entropy-Weighted Fusion"
+      subtitle="Smart modality balancing using information theory.">
+      <div class="space-y-4">
+        <p class="text-[color:var(--text-secondary)] leading-relaxed text-sm sm:text-base">
+          In v1.0, audio and text were always 50/50. In v5.0, we use <strong class="text-[color:var(--text-primary)]">Entropy-Aware weighting</strong>. We calculate the Shannon entropy (uncertainty) for both channels. If the audio is garbled but the words are clear, text gets higher weight. If the transcription is shaky but the tone is clearly "angry", audio dominates.
+        </p>
+        <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-5">
+          <div class="text-xs font-black uppercase tracking-widest text-[color:var(--text-muted)] mb-3 opacity-60">Weight Selection Logic</div>
+          <div class="overflow-x-auto no-scrollbar">
+            <div class="flex gap-4 items-center min-w-[400px] sm:min-w-0">
+              <div class="flex-1 space-y-2">
+                 <div class="flex justify-between text-[10px] font-bold">
+                   <span>Audio Confidence</span>
+                   <span class="text-[color:var(--brand-primary)]">High</span>
+                 </div>
+                 <div class="h-1.5 rounded-full bg-[color:var(--bg-primary)] overflow-hidden">
+                   <div class="h-full bg-[color:var(--brand-primary)]" style="width: 85%"></div>
+                 </div>
+              </div>
+              <div class="text-xs font-black text-[color:var(--text-muted)]">VS</div>
+              <div class="flex-1 space-y-2">
+                 <div class="flex justify-between text-[10px] font-bold">
+                   <span>Text Confidence</span>
+                   <span class="text-[color:var(--accent)]">Low</span>
+                 </div>
+                 <div class="h-1.5 rounded-full bg-[color:var(--bg-primary)] overflow-hidden">
+                   <div class="h-full bg-[color:var(--accent)]" style="width: 30%"></div>
+                 </div>
+              </div>
+            </div>
+          </div>
+          <p class="text-[10px] text-[color:var(--text-muted)] mt-5">Modality Weight &propto; 1 / (Entropy + &epsilon;)</p>
+        </div>
+        <app-python-code-block [code]="codeEntropyFusion" title="Shannon Entropy Weighting" />
+      </div>
+    </app-model-doc-section>
+
+    <!-- 8. Output Format -->
+    <app-model-doc-section sectionId="output-rich" title="Rich Output Format"
+      subtitle="The modern multimodal trace.">
+      <div class="space-y-4">
+        <p class="text-[color:var(--text-secondary)] leading-relaxed text-sm sm:text-base">
+          The API response has been expanded to include <strong class="text-[color:var(--text-primary)]">transition detections</strong> and <strong class="text-[color:var(--text-primary)]">quality metadata</strong>. This allows the frontend to show precisely when an emotion shift occurred and if the audio quality impacted the result.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4">
+            <div class="font-bold text-[color:var(--text-primary)] mb-2 text-sm">Quality Metrics</div>
+            <ul class="space-y-1.5 text-[color:var(--text-muted)]">
+              <li class="flex items-center gap-1.5"><span class="w-1 h-1 rounded-full bg-[color:var(--brand-primary)]"></span> clipping_detected (boolean)</li>
+              <li class="flex items-center gap-1.5"><span class="w-1 h-1 rounded-full bg-[color:var(--brand-primary)]"></span> original_peak (float)</li>
+              <li class="flex items-center gap-1.5"><span class="w-1 h-1 rounded-full bg-[color:var(--brand-primary)]"></span> intensity_weight (per-segment)</li>
+            </ul>
+          </div>
+          <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4">
+            <div class="font-bold text-[color:var(--text-primary)] mb-2 text-sm">Temporal Events</div>
+            <ul class="space-y-1.5 text-[color:var(--text-muted)]">
+              <li class="flex items-center gap-1.5"><span class="w-1 h-1 rounded-full bg-[color:var(--accent)]"></span> from_emotion / to_emotion</li>
+              <li class="flex items-center gap-1.5"><span class="w-1 h-1 rounded-full bg-[color:var(--accent)]"></span> at_offset (seconds)</li>
+              <li class="flex items-center gap-1.5"><span class="w-1 h-1 rounded-full bg-[color:var(--accent)]"></span> frame_reference (id)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </app-model-doc-section>
+
+    <!-- 9. Quality Verification -->
+    <app-model-doc-section sectionId="quality-flags" title="Quality Verification"
+      subtitle="Ensuring clinical-grade reliability.">
+      <div class="space-y-3">
+         <div class="flex gap-3 items-start bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-blue-500/10 text-blue-500">
+               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+               <div class="text-sm font-bold text-[color:var(--text-primary)]">Confidence Gating</div>
+               <p class="text-xs text-[color:var(--text-muted)] mt-1">Segments where the model is highly uncertain (max prob < 0.25) are severely downweighted (&times;0.15) to prevent trash-in/trash-out errors.</p>
+            </div>
+         </div>
+         <div class="flex gap-3 items-start bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-orange-500/10 text-orange-500">
+               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+               <div class="text-sm font-bold text-[color:var(--text-primary)]">Adaptive Entropy</div>
+               <p class="text-xs text-[color:var(--text-muted)] mt-1">The system automatically detects when one modality is failing (asymptotic entropy) and shifts the entire model's trust to the surviving channel.</p>
+            </div>
+         </div>
+      </div>
+    </app-model-doc-section>
+
+  </main>
+</div>

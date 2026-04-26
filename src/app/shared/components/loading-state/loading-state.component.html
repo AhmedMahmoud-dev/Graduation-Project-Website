@@ -1,0 +1,26 @@
+<div class="flex flex-col items-center justify-center p-8 text-center"
+  [class.min-h-[50vh]]="fullPage()"
+  [class.flex-1]="fullPage()"
+  [class.w-full]="!fullPage()">
+  
+  <div class="relative flex items-center justify-center mb-6">
+    <!-- Animated Emotra Logo -->
+    <svg class="text-[color:var(--brand-primary)] drop-shadow-md"
+      [class.w-12]="size() === 'sm'" [class.h-12]="size() === 'sm'"
+      [class.w-16]="size() === 'md'" [class.h-16]="size() === 'md'"
+      [class.w-24]="size() === 'lg'" [class.h-24]="size() === 'lg'"
+      viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path class="logo-animate-path" pathLength="100" d="M9 3v2M15 3v2M3 9h2M19 9h2M12 19c-3.866 0-7-3.134-7-7s3.134-7 7-7 7 3.134 7 7-7 3.134-7 7z" />
+      <path class="logo-animate-path" pathLength="100" style="animation-delay: 0.15s" d="M9 12c.5-1 1.5-1.5 3-1.5s2.5.5 3 1.5M12 6q0 3 -2 5" />
+    </svg>
+  </div>
+
+  <h3 class="text-lg md:text-xl font-black text-[color:var(--text-primary)] mb-2 tracking-tight">
+    {{ message() }}
+  </h3>
+  
+  <p class="text-xs font-bold text-[color:var(--text-muted)] uppercase tracking-widest max-w-sm mx-auto">
+    Securely establishing connection with the intelligence server
+  </p>
+</div>

@@ -1,0 +1,293 @@
+<div
+  class="min-h-screen flex flex-col bg-[color:var(--color-bg)] text-[color:var(--color-text)] w-full max-w-[100vw] overflow-x-hidden">
+
+  <!-- ===================== STATE: INPUT ===================== -->
+  @if (state() === 'input') {
+  <app-page-header title="Text Emotion Analysis" subtitle="Emotion Intelligence"
+    description="Paste or type your text to uncover the emotional journey within each sentence.">
+  </app-page-header>
+  <section class="flex-1 py-12 px-6 md:px-12" style="background: var(--bg-secondary)">
+    <div class="max-w-3xl mx-auto w-full min-w-0">
+      <!-- Textarea Card -->
+      <div class="rounded-2xl overflow-hidden"
+        style="background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow)">
+        <textarea [(ngModel)]="inputText" (ngModelChange)="onTextChange()"
+          placeholder="Enter text to analyze emotions..."
+          class="w-full p-6 text-[15px] leading-[1.8] outline-none resize-none"
+          style="min-height: 160px; max-height: 400px; background: transparent; color: var(--text-primary); font-family: var(--font-sans)"></textarea>
+        <!-- Counters Footer -->
+        <div class="px-6 py-3 flex flex-wrap items-center justify-between gap-3"
+          style="border-top: 1px solid var(--border-color); background: var(--bg-secondary)">
+          <div class="flex items-center gap-4 text-sm" style="color: var(--text-muted)">
+            <span><strong style="color: var(--text-primary)">{{ charCount() }}</strong> / 2000</span>
+            <span style="width:1px; height:12px; background: var(--border-color)"></span>
+            <span>~<strong style="color: var(--text-primary)">{{ tokenEstimate() }}</strong> tokens</span>
+            <span style="width:1px; height:12px; background: var(--border-color)"></span>
+            <span><strong style="color: var(--text-primary)">{{ sentenceCount() }}</strong> sentences</span>
+          </div>
+          <div class="flex items-center gap-2">
+            @if (tokenEstimate() > 400) {
+            <span class="px-3 py-1 rounded-full text-xs font-semibold"
+              style="background: rgba(253,150,68,0.15); color: #fd9644">
+              ⚠ May truncate at 512 tokens
+            </span>
+            }
+            @if (inputText().length > 0) {
+            <button (click)="inputText.set(''); onTextChange()"
+              class="px-3 py-1 rounded-lg text-xs font-semibold transition-colors" style="color: var(--text-muted)">
+              Clear
+            </button>
+            }
+          </div>
+        </div>
+      </div>
+      <!-- Action Buttons -->
+      <div class="mt-8 flex flex-col min-[821px]:flex-row items-center justify-between gap-4">
+        <p class="text-xs order-3 min-[821px]:order-1" style="color: var(--text-muted)">
+          Powered by <strong style="color: var(--text-secondary)">j-hartmann/emotion-english-distilroberta-base</strong>
+        </p>
+        <div class="flex flex-col min-[821px]:flex-row items-center gap-3 w-full min-[821px]:w-auto order-1 min-[821px]:order-2">
+          <button (click)="useSample()"
+            class="w-full min-[821px]:w-auto px-6 py-4 rounded-full font-bold text-sm transition-all flex items-center justify-center gap-2"
+            style="border: 1px solid var(--border-color); color: var(--text-primary); background: transparent">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Try a Sample
+          </button>
+          <button [disabled]="inputText().trim().length === 0" (click)="startAnalysis()"
+            class="w-full min-[821px]:w-auto px-10 py-4 rounded-full font-bold text-sm text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            style="background: var(--brand-primary); box-shadow: var(--shadow)">
+            Run Analysis
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+  }
+
+  <!-- ===================== STATE: LOADING ===================== -->
+  @if (state() === 'loading') {
+  <app-loading-tips [tips]="loadingTips"></app-loading-tips>
+  }
+
+  <!-- ===================== STATE: FETCHING (REPORT) ===================== -->
+  @if (state() === 'fetching') {
+  <div class="flex-1 flex flex-col items-center justify-center p-12 min-h-[60vh]">
+    <app-loading-state message="Retrieving analysis report..."></app-loading-state>
+  </div>
+  }
+
+  <!-- ===================== STATE: RESULTS ===================== -->
+  @if (state() === 'results' && result()) {
+  <!-- 3.1 Top Bar -->
+  <app-session-top-bar [sessionId]="sessionId()" (newAnalysis)="resetToInput()">
+  </app-session-top-bar>
+  <!-- 3.2 Dominant Emotion Hero -->
+  <section class="px-4 sm:px-8 md:px-12 py-12"
+    style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color)">
+    <div class="max-w-7xl mx-auto w-full min-w-0">
+      <app-dominant-emotion-hero [emotionLabel]="result()!.combined_final_emotion.label"
+        [confidencePercent]="result()!.combined_final_emotion.confidence_percent"
+        [category]="result()!.combined_final_emotion.category" [sectionTitle]="'Dominant Emotion'"
+        [showConfidenceBar]="true"
+        [truncationWarning]="result()!.input_info.input_was_truncated ? 'Text was truncated at 512 tokens. Results reflect the first 512 tokens only.' : null">
+      </app-dominant-emotion-hero>
+    </div>
+  </section>
+  <!-- 3.3 Emotion Timeline -->
+  <section class="px-4 sm:px-8 md:px-12 py-12"
+    style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color)">
+    <div class="max-w-7xl mx-auto w-full min-w-0">
+      <div class="section-header mb-8">
+        <p class="text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">Visualizations
+        </p>
+        <h2 class="text-2xl font-extrabold tracking-tight font-heading" style="color: var(--text-primary)">Emotion
+          Timeline</h2>
+        <p class="text-sm mt-1" style="color: var(--text-muted)">How emotions shifted sentence by sentence</p>
+      </div>
+      <div class="rounded-2xl p-5 sm:p-8 w-full max-w-[calc(100vw-2.5rem)] sm:max-w-full"
+        style="background: var(--bg-card); border: 1px solid var(--border-color)">
+        <div class="mt-8">
+          <app-emotion-timeline [data]="timelineData()" [dominant]="result()!.combined_final_emotion.label"
+            class="block w-full h-[340px] md:h-[380px]">
+          </app-emotion-timeline>
+        </div>
+        <!-- Sentence chips -->
+        <div class="mt-6 flex flex-wrap gap-2">
+          @for (s of result()!.sentences_analysis; track s; let i = $index) {
+          <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold"
+            [style.background]="colorService.getBadgeBg(s.dominant.label)"
+            [style.color]="colorService.getColor(s.dominant.label)"
+            [style.border]="colorService.getBadgeBorder(s.dominant.label)">
+            <span class="opacity-60">S{{ i + 1 }}</span>
+            <span>{{ s.dominant.label | titlecase }}</span>
+          </div>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- 3.4 Emotion Distribution -->
+  <section class="px-4 sm:px-8 md:px-12 py-12"
+    style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color)">
+    <div class="max-w-7xl mx-auto w-full min-w-0">
+      <div class="section-header mb-8">
+        <p class="text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">Distribution</p>
+        <h2 class="text-2xl font-extrabold tracking-tight font-heading" style="color: var(--text-primary)">Emotion
+          Distribution</h2>
+        <p class="text-sm mt-1" style="color: var(--text-muted)">Combined confidence scores across all emotions</p>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="rounded-2xl p-6 md:p-8" style="background: var(--bg-card); border: 1px solid var(--border-color)">
+          <div class="mt-8">
+            <app-emotion-distribution [data]="distributionData()" viewType="bar" class="block w-full h-[260px]">
+            </app-emotion-distribution>
+          </div>
+        </div>
+        <!-- Emotional Insights -->
+        @if (emotionalInsights(); as insights) {
+        <div class="rounded-2xl p-4 sm:p-6 md:p-8 flex flex-col items-center justify-center text-center gap-6"
+          style="background: var(--bg-card); border: 1px solid var(--border-color)">
+          <div class="mb-2">
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--text-muted)">
+              Emotional Insights</p>
+            <div class="w-20 h-20 rounded-3xl flex items-center justify-center mb-4 mx-auto"
+              [style.background]="'color-mix(in srgb, ' + insights.polarityColor + ', transparent 92%)'"
+              [style.border]="'1px solid color-mix(in srgb, ' + insights.polarityColor + ', transparent 80%)'">
+              <app-emotion-icon [emotion]="insights.polarity" [size]="40"></app-emotion-icon>
+            </div>
+            <h4 class="text-2xl font-black uppercase tracking-tight" [style.color]="insights.polarityColor">{{
+              insights.polarity }} Profile</h4>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+            <div class="p-4 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] w-full">
+              <p class="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Diversity</p>
+              <p class="text-xl font-bold" style="color: var(--text-primary)">{{ insights.diversity }} <span
+                  class="text-xs opacity-50">Modes</span></p>
+            </div>
+            <div class="p-4 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] w-full">
+              <p class="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Complexity</p>
+              <p class="text-xl font-bold" style="color: var(--text-primary)">{{ insights.complexity }}</p>
+            </div>
+          </div>
+          <p class="text-xs leading-relaxed italic" style="color: var(--text-secondary)">
+            The text predominantly reflects a <strong [style.color]="colorService.getColor(insights.primary)">{{
+              insights.primary }}</strong> tone
+            with a {{ insights.complexity.toLowerCase() }} structure.
+          </p>
+        </div>
+        }
+      </div>
+    </div>
+  </section>
+  <!-- 3.5 Analysis Tracks -->
+  <section class="px-4 sm:px-8 md:px-12 py-12"
+    style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color)">
+    <div class="max-w-7xl mx-auto w-full min-w-0">
+      <div class="section-header mb-8">
+        <p class="text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">Methodology</p>
+        <h2 class="text-2xl font-extrabold tracking-tight font-heading" style="color: var(--text-primary)">Analysis
+          Tracks</h2>
+        <p class="text-sm mt-1" style="color: var(--text-muted)">Comparing the two analysis tracks</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Sentence Track (Combined) -->
+        <div class="rounded-2xl p-5 sm:p-8" style="background: var(--bg-card); border: 1px solid var(--border-color)">
+          <span class="inline-block px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest mb-3"
+            style="background: rgba(108,99,255,0.12); color: var(--brand-primary)">Sentence Track</span>
+          <h4 class="text-lg font-bold mb-1" style="color: var(--text-primary)">Combined Result</h4>
+          <p class="text-xs mb-5" style="color: var(--text-muted)">Per-sentence + full-text weighted merge</p>
+          <div class="flex items-baseline flex-wrap gap-2 mb-5 pb-5" style="border-bottom: 1px solid var(--border-color)">
+            <span class="text-3xl sm:text-4xl font-black capitalize"
+              [style.color]="colorService.getColor(result()!.combined_final_emotion.label)">
+              {{ result()!.combined_final_emotion.label }}
+            </span>
+            <span class="text-lg font-bold" style="color: var(--text-muted)">
+              {{ result()!.combined_final_emotion.confidence_percent | number:'1.1-1' }}%
+            </span>
+          </div>
+          <span class="category-badge" [attr.data-category]="result()!.combined_final_emotion.category">
+            {{ result()!.combined_final_emotion.category }}
+          </span>
+        </div>
+        <!-- Full Text Track -->
+        <div class="rounded-2xl p-5 sm:p-8" style="background: var(--bg-card); border: 1px solid var(--border-color)"
+          [style.borderLeftWidth]="'3px'"
+          [style.borderLeftColor]="colorService.getColor(result()!.full_text_analysis.dominant.label)">
+          <span class="inline-block px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest mb-3"
+            style="background: rgba(0,212,170,0.12); color: var(--accent)">Full Text Track</span>
+          <h4 class="text-lg font-bold mb-1" style="color: var(--text-primary)">Full Text Analysis</h4>
+          <p class="text-xs mb-5" style="color: var(--text-muted)">Entire text processed as one unit</p>
+          <div class="flex items-baseline flex-wrap gap-2 mb-5 pb-5" style="border-bottom: 1px solid var(--border-color)">
+            <span class="text-3xl sm:text-4xl font-black capitalize"
+              [style.color]="colorService.getColor(result()!.full_text_analysis.dominant.label)">
+              {{ result()!.full_text_analysis.dominant.label }}
+            </span>
+            <span class="text-lg font-bold" style="color: var(--text-muted)">
+              {{ (result()!.full_text_analysis.dominant.confidence * 100) | number:'1.1-1' }}%
+            </span>
+          </div>
+          <span class="category-badge" [attr.data-category]="result()!.full_text_analysis.dominant.category">
+            {{ result()!.full_text_analysis.dominant.category }}
+          </span>
+        </div>
+      </div>
+      <div class="mt-6 rounded-xl p-4"
+        style="background: var(--bg-surface, var(--bg-secondary)); border: 1px solid var(--border-color)">
+        <p class="text-xs font-medium leading-relaxed" style="color: var(--text-secondary)">
+          The final result blends per-sentence analysis (with intensity weights) and full-text analysis using a
+          <strong style="color: var(--text-primary)">0.8 global weight factor</strong>.
+        </p>
+      </div>
+    </div>
+  </section>
+  <!-- 3.6 Sentence Breakdown -->
+  <section class="px-4 sm:px-8 md:px-12 py-12"
+    style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color)">
+    <div class="max-w-7xl mx-auto w-full min-w-0">
+      <div class="section-header mb-8">
+        <p class="text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">Deep Dive</p>
+        <h2 class="text-2xl font-extrabold tracking-tight font-heading" style="color: var(--text-primary)">Sentence
+          Breakdown</h2>
+        <p class="text-sm mt-1" style="color: var(--text-muted)">Detailed emotion analysis for each sentence</p>
+      </div>
+      <div class="space-y-4 pr-2" [class.max-h-[800px]]="result()!.sentences_analysis.length > 8"
+        [class.overflow-y-auto]="result()!.sentences_analysis.length > 8">
+        @for (s of result()!.sentences_analysis; track s; let i = $index) {
+        <app-analysis-breakdown-card [index]="i + 1" [emotionLabel]="s.dominant.label"
+          [confidence]="s.dominant.confidence" [probabilities]="s.probabilities" [sentence]="s.sentence"
+          [intensityWeight]="s.intensity_weight">
+        </app-analysis-breakdown-card>
+        }
+      </div>
+    </div>
+  </section>
+  <!-- 3.7 Model Info Grid -->
+  <section class="px-6 md:px-12 py-12"
+    style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color)">
+    <div class="max-w-7xl mx-auto w-full min-w-0">
+      <app-model-info-grid [chips]="modelChips()"
+        [warningChip]="result()!.input_info.input_was_truncated ? { label: 'Truncated', value: 'Yes' } : null">
+      </app-model-info-grid>
+    </div>
+  </section>
+  <!-- 3.8 Raw JSON -->
+  <section class="px-6 md:px-12 py-12" style="background: var(--bg-secondary)">
+    <div class="max-w-7xl mx-auto w-full min-w-0">
+      <app-raw-json-section [data]="result()"></app-raw-json-section>
+    </div>
+  </section>
+
+  <!-- Analysis Feedback -->
+  <section id="feedback-section" class="px-6 md:px-12 py-12" style="background: var(--bg-primary)">
+    <div class="max-w-7xl mx-auto w-full min-w-0">
+      <app-analysis-feedback [analysisId]="sessionId()"></app-analysis-feedback>
+    </div>
+  </section>
+  }
+
+
+  <app-footer-section></app-footer-section>
+</div>

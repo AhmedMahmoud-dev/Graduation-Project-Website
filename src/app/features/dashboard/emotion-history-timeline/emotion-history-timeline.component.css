@@ -1,0 +1,174 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   SECTION SHELL
+───────────────────────────────────────────────────────────────────────────── */
+.ej-section {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  padding: 3rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .ej-section {
+    padding: 3rem;
+  }
+}
+
+.ej-inner {
+  max-width: 80rem;
+  /* Matches max-w-7xl (1280px) used in Precision Trend */
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SECTION HEADER
+───────────────────────────────────────────────────────────────────────────── */
+.ej-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ej-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0 0 0.25rem;
+}
+
+.ej-subtitle {
+  font-size: 0.625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.ej-archive-link {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--brand-primary);
+  text-decoration: none;
+  padding: 0.5rem 0;
+  transition: opacity 150ms ease;
+  white-space: nowrap;
+}
+
+.ej-archive-link:hover {
+  opacity: 0.7;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   FILTER ROWS
+───────────────────────────────────────────────────────────────────────────── */
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   CHART CARD (shared by both charts)
+───────────────────────────────────────────────────────────────────────────── */
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  position: relative; /* Enabled for debug counter positioning */
+}
+
+@media (min-width: 768px) {
+  .chart-card {
+    padding: 2rem;
+  }
+}
+
+.chart-card__head {
+  margin-bottom: 1.25rem;
+}
+
+.chart-card__label {
+  font-size: 0.9375rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.chart-card__desc {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ECHARTS HOST
+───────────────────────────────────────────────────────────────────────────── */
+.ej-chart-host {
+  display: block;
+  width: 100%;
+  height: 280px;
+}
+
+@media (min-width: 768px) {
+  .ej-chart-host {
+    height: 340px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   EMOTION BADGE ROW (deep-dive selector)
+───────────────────────────────────────────────────────────────────────────── */
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.emo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  padding: 0.375rem 0.875rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 900;
+  text-transform: capitalize;
+  letter-spacing: 0.04em;
+  border: 1.5px solid var(--border-color);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease;
+  white-space: nowrap;
+}
+
+.emo-badge__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.emo-badge--active {
+  border-color: var(--emo-color, var(--brand-primary));
+  color: var(--emo-color, var(--brand-primary));
+  background: color-mix(in srgb, var(--emo-color, var(--brand-primary)), transparent 88%);
+}

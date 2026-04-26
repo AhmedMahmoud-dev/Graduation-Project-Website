@@ -1,0 +1,156 @@
+/* History page custom enhancements */
+.history-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  /* Performance Optimization for long lists */
+  content-visibility: auto;
+  contain-intrinsic-size: 150px;
+}
+
+.history-card:hover {
+  border-color: var(--brand-primary);
+  box-shadow: var(--shadow-hover);
+}
+
+.type-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+}
+
+.type-indicator svg {
+  width: 14px;
+  height: 14px;
+}
+
+.card-action-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  color: var(--text-muted);
+}
+
+.card-action-btn:hover {
+  background: var(--bg-surface);
+  color: var(--brand-primary);
+}
+
+.delete-btn:hover {
+  background: rgba(255, 71, 87, 0.1);
+  color: #ff4757;
+}
+
+/* Filter buttons */
+.filter-btn {
+  padding: 8px 16px;
+  border-radius: 99px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  background: transparent;
+  transition: all 0.2s;
+}
+
+.filter-btn.active {
+  background: var(--brand-primary);
+  color: white;
+  border-color: var(--brand-primary);
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 20px 12px 48px;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  /* border-color: var(--brand-primary); */
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-primary) 15%, transparent);
+}
+
+.dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all 0.2s;
+  color: var(--text-muted);
+}
+
+.dropdown-item:hover {
+  background: var(--bg-secondary);
+}
+
+.dropdown-item.active {
+  background: var(--brand-primary);
+  color: white;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   HISTORY TOOLBAR RESPONSIVENESS
+───────────────────────────────────────────────────────────────────────────── */
+
+/* Desktop / Laptop: One Row for everything */
+.toolbar-flex-container {
+  flex-direction: row !important;
+}
+
+/* Tablet / Small Laptop (1200px and below): 
+   Tabs stay top, Search & Sort move to a new row together */
+@media (max-width: 1200px) {
+  .toolbar-flex-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .controls-flex-container {
+    /* Keep search and sort side-by-side until mobile */
+    flex-direction: row !important;
+    width: 100% !important;
+  }
+}
+
+/* Ultra Mobile (375px and below): 
+   Search and Sort each take their own full-width row */
+@media (max-width: 375px) {
+  .controls-flex-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 1rem !important;
+  }
+
+  .controls-flex-container>div,
+  .sort-group,
+  .sort-group>div {
+    width: 100% !important;
+    flex: none !important;
+  }
+}

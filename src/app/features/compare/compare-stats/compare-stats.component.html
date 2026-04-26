@@ -1,0 +1,118 @@
+<div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-3xl p-6 md:p-8 shadow-sm">
+  <div class="mb-6">
+    <div class="flex items-center gap-3 mb-2">
+      <div class="w-1.5 h-6 bg-[color:var(--brand-primary)] rounded-full"></div>
+      <h2 class="text-xl md:text-2xl font-black text-[color:var(--text-primary)] tracking-tight">Analysis Summary</h2>
+    </div>
+  </div>
+
+  <!-- Desktop Table format (hidden on small mobile, visible on md+) -->
+  <div class="hidden md:block w-full overflow-x-auto">
+    <table class="w-full text-left border-collapse min-w-full">
+      <thead>
+        <tr>
+          <th
+            class="p-4 border-b border-[color:var(--border-color)] text-[10px] font-black uppercase text-[color:var(--text-muted)] tracking-widest w-1/4">
+            Metric</th>
+          <th
+            class="p-4 border-b border-[color:var(--border-color)] text-[10px] font-black uppercase text-[color:var(--text-muted)] tracking-widest w-[30%]">
+            Analysis A</th>
+          <th
+            class="p-4 border-b border-[color:var(--border-color)] text-[10px] font-black uppercase text-[color:var(--text-muted)] tracking-widest w-[30%]">
+            Analysis B</th>
+          <th
+            class="p-4 border-b border-[color:var(--border-color)] text-[10px] font-black uppercase text-[color:var(--text-muted)] tracking-widest text-right">
+            Difference</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of statsRows(); track row.label) {
+        <tr
+          class="group border-b border-[color:var(--border-color)] hover:bg-[color:var(--bg-surface)] transition-colors">
+
+          <td class="p-4 text-sm font-bold text-[color:var(--text-primary)]">{{ row.label }}</td>
+
+          <td class="p-4 text-sm font-medium text-[color:var(--text-secondary)]">
+            @if (row.isEmotion) {
+            <span class="px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest text-white"
+              [style.backgroundColor]="getEmotionColor(row.valA)">
+              {{ row.valA }}
+            </span>
+            } @else {
+            {{ row.valA }}
+            }
+          </td>
+
+          <td class="p-4 text-sm font-medium text-[color:var(--text-secondary)]">
+            @if (row.isEmotion) {
+            <span class="px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest text-white"
+              [style.backgroundColor]="getEmotionColor(row.valB)">
+              {{ row.valB }}
+            </span>
+            } @else {
+            {{ row.valB }}
+            }
+          </td>
+
+          <td class="p-4 text-sm font-bold text-[color:var(--text-secondary)] text-right">
+            @if (row.diff.startsWith('+')) {
+            <span class="text-emerald-500">{{ row.diff }}</span>
+            } @else if (row.diff.startsWith('-') && row.diff !== '-') {
+            <span class="text-red-500">{{ row.diff }}</span>
+            } @else {
+            <span class="text-[color:var(--text-muted)]">{{ row.diff }}</span>
+            }
+          </td>
+
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Card List (visible on small mobile only) -->
+  <div class="md:hidden flex flex-col gap-4">
+    @for (row of statsRows(); track row.label) {
+    <div
+      class="p-4 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] flex flex-col gap-2">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[10px] font-black uppercase text-[color:var(--text-muted)] tracking-widest">{{ row.label
+          }}</span>
+        <span
+          class="text-[10px] font-black uppercase text-[color:var(--text-primary)] bg-[color:var(--bg-card)] px-2 py-0.5 rounded border border-[color:var(--border-color)]">{{
+          row.diff }}</span>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <!-- A -->
+        <div class="flex flex-col flex-1 min-w-0 break-words">
+          <span class="text-[9px] font-bold text-[color:var(--text-muted)] uppercase mb-1">A</span>
+          @if (row.isEmotion) {
+          <span class="px-2 w-fit py-0.5 rounded text-[8px] font-black uppercase tracking-widest text-white"
+            [style.backgroundColor]="getEmotionColor(row.valA)">
+            {{ row.valA }}
+          </span>
+          } @else {
+          <span class="text-xs font-medium text-[color:var(--text-secondary)]">{{ row.valA }}</span>
+          }
+        </div>
+
+        <div class="w-px h-6 bg-[color:var(--border-color)] mx-4"></div>
+
+        <!-- B -->
+        <div class="flex flex-col flex-1 text-right items-end min-w-0 break-words">
+          <span class="text-[9px] font-bold text-[color:var(--text-muted)] uppercase mb-1">B</span>
+          @if (row.isEmotion) {
+          <span class="px-2 w-fit py-0.5 rounded text-[8px] font-black uppercase tracking-widest text-white"
+            [style.backgroundColor]="getEmotionColor(row.valB)">
+            {{ row.valB }}
+          </span>
+          } @else {
+          <span class="text-xs font-medium text-[color:var(--text-secondary)]">{{ row.valB }}</span>
+          }
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+</div>

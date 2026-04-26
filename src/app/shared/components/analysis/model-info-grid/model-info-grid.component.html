@@ -1,0 +1,24 @@
+@if (showTitle()) {
+  <div class="section-header mb-8">
+    <p class="text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">{{ subTitle() }}</p>
+    <h2 class="text-2xl font-extrabold tracking-tight font-heading" style="color: var(--text-primary)">
+    {{ title() }}</h2>
+  </div>
+}
+
+<div class="flex flex-wrap gap-3">
+  @for (chip of chips(); track chip.label) {
+    <div class="info-chip">
+      <span class="text-xs" style="color: var(--text-muted)">{{ chip.label }}</span>
+      <span class="text-sm font-bold" style="color: var(--text-primary)" [class.font-mono]="chip.mono">
+        {{ chip.value }}
+      </span>
+    </div>
+  }
+  @if (warningChip(); as wChip) {
+    <div class="info-chip truncated-chip">
+      <span class="text-xs" style="color: #fd9644">⚠ {{ wChip.label }}</span>
+      <span class="text-sm font-bold" style="color: #fd9644">{{ wChip.value }}</span>
+    </div>
+  }
+</div>

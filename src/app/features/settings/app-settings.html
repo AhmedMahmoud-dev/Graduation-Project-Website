@@ -1,0 +1,42 @@
+<div class="min-h-screen flex flex-col bg-[color:var(--color-bg)] transition-colors duration-300">
+      <!-- Header Section -->
+      <app-page-header title="Settings" [hasNav]="true"
+        description="Personalize your experience by customizing the application theme and emotion colors.">
+        
+        <div nav class="mb-6 w-full lg:w-max">
+          <app-segmented-nav 
+            [options]="navOptions" 
+            [selectedValue]="activeMainTab()" 
+            (selectedValueChange)="setActiveTab($event)">
+          </app-segmented-nav>
+        </div>
+      </app-page-header>
+
+      <!-- Main Content Section -->
+      <section class="py-12 px-4 md:px-12 bg-[color:var(--color-bg)] flex-1">
+        <div class="max-w-7xl mx-auto">
+          
+          <!-- Appearance & Colors Tab Content -->
+          @if (activeMainTab() === 'colors') {
+            <app-appearance-and-colors (settingsChanged)="triggerToast()"></app-appearance-and-colors>
+          }
+
+          <!-- Account Tab Content -->
+          @if (activeMainTab() === 'account') {
+            <app-account-settings (passwordChanged)="triggerToast()"></app-account-settings>
+          }
+          
+          <!-- Alerts Tab Content -->
+          @if (activeMainTab() === 'alerts') {
+            <app-alert-preferences (settingsChanged)="triggerToast()"></app-alert-preferences>
+          }
+
+          <!-- Notifications Tab Content -->
+          @if (activeMainTab() === 'notifications') {
+            <app-notification-settings></app-notification-settings>
+          }
+        </div>
+      </section>
+
+      <app-footer-section></app-footer-section>
+</div>

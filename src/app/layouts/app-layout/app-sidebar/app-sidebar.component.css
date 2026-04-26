@@ -1,0 +1,8 @@
+:host ::ng-deep svg {
+  stroke: currentColor !important;
+  transition: stroke 0.2s ease;
+}
+
+.active-link {
+  color: var(--brand-primary) !important;
+}

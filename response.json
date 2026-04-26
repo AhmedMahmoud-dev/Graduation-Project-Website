@@ -1,0 +1,47 @@
+{
+  "is_success": true,
+  "message": "Success",
+  "data": [
+    {
+      "id": 6,
+      "feedback_type": "analysis",
+      "analysis_id": "d81045e5-2fc7-4535-9757-7f634694a05c",
+      "rating": 5,
+      "comment": "test",
+      "is_public": null,
+      "created_at": "2026-04-18T13:18:26.0485255"
+    },
+    {
+      "id": 5,
+      "feedback_type": "analysis",
+      "analysis_id": "6ecce893-e4b5-4e51-a806-eb3ec4756dfe",
+      "rating": 5,
+      "comment": "it was good.",
+      "is_public": null,
+      "created_at": "2026-04-18T12:48:50.0885358"
+    },
+    {
+      "id": 2,
+      "feedback_type": "analysis",
+      "analysis_id": "7fa34ad1-f879-481e-af16-0090ed732264",
+      "rating": 5,
+      "comment": "a very good analysis.",
+      "is_public": null,
+      "created_at": "2026-04-17T13:55:26.7560098"
+    },
+    {
+      "id": 1,
+      "feedback_type": "system",
+      "analysis_id": null,
+      "rating": 2,
+      "comment": "the system is very good, and this is what i see, the timeline is very good idea it's very helpfull to understand my emotions from different inputs, the AI models accuracy is awesome, and the result page contain very good information, and about the dashboard, this is the best insights i have everyseen in my life!, the over all system is perfect.",
+      "is_public": true,
+      "created_at": "2026-04-17T13:54:10.9290357"
+    }
+  ],
+  "status_code": 200,
+  "timestamp": "2026-04-18T14:50:36.1288712Z",
+  "total": 4,
+  "page": 1,
+  "page_size": 10
+}

@@ -1,0 +1,70 @@
+<section id="features"
+  class="py-16 md:py-24 lg:py-32 px-4 xs:px-6 lg:px-12 bg-[color:var(--color-bg)] text-[color:var(--color-text)] overflow-hidden">
+  <div class="max-w-7xl mx-auto flex flex-col">
+    <!-- Section Header -->
+    <div class="max-w-3xl mb-12 sm:mb-16 md:mb-20 px-2 w-full text-center sm:text-left">
+      <h2 id="features-heading"
+        class="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-black text-[color:var(--color-text)] tracking-tight mb-4 sm:mb-6 break-words w-full">
+        Understand Emotions Everywhere.
+      </h2>
+      <p id="features-subheading"
+        class="text-sm xs:text-base sm:text-lg md:text-xl text-[color:var(--color-text-muted)] font-medium leading-relaxed">
+        One platform. Four input types. Infinite insight powered by state-of-the-art neural architectures.
+      </p>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 sm:gap-8 w-full">
+      @for (item of features; track item.title) {
+      <div [id]="'feature-' + item.title.toLowerCase().replace(' ', '-')"
+        class="p-6 xs:p-8 lg:p-8 bg-[color:var(--color-surface)] border border-[color:var(--color-border)] rounded-3xl flex flex-col h-full relative w-full min-w-0 overflow-hidden group transition-colors hover:border-[color:var(--color-primary)]">
+
+        <!-- Coming Soon Overlay -->
+        @if (item.status === 'coming-soon') {
+        <div
+          class="absolute inset-0 z-20 flex items-center justify-center p-6 text-center backdrop-blur-md bg-[color-mix(in_srgb,var(--color-bg),transparent_40%)] rounded-3xl">
+          <div
+            class="bg-[color:var(--color-text)] text-[color:var(--color-bg)] px-6 py-2.5 rounded-xl font-black uppercase tracking-[0.2em] text-[10px] shadow-lg border border-[color:var(--color-border)]">
+            Coming Soon
+          </div>
+        </div>
+        }
+
+        <div [class.opacity-40]="item.status === 'coming-soon'" [class.filter]="item.status === 'coming-soon'"
+          [class.grayscale]="item.status === 'coming-soon'" class="flex flex-col h-full">
+
+          <!-- Icon with tinted background -->
+          <div
+            class="w-12 h-12 mb-5 rounded-xl bg-[color:color-mix(in_srgb,var(--color-primary),transparent_88%)] flex items-center justify-center">
+            <svg class="w-6 h-6 text-[color:var(--color-primary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path [attr.d]="item.icon" />
+            </svg>
+          </div>
+
+          <!-- Category Chip -->
+          <span
+            class="inline-flex self-start px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-[color:var(--brand-primary)] bg-[color:color-mix(in_srgb,var(--brand-primary),transparent_92%)] border border-[color:color-mix(in_srgb,var(--brand-primary),transparent_80%)] mb-4">
+            {{ item.category }}
+          </span>
+
+          <h3 class="text-lg sm:text-xl font-bold text-[color:var(--color-text)] mb-3">{{ item.title }}</h3>
+          <p class="text-[color:var(--color-text-muted)] text-sm font-medium leading-relaxed mb-8 flex-1">
+            {{ item.description }}
+          </p>
+
+          @if (item.status === 'available') {
+          <a [routerLink]="item.link"
+            class="text-[color:var(--color-primary)] font-black text-[10px] sm:text-xs uppercase tracking-widest inline-flex items-center gap-1.5 hover:underline underline-offset-4">
+            Explore model
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+              <path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </a>
+          }
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+</section>

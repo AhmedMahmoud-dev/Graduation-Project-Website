@@ -1,0 +1,42 @@
+:host {
+  display: block;
+}
+
+.grid-background {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--color-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(circle at center, white 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle at center, white 0%, transparent 70%);
+  opacity: 0.2;
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme='dark'] .grid-background {
+  opacity: 0.1;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-text-muted), transparent 80%) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-text-muted), transparent 80%) 1px, transparent 1px);
+}
+
+/* Brand-tinted radial glow behind hero content */
+.hero-glow {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 600px;
+  height: 400px;
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--brand-primary), transparent 88%) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme='dark'] .hero-glow {
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--brand-primary), transparent 82%) 0%, transparent 70%);
+}

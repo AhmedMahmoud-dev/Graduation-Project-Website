@@ -1,0 +1,310 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.feedback-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow);
+  border-radius: 16px;
+  padding: 24px;
+  transition: box-shadow 0.3s ease;
+}
+
+/* Header Section */
+.feedback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.feedback-header-content {
+  flex: 1;
+}
+
+.feedback-header-content h3 {
+  font-family: var(--font-heading);
+  color: var(--color-text);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.feedback-header-content p {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Buttons */
+.btn-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, opacity 150ms ease;
+  border: none;
+  white-space: nowrap;
+}
+
+.btn-edit {
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  background: transparent;
+}
+
+.btn-edit:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-primary) 5%, transparent);
+}
+
+.btn-delete {
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 25%, transparent);
+}
+
+.btn-delete:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-danger) 18%, transparent);
+  border-color: color-mix(in srgb, var(--color-danger) 70%, transparent);
+}
+
+.btn-submit {
+  background: var(--color-primary);
+  color: white;
+  font-weight: 600;
+}
+
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  background: transparent;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: var(--color-bg);
+}
+
+/* Rating State */
+.rating-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 24px;
+}
+
+.label-small {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.rating-row .label-small {
+  margin-bottom: 0;
+}
+
+.score-badge {
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
+  border-radius: 6px;
+  padding: 2px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.stars-display {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star-icon {
+  width: 20px;
+  height: 20px;
+  transition: fill 150ms ease;
+}
+
+/* Review Content */
+.review-block {
+  border-left: 3px solid var(--color-primary);
+  padding: 10px 14px 10px 12px;
+  background: color-mix(in srgb, var(--color-primary) 5%, transparent);
+  border-radius: 0 8px 8px 0;
+}
+
+.review-text {
+  color: var(--color-text);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Edit Mode Form */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.star-input-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.star-btn {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 150ms ease;
+}
+
+.star-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-text-muted) 10%, transparent);
+}
+
+.star-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.review-textarea {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  min-height: 100px;
+  width: 100%;
+  resize: none;
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.review-textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px 0;
+}
+
+.empty-icon {
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.empty-state h4 {
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.empty-state p {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin-top: 4px;
+  margin-bottom: 20px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .feedback-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    margin-top: 16px;
+    width: 100%;
+  }
+
+  .header-actions button {
+    flex: 1;
+  }
+
+  .rating-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .header-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .header-actions button {
+    width: 100%;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .form-actions button {
+    width: 100%;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .form-actions button {
+    flex: 1;
+  }
+}

@@ -1,0 +1,449 @@
+<div class="w-full px-0 py-0 flex flex-col lg:flex-row">
+  <!-- TOC Sidebar (Left/Top) -->
+  <app-model-doc-toc class="sticky top-[64px] z-40 lg:static lg:z-auto" [items]="tocItems"
+    [activeId]="activeSection()" />
+
+  <!-- Main Content (Right) -->
+  <main class="flex-1 min-w-0 pt-12 lg:pt-0">
+
+    <!-- ==================== SECTIONS ==================== -->
+
+    <!-- 1. Overview -->
+    <app-model-doc-section sectionId="overview" title="Overview">
+      <div class="space-y-4">
+        <p class="text-[color:var(--text-secondary)] leading-relaxed text-sm sm:text-base">
+          Emotra's audio emotion engine is a <strong class="text-[color:var(--text-primary)]">multimodal
+            system</strong> — it doesn't just listen to <em>what</em> you say, it also analyzes <em>how</em> you say
+          it. The pipeline combines speech-to-text transcription with voice tone analysis to produce a fused emotion
+          result that captures both linguistic and acoustic emotional cues.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6">
+          <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-5">
+            <div class="text-2xl sm:text-3xl font-black text-[color:var(--brand-primary)] mb-1">3</div>
+            <div class="text-xs sm:text-sm font-bold text-[color:var(--text-muted)]">AI Models Used</div>
+          </div>
+          <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-5">
+            <div class="text-2xl sm:text-3xl font-black text-[color:var(--brand-primary)] mb-1">7</div>
+            <div class="text-xs sm:text-sm font-bold text-[color:var(--text-muted)]">Emotion Classes</div>
+          </div>
+          <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-5">
+            <div class="text-2xl sm:text-3xl font-black text-[color:var(--brand-primary)] mb-1">3s</div>
+            <div class="text-xs sm:text-sm font-bold text-[color:var(--text-muted)]">Sliding Window</div>
+          </div>
+          <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-5">
+            <div class="text-2xl sm:text-3xl font-black text-[color:var(--brand-primary)] mb-1">50/50</div>
+            <div class="text-xs sm:text-sm font-bold text-[color:var(--text-muted)]">Fusion Ratio</div>
+          </div>
+        </div>
+      </div>
+    </app-model-doc-section>
+
+    <!-- 2. Pipeline Architecture -->
+    <app-model-doc-section sectionId="pipeline-architecture" title="Pipeline Architecture"
+      subtitle="The 4-step multimodal processing pipeline.">
+      <div class="space-y-4">
+        <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-6">
+          <div class="space-y-5">
+            <div class="flex gap-3 items-start">
+              <div
+                class="w-8 h-8 rounded-lg bg-[color:var(--brand-primary)] text-white flex items-center justify-center text-xs font-black shrink-0">
+                1</div>
+              <div class="flex-1">
+                <div class="text-sm font-bold text-[color:var(--text-primary)] mb-1">Speech-to-Text (Whisper)</div>
+                <p class="text-xs text-[color:var(--text-muted)] leading-relaxed">Audio file is transcribed into text
+                  using OpenAI's Whisper model. This extracts <em>what</em> was said.</p>
+                <div
+                  class="mt-2 inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] text-[color:var(--text-muted)]">
+                  whisper-small</div>
+              </div>
+            </div>
+            <div class="flex gap-3 items-start">
+              <div
+                class="w-8 h-8 rounded-lg bg-[color:var(--brand-primary)] text-white flex items-center justify-center text-xs font-black shrink-0">
+                2</div>
+              <div class="flex-1">
+                <div class="text-sm font-bold text-[color:var(--text-primary)] mb-1">Text Emotion Analysis</div>
+                <p class="text-xs text-[color:var(--text-muted)] leading-relaxed">The transcribed text is sent to
+                  Emotra's Text Emotion API (the same model documented on the Text Model page) to detect emotions from
+                  the words.</p>
+                <div
+                  class="mt-2 inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] text-[color:var(--text-muted)]">
+                  DistilRoBERTa</div>
+              </div>
+            </div>
+            <div class="flex gap-3 items-start">
+              <div
+                class="w-8 h-8 rounded-lg bg-[color:var(--brand-primary)] text-white flex items-center justify-center text-xs font-black shrink-0">
+                3</div>
+              <div class="flex-1">
+                <div class="text-sm font-bold text-[color:var(--text-primary)] mb-1">Voice Tone Analysis (HuBERT)
+                </div>
+                <p class="text-xs text-[color:var(--text-muted)] leading-relaxed">The raw audio waveform is analyzed
+                  for vocal patterns — pitch, energy, speaking pace — to detect emotions from <em>how</em> it was
+                  said, independent of words.</p>
+                <div
+                  class="mt-2 inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] text-[color:var(--text-muted)]">
+                  superb/hubert-large-superb-er</div>
+              </div>
+            </div>
+            <div class="flex gap-3 items-start">
+              <div
+                class="w-8 h-8 rounded-lg bg-[color:var(--brand-primary)] text-white flex items-center justify-center text-xs font-black shrink-0">
+                4</div>
+              <div class="flex-1">
+                <div class="text-sm font-bold text-[color:var(--text-primary)] mb-1">Multimodal Fusion</div>
+                <p class="text-xs text-[color:var(--text-muted)] leading-relaxed">The text emotion scores and audio
+                  emotion scores are merged 50/50 to produce the final multimodal emotion result.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </app-model-doc-section>
+
+    <!-- 3. Emotion Classes -->
+    <app-model-doc-section sectionId="emotion-classes" title="Emotion Classes"
+      subtitle="The 7 emotions detected by the audio model — 4 native + 3 synthesized.">
+      <div class="space-y-4">
+        <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-5 mb-4">
+          <div class="text-xs font-black uppercase tracking-widest text-[color:var(--text-muted)] mb-2 opacity-60">
+            Important</div>
+          <p class="text-xs sm:text-sm text-[color:var(--text-secondary)] leading-relaxed">
+            The HuBERT audio model natively detects only <strong class="text-[color:var(--text-primary)]">4
+              emotions</strong> (neutral, joy, anger, sadness). Emotra maps these to <strong
+              class="text-[color:var(--text-primary)]">7 emotions</strong> using a synthetic budgeting system —
+            disgust, fear, and surprise are derived from their parent emotions.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          @for (emotion of emotions; track emotion.label) {
+          <div
+            class="flex items-start gap-3 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4">
+            <app-emotion-icon [emotion]="emotion.label" [size]="28" class="shrink-0 mt-0.5"></app-emotion-icon>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-sm font-bold capitalize text-[color:var(--text-primary)]">{{ emotion.label }}</span>
+                <span class="category-badge" [attr.data-category]="emotion.category">{{ emotion.category }}</span>
+              </div>
+              <p class="text-xs text-[color:var(--text-muted)] leading-relaxed">{{ emotion.description }}</p>
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+    </app-model-doc-section>
+
+    <!-- 4. Speech to Text -->
+    <app-model-doc-section sectionId="speech-to-text" title="Speech to Text"
+      subtitle="Converting audio to text using OpenAI's Whisper model.">
+      <div class="space-y-4">
+        <p class="text-[color:var(--text-secondary)] leading-relaxed text-sm sm:text-base">
+          The first step is transcription. Emotra uses <strong class="text-[color:var(--text-primary)]">Whisper
+            (small)</strong>, OpenAI's automatic speech recognition model, to convert audio recordings into text.
+          Whisper handles background noise, different accents, and variable speaking speeds.
+        </p>
+        <div class="flex flex-wrap gap-3 text-xs">
+          <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-xl px-3 py-2">
+            <span class="text-[color:var(--text-muted)] font-bold">Model:</span>
+            <span class="text-[color:var(--text-primary)] font-semibold ml-1">whisper-small</span>
+          </div>
+          <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-xl px-3 py-2">
+            <span class="text-[color:var(--text-muted)] font-bold">Sample Rate:</span>
+            <span class="text-[color:var(--text-primary)] font-semibold ml-1">16,000 Hz</span>
+          </div>
+        </div>
+        <app-python-code-block [code]="codeTranscribe" title="transcribe_audio()" />
+      </div>
+    </app-model-doc-section>
+
+    <!-- 5. Voice Tone Analysis -->
+    <app-model-doc-section sectionId="audio-emotion" title="Voice Tone Analysis"
+      subtitle="Detecting emotions from vocal patterns using HuBERT.">
+      <div class="space-y-4">
+        <p class="text-[color:var(--text-secondary)] leading-relaxed text-sm sm:text-base">
+          The audio waveform is analyzed using a <strong class="text-[color:var(--text-primary)]">sliding
+            window</strong> approach. A 3-second window moves over the audio with a 1-second hop, producing an emotion
+          prediction for every segment. This creates a <strong
+            class="text-[color:var(--text-primary)]">timeline</strong> of emotions across the recording.
+        </p>
+        <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-5">
+          <div class="text-xs font-black uppercase tracking-widest text-[color:var(--text-muted)] mb-3 opacity-60">
+            Sliding Window Config</div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div>
+              <div class="text-[color:var(--text-muted)] font-semibold mb-1">Window Size</div>
+              <div class="text-[color:var(--text-primary)] font-bold text-lg">3.0s</div>
+            </div>
+            <div>
+              <div class="text-[color:var(--text-muted)] font-semibold mb-1">Hop Size</div>
+              <div class="text-[color:var(--text-primary)] font-bold text-lg">1.0s</div>
+            </div>
+            <div>
+              <div class="text-[color:var(--text-muted)] font-semibold mb-1">Min Chunk</div>
+              <div class="text-[color:var(--text-primary)] font-bold text-lg">0.5s</div>
+            </div>
+            <div>
+              <div class="text-[color:var(--text-muted)] font-semibold mb-1">Sample Rate</div>
+              <div class="text-[color:var(--text-primary)] font-bold text-lg">16kHz</div>
+            </div>
+          </div>
+        </div>
+        <app-python-code-block [code]="codeAnalyzeAudio" title="analyze_audio_emotion()" />
+      </div>
+    </app-model-doc-section>
+
+    <!-- 6. 4→7 Emotion Mapping -->
+    <app-model-doc-section sectionId="emotion-mapping" title="4→7 Emotion Mapping"
+      subtitle="How HuBERT's 4 native emotions are expanded to 7.">
+      <div class="space-y-4">
+        <p class="text-[color:var(--text-secondary)] leading-relaxed text-sm sm:text-base">
+          The HuBERT model only recognizes 4 emotions: <strong class="text-[color:var(--text-primary)]">neutral, joy,
+            anger, sadness</strong>. To match Emotra's 7-class system, we use a <strong
+            class="text-[color:var(--text-primary)]">synthetic budget allocation</strong> strategy — 90% of the
+          probability goes to the real emotions, and 10% is distributed to the 3 derived emotions.
+        </p>
+        <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-5">
+          <div class="text-xs font-black uppercase tracking-widest text-[color:var(--text-muted)] mb-3 opacity-60">
+            Derivation Map</div>
+          <div class="space-y-3 text-xs">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[color:var(--text-primary)]">
+              <div class="flex items-center gap-2">
+                <span class="font-bold w-16 sm:w-20">Disgust</span>
+                <svg class="w-4 h-4 text-[color:var(--text-muted)] shrink-0" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor" stroke-width="2">
+                  <path d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[color:var(--text-muted)]">Derived from</span>
+                <span class="font-bold text-[color:var(--emotion-anger)]">Anger</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[color:var(--text-primary)]">
+              <div class="flex items-center gap-2">
+                <span class="font-bold w-16 sm:w-20">Fear</span>
+                <svg class="w-4 h-4 text-[color:var(--text-muted)] shrink-0" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor" stroke-width="2">
+                  <path d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[color:var(--text-muted)]">Derived from</span>
+                <span class="font-bold text-[color:var(--emotion-sadness)]">Sadness</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[color:var(--text-primary)]">
+              <div class="flex items-center gap-2">
+                <span class="font-bold w-16 sm:w-20">Surprise</span>
+                <svg class="w-4 h-4 text-[color:var(--text-muted)] shrink-0" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor" stroke-width="2">
+                  <path d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[color:var(--text-muted)]">Derived from</span>
+                <span class="font-bold text-[color:var(--emotion-joy)]">Joy</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-5">
+          <div class="text-xs font-black uppercase tracking-widest text-[color:var(--text-muted)] mb-3 opacity-60">
+            Budget Split</div>
+          <div class="flex gap-2 items-center text-xs">
+            <div class="flex-1 rounded-lg overflow-hidden h-6 bg-[color:var(--bg-primary)]">
+              <div
+                class="h-full bg-[color:var(--brand-primary)] rounded-lg flex items-center justify-center text-white font-bold text-[10px]"
+                style="width: 90%">
+                90% Real
+              </div>
+            </div>
+            <div class="w-16 rounded-lg overflow-hidden h-6 bg-[color:var(--bg-primary)]">
+              <div
+                class="h-full bg-[color:var(--accent)] rounded-lg flex items-center justify-center text-white font-bold text-[10px]"
+                style="width: 100%">
+                10%
+              </div>
+            </div>
+          </div>
+        </div>
+        <app-python-code-block [code]="codeMapping" title="convert_4_to_7_classes()" />
+      </div>
+    </app-model-doc-section>
+
+    <!-- 7. Energy Weighting -->
+    <app-model-doc-section sectionId="energy-weighting" title="Energy Weighting"
+      subtitle="How louder segments carry more influence.">
+      <div class="space-y-4">
+        <p class="text-[color:var(--text-secondary)] leading-relaxed text-sm sm:text-base">
+          Not all audio segments are equally informative. Emotra uses <strong
+            class="text-[color:var(--text-primary)]">RMS (Root Mean Square) energy</strong> to weight each segment.
+          Louder, more energetic speech carries more influence, while silence or very quiet segments are suppressed.
+        </p>
+        <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-5">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center text-xs">
+            <div>
+              <div class="text-[color:var(--text-muted)] font-semibold mb-1">Min Weight</div>
+              <div class="text-[color:var(--text-primary)] font-bold text-lg">0.5</div>
+              <div class="text-[color:var(--text-muted)] text-[10px]">Silent/quiet</div>
+            </div>
+            <div>
+              <div class="text-[color:var(--text-muted)] font-semibold mb-1">Base Weight</div>
+              <div class="text-[color:var(--text-primary)] font-bold text-lg">1.0</div>
+              <div class="text-[color:var(--text-muted)] text-[10px]">Normal speech</div>
+            </div>
+            <div>
+              <div class="text-[color:var(--text-muted)] font-semibold mb-1">Max Weight</div>
+              <div class="text-[color:var(--text-primary)] font-bold text-lg">2.5</div>
+              <div class="text-[color:var(--text-muted)] text-[10px]">Loud/energetic</div>
+            </div>
+          </div>
+        </div>
+        <app-python-code-block [code]="codeRmsWeight" title="rms_weight()" />
+      </div>
+    </app-model-doc-section>
+
+    <!-- 8. Multimodal Fusion -->
+    <app-model-doc-section sectionId="multimodal-fusion" title="Multimodal Fusion"
+      subtitle="Combining audio emotion and text emotion into a single result.">
+      <div class="space-y-4">
+        <p class="text-[color:var(--text-secondary)] leading-relaxed text-sm sm:text-base">
+          The final step merges the two emotion channels — what was <em>said</em> (text) and how it was
+          <em>expressed</em> (voice tone) — using a <strong class="text-[color:var(--text-primary)]">balanced 50/50
+            fusion</strong>. This ensures both channels have equal influence on the final emotion result.
+        </p>
+        <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4 sm:p-5">
+          <div class="text-xs font-black uppercase tracking-widest text-[color:var(--text-muted)] mb-3 opacity-60">
+            Fusion Formula</div>
+          <div class="math-formula overflow-x-auto no-scrollbar">
+            <span class="math-var">final</span><sub>i</sub> <span class="math-op">=</span>
+            <div class="math-frac">
+              <div class="math-num"><span class="math-var">audio_probs</span><sub>i</sub> <span class="math-op">+</span>
+                <span class="math-var">text_probs</span><sub>i</sub>
+              </div>
+              <div class="math-den"><span class="math-val">2.0</span></div>
+            </div>
+          </div>
+          <p class="text-xs text-[color:var(--text-muted)] mt-2">
+            Each emotion probability is the simple average of its audio and text counterpart. If the text API fails,
+            audio probabilities are used as fallback.
+          </p>
+        </div>
+        <app-python-code-block [code]="codeFusion" title="fuse_audio_text()" />
+      </div>
+    </app-model-doc-section>
+
+    <!-- 9. Output Format -->
+    <app-model-doc-section sectionId="output-format" title="Output Format"
+      subtitle="The complete API response structure for audio analysis.">
+      <div class="space-y-4">
+        <p class="text-[color:var(--text-secondary)] leading-relaxed text-sm sm:text-base">
+          The API returns a rich multimodal result: the transcribed text, per-segment emotion timeline from the audio
+          channel, text emotion analysis results, the fused multimodal emotion, and metadata about all three models
+          used.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4">
+            <div class="font-bold text-[color:var(--text-primary)] mb-2">Audio Channel</div>
+            <ul class="space-y-1.5 text-[color:var(--text-muted)]">
+              <li class="flex items-center gap-1.5"><span
+                  class="w-1 h-1 rounded-full bg-[color:var(--brand-primary)]"></span> audio_emotion.timeline</li>
+              <li class="flex items-center gap-1.5"><span
+                  class="w-1 h-1 rounded-full bg-[color:var(--brand-primary)]"></span> audio_emotion.combined_probs
+              </li>
+              <li class="flex items-center gap-1.5"><span
+                  class="w-1 h-1 rounded-full bg-[color:var(--brand-primary)]"></span> audio_emotion.segments_count
+              </li>
+              <li class="flex items-center gap-1.5"><span
+                  class="w-1 h-1 rounded-full bg-[color:var(--brand-primary)]"></span> duration_seconds</li>
+            </ul>
+          </div>
+          <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4">
+            <div class="font-bold text-[color:var(--text-primary)] mb-2">Fused Result</div>
+            <ul class="space-y-1.5 text-[color:var(--text-muted)]">
+              <li class="flex items-center gap-1.5"><span
+                  class="w-1 h-1 rounded-full bg-[color:var(--brand-primary)]"></span> final_multimodal_emotion</li>
+              <li class="flex items-center gap-1.5"><span
+                  class="w-1 h-1 rounded-full bg-[color:var(--brand-primary)]"></span> final_multimodal_results</li>
+              <li class="flex items-center gap-1.5"><span
+                  class="w-1 h-1 rounded-full bg-[color:var(--brand-primary)]"></span> transcribed_text</li>
+              <li class="flex items-center gap-1.5"><span
+                  class="w-1 h-1 rounded-full bg-[color:var(--brand-primary)]"></span> model_info (all 3 models)</li>
+            </ul>
+          </div>
+        </div>
+        <app-python-code-block [code]="codeOutputFormat" title="API Response Structure" />
+      </div>
+    </app-model-doc-section>
+
+    <!-- 10. Limitations -->
+    <app-model-doc-section sectionId="limitations" title="Limitations"
+      subtitle="Important constraints of the audio emotion analysis.">
+      <div class="space-y-3">
+        <div
+          class="flex gap-3 items-start bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-[color:var(--color-danger)]"
+            style="background: color-mix(in srgb, var(--color-danger), transparent 90%);">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            </svg>
+          </div>
+          <div>
+            <div class="text-sm font-bold text-[color:var(--text-primary)] mb-1">Only 4 Native Audio Emotions</div>
+            <p class="text-xs text-[color:var(--text-muted)] leading-relaxed">HuBERT natively detects only neutral,
+              joy, anger, and sadness. Disgust, fear, and surprise are synthetically derived and may be less accurate.
+            </p>
+          </div>
+        </div>
+        <div
+          class="flex gap-3 items-start bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-[color:var(--color-danger)]"
+            style="background: color-mix(in srgb, var(--color-danger), transparent 90%);">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div>
+            <div class="text-sm font-bold text-[color:var(--text-primary)] mb-1">Audio Quality Dependency</div>
+            <p class="text-xs text-[color:var(--text-muted)] leading-relaxed">Background noise, music, or poor
+              microphone quality can significantly reduce accuracy for both transcription and emotion detection.</p>
+          </div>
+        </div>
+        <div
+          class="flex gap-3 items-start bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-[color:var(--color-danger)]"
+            style="background: color-mix(in srgb, var(--color-danger), transparent 90%);">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+            </svg>
+          </div>
+          <div>
+            <div class="text-sm font-bold text-[color:var(--text-primary)] mb-1">Accent Sensitivity</div>
+            <p class="text-xs text-[color:var(--text-muted)] leading-relaxed">Whisper performs best with standard
+              accents. Heavy accents or non-native English speakers may result in transcription errors that affect
+              text emotion accuracy.</p>
+          </div>
+        </div>
+        <div
+          class="flex gap-3 items-start bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl p-4">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-[color:var(--color-danger)]"
+            style="background: color-mix(in srgb, var(--color-danger), transparent 90%);">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            </svg>
+          </div>
+          <div>
+            <div class="text-sm font-bold text-[color:var(--text-primary)] mb-1">No Music or Noise Handling</div>
+            <p class="text-xs text-[color:var(--text-muted)] leading-relaxed">The model is designed for speech. Audio
+              with music, sound effects, or multiple speakers may produce unreliable results.</p>
+          </div>
+        </div>
+      </div>
+    </app-model-doc-section>
+
+  </main>
+</div>

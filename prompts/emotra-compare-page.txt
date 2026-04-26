@@ -1,0 +1,384 @@
+You are a senior frontend developer continuing work on Emotra.
+
+The following are already built and working:
+- App layout (app sidebar + top navbar)
+- History page — stores full API response JSON in localStorage for each analysis
+- Text analysis page — real API working
+- Audio analysis page — real API working
+- Auth system — fully working
+
+Your task is to build the Compare page at /compare inside the AppLayout.
+
+---
+
+WHAT THE COMPARE PAGE DOES:
+
+It allows the user to select two past analyses of the same type (text vs text OR audio vs audio) from their history and see a deep side-by-side emotional comparison between them. This is called an "Emotional Diff" — like a code diff but for emotions.
+
+---
+
+LOCALSTORAGE DATA:
+
+The history page stores analyses in localStorage. Each analysis type has its own key. Each entry contains the full API response JSON — not a summary, the complete response including all sentences, all probabilities, timeline data, model info, timestamps, everything.
+
+Before writing any code, read the existing history page and localStorage service to understand exactly how entries are stored and retrieved. Use the same retrieval logic — do not create a new storage system.
+
+Each entry has its own unique ID. Entries are either text analyses or audio analyses stored under separate keys.
+
+---
+
+ROUTE:
+
+/compare → AppLayout → CompareComponent [AuthGuard]
+
+Add this route to app.routes.ts as a child of the AppLayout route.
+
+---
+
+PAGE STRUCTURE:
+
+The page has 6 sections in this order:
+
+SECTION 1 — SELECTION PANEL
+SECTION 2 — DOMINANT EMOTION HERO ROW
+SECTION 3 — TIMELINE OVERLAY CHART
+SECTION 4 — EMOTION DISTRIBUTION COMPARISON
+SECTION 5 — SENTENCE BY SENTENCE DIFF
+SECTION 6 — STATS SUMMARY TABLE
+
+All sections below Section 1 are hidden until both analyses are selected. When both are selected, all sections animate in smoothly (fade in, stagger).
+
+---
+
+SECTION 1 — SELECTION PANEL
+
+Two side-by-side panels. Each panel is a large clickable card that acts as a selector.
+
+Before selection:
+- Left card: dashed border, icon in center, label "Select Analysis A"
+- Right card: dashed border, icon in center, label "Select Analysis B"
+- A type selector above both cards: two toggle buttons "Text" and "Audio" — selecting a type filters which analyses appear in the picker modal
+- Both cards show the same type — you cannot compare text vs audio
+
+When a card is clicked, open a PICKER MODAL:
+- Modal shows all history entries of the selected type
+- Each entry in the modal is a card showing:
+  - Date and time (formatted nicely)
+  - First 80 characters of the input text/audio name
+  - Dominant emotion badge (colored with emotion color)
+  - Confidence percentage
+  - Sentence/segment count
+- Entries are sorted by date, newest first
+- User clicks an entry to select it — modal closes, card updates to show the selected analysis summary
+- If the same entry is already selected in the other panel, do not allow selecting it again — show it grayed out with a "Already selected" label
+
+After selection, each panel card shows:
+- Date and time
+- First 80 characters of input
+- Dominant emotion (large, colored)
+- Confidence percentage
+- A "Change" button to reopen the picker
+
+A "Compare" button appears between the two cards once both are selected (or comparison loads automatically — your choice, automatic is better UX).
+
+If no history entries exist for the selected type: show an empty state inside the modal with a message and a link to go analyze something first.
+
+---
+
+EMOTION COLOR MAP (use consistently everywhere):
+
+anger    → #ff4757
+disgust  → #a29bfe
+fear     → #fd9644
+joy      → #ffd32a
+neutral  → #778ca3
+sadness  → #4a90d9
+surprise → #00d4aa
+
+---
+
+SECTION 2 — DOMINANT EMOTION HERO ROW
+
+Three columns:
+
+LEFT COLUMN — Analysis A:
+- Large emotion label in its color
+- Confidence percent (large, bold)
+- Category badge (Positive / Negative / Neutral)
+- Date label below
+
+CENTER COLUMN — The Difference:
+- A vertical divider line
+- An arrow or indicator showing direction of change
+- If both are the same emotion: "Same Emotion" label in neutral color
+- If different: show both emotions with an arrow between them (A emotion → B emotion)
+- A sentiment shift label:
+  - If A was negative and B is positive: "Improved" in green with up arrow
+  - If A was positive and B is negative: "Worsened" in red with down arrow
+  - If similar category: "Similar" in neutral color
+- Confidence delta: show the difference in confidence percent (+12% or -8%)
+
+RIGHT COLUMN — Analysis B:
+- Same as left column
+
+---
+
+SECTION 3 — TIMELINE OVERLAY CHART
+
+Title: "Emotion Timeline Comparison"
+Subtitle: "Both emotional journeys on one chart"
+
+Use ECharts line chart (ngx-echarts, already installed).
+
+Both analyses plotted on the same chart:
+- X axis: position index (S1, S2, S3... for whichever has more sentences)
+- Y axis: confidence score 0 to 1
+- Analysis A lines: solid lines
+- Analysis B lines: dashed lines
+- 7 emotions = 7 solid lines + 7 dashed lines = 14 lines total
+- Each emotion pair (solid + dashed) shares the same color from the emotion color map
+- Legend at top — clicking toggles both lines for that emotion (solid + dashed together)
+- smooth: true for all lines
+- The dominant emotion of each analysis has a thicker line (lineWidth: 3, others: 1.5)
+- Tooltip: on hover shows both A and B values for that position and emotion
+- Chart height: 400px
+- Uses ChartThemeService for light/dark theme
+- Animates on first render
+
+Below the chart:
+- A small note: "Solid lines = Analysis A · Dashed lines = Analysis B"
+
+If the two analyses have different sentence/segment counts, plot up to the length of the longer one. Where the shorter one ends, its lines stop.
+
+---
+
+SECTION 4 — EMOTION DISTRIBUTION COMPARISON
+
+Title: "Emotion Distribution"
+Subtitle: "Final combined scores compared"
+
+Two horizontal bar charts side by side (left = A, right = B).
+
+Each chart:
+- Y axis: all 7 emotions in the same fixed order (fear, sadness, anger, disgust, neutral, surprise, joy)
+- X axis: 0 to 100%
+- Each bar colored with emotion color
+- Confidence percent shown at end of bar
+- Chart height: 280px
+- Animate bars on load
+
+IMPORTANT: Both charts must use the exact same emotion order so the user can visually compare row by row.
+
+Below both charts, a DIFFERENCE ROW:
+- For each emotion: show the delta between A and B
+- Format: "+12.3%" in green if B is higher, "-8.1%" in red if B is lower, "=" if same
+- Same fixed order as the charts
+
+---
+
+SECTION 5 — SENTENCE BY SENTENCE DIFF
+
+Title: "Sentence Analysis Diff"
+Subtitle: "Emotion detected in each sentence — Analysis A vs Analysis B"
+
+For text analyses: show sentences
+For audio analyses: show segments
+
+Layout: two columns, A on left, B on right. Each row is one index (S1, S2, S3...).
+
+Each row contains:
+LEFT SIDE (Analysis A sentence/segment):
+- Sentence number badge
+- The sentence/segment text (truncated at 120 chars with ellipsis, expandable on click)
+- Dominant emotion badge (colored)
+- Confidence percentage
+- Top 3 emotions as tiny colored bars
+
+RIGHT SIDE (Analysis B sentence/segment):
+- Same structure
+
+CENTER: a thin vertical divider
+
+ROW HIGHLIGHTING:
+- If both sides have the same dominant emotion: row has a subtle same-color tint (very low opacity)
+- If dominant emotions differ: row has a highlighted border or background — this is the most important visual signal
+- Add a small icon in the center of differing rows: a swap/change icon
+
+If one analysis has more sentences than the other: show empty placeholder on the shorter side for extra rows.
+
+Rows animate in with a stagger delay (40ms between each row).
+
+---
+
+SECTION 6 — STATS SUMMARY TABLE
+
+Title: "Analysis Summary"
+
+A clean comparison table:
+
+| Metric | Analysis A | Analysis B | Difference |
+|---|---|---|---|
+| Date | formatted date | formatted date | X days apart |
+| Dominant Emotion | emotion badge | emotion badge | same/changed |
+| Confidence | 77.25% | 65.40% | -11.85% |
+| Sentences/Segments | 9 | 7 | -2 |
+| Token Count | 143 | 98 | -45 |
+| Processing Time | 466ms | 312ms | - |
+| Input Length | 630 chars | 412 chars | - |
+| Model | model name | model name | - |
+| Device Used | cpu/gpu | cpu/gpu | - |
+
+Style: clean table, alternating row background, border on cells, fully responsive (stacks on mobile).
+
+---
+
+EMPTY AND LOADING STATES:
+
+Loading state (while comparison renders):
+- Skeleton cards for each section
+- Pulse animation
+
+Empty history state (no analyses of selected type):
+- Centered illustration placeholder
+- Message: "No [Text/Audio] analyses found in your history"
+- Button: "Analyze Something" linking to /analysis
+
+---
+
+DESIGN REQUIREMENTS:
+
+- All sections are cards with var(--bg-card) background, var(--border-color) border, 16px border radius
+- Section titles: bold, var(--text-primary), with a 4px left border accent in brand color
+- Emotion colors used consistently — same color for same emotion everywhere
+- Both light and dark mode look great
+- Fully responsive:
+  - Selection panel: stacks vertically on mobile
+  - Hero row: stacks vertically on mobile
+  - Distribution charts: stack on mobile
+  - Sentence diff: stacks on mobile (A first, then B)
+- Smooth animations throughout
+
+---
+
+COMPONENT STRUCTURE:
+
+src/app/features/compare/
+  compare/
+    compare.component.ts
+    compare.component.html
+    compare.component.css
+
+  compare-selector/
+    compare-selector.component.ts
+    compare-selector.component.html
+    compare-selector.component.css
+
+  compare-hero/
+    compare-hero.component.ts
+    compare-hero.component.html
+    compare-hero.component.css
+
+  compare-timeline/
+    compare-timeline.component.ts
+    compare-timeline.component.html
+    compare-timeline.component.css
+
+  compare-distribution/
+    compare-distribution.component.ts
+    compare-distribution.component.html
+    compare-distribution.component.css
+
+  compare-diff/
+    compare-diff.component.ts
+    compare-diff.component.html
+    compare-diff.component.css
+
+  compare-stats/
+    compare-stats.component.ts
+    compare-stats.component.html
+    compare-stats.component.css
+
+All components are standalone. Each folder contains exactly one component split across .ts, .html, and .css files with the same base name. No inline templates.
+
+---
+
+RESPONSIVENESS REQUIREMENTS (MANDATORY):
+
+This page must work perfectly on every screen size and every theme mode. This is not optional — test every section mentally against all of these before finishing.
+
+SCREEN SIZES:
+
+Large desktop (1440px+):
+- All sections full width
+- Selection panel: two cards side by side
+- Hero row: three columns (A / diff / B)
+- Distribution charts: two charts side by side
+- Sentence diff: two columns side by side
+- Stats table: full horizontal table
+
+Desktop (1024px - 1440px):
+- Same as large desktop
+- Slightly reduced padding and font sizes
+
+Tablet (768px - 1024px):
+- Selection panel: two cards still side by side but smaller
+- Hero row: three columns compressed
+- Distribution charts: stack vertically (A on top, B below)
+- Sentence diff: stack vertically (A row then B row for each index)
+- Stats table: horizontally scrollable
+
+Mobile (below 768px):
+- Selection panel: stack vertically (A card on top, B card below)
+- Hero row: stack vertically (A on top, center diff in middle, B below)
+- Distribution charts: full width stacked
+- Sentence diff: full width stacked per sentence (A then B then divider)
+- Stats table: card-based layout instead of table (each row becomes a card with label + A value + B value)
+- All charts: full width, reduced height (280px instead of 400px for timeline)
+- No horizontal scroll on any section except the stats table on tablet
+
+---
+
+THEME REQUIREMENTS:
+
+colors based on theme colors (like "Theme Colors", and "Emotion Colors" variables)
+
+THEME SWITCHING:
+- When the user switches theme mid-session, all charts must update immediately via ChartThemeService
+- No page refresh required
+- CSS variable-based colors update automatically
+- Chart theme signal must be subscribed to in every chart component
+
+GENERAL RULES:
+- Never use fixed pixel widths that break on smaller screens — use percentages, flex, or grid
+- All font sizes must scale — use responsive Tailwind classes (text-sm on mobile, text-base on desktop)
+- All padding and gaps must reduce on smaller screens
+- Touch targets on mobile must be at least 44px tall for buttons and interactive elements
+- The picker modal must be full screen on mobile and centered on desktop
+- No content must overflow horizontally at any screen size
+
+
+
+
+---
+
+IMPORTANT RULES:
+
+- Read the existing history service/localStorage implementation first and reuse it exactly
+- Use ChartThemeService for all ECharts — charts must update when theme changes
+- All emotion colors must come from a single shared constant — not hardcoded in multiple places
+- Use Angular Signals for all state management
+- No UI component libraries
+- TailwindCSS primary, plain CSS allowed
+- No SCSS
+
+---
+
+OUTPUT REQUIREMENTS:
+
+- Every file complete, no TODOs, no placeholders
+- Picker modal must work correctly — selection updates the comparison
+- All 6 sections render correctly with real localStorage data
+- Charts animate on load and respond to theme switching
+- Sentence diff highlights differing rows correctly
+- Both light and dark mode look stunning
+- Fully responsive at all screen sizes

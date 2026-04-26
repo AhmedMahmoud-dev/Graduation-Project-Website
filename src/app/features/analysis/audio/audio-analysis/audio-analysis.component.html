@@ -1,0 +1,483 @@
+<div
+  class="min-h-screen flex flex-col bg-[color:var(--color-bg)] text-[color:var(--color-text)] w-full max-w-[100vw] overflow-x-hidden">
+
+  <!-- ===================== STATE: INPUT ===================== -->
+  @if (state() === 'input') {
+  <!-- Page Header -->
+  <app-page-header title="Audio Emotion Analysis" subtitle="Multimodal intelligence"
+    description="Analyze emotions from speech. Upload a file or record live to reveal tonal and semantic sentiments.">
+  </app-page-header>
+  <!-- Main Input Section -->
+  <section class="flex-1 py-8 sm:py-12 md:py-16 px-4 sm:px-6 md:px-12" style="background: var(--bg-secondary)">
+    <div class="max-w-3xl mx-auto w-full min-w-0">
+
+      <!-- ═══ Input Card ═══ -->
+      <div class="rounded-[28px] overflow-hidden border border-[color:var(--border-color)] shadow-md"
+        style="background: var(--bg-card)">
+
+        <!-- Hidden Audio Element -->
+        <audio #audioElement [src]="currentAudioUrl()" (timeupdate)="onAudioTimeUpdate()" (play)="onAudioPlay()"
+          (pause)="onAudioPause()" (ended)="onAudioEnded()" class="hidden"></audio>
+
+        <!-- ─── Tab Switcher ─── -->
+        <div class="px-4 py-4 sm:px-8 sm:py-5 flex justify-center border-b border-[color:var(--border-color)]"
+          style="background: var(--bg-card)">
+          <div class="w-full sm:w-max min-w-0">
+            <app-segmented-nav [options]="tabOptions" [selectedValue]="activeTab()"
+              (selectedValueChange)="activeTab.set($event !== 'upload' && $event !== 'record' ? 'upload' : $event)">
+            </app-segmented-nav>
+          </div>
+        </div>
+
+        <!-- ─── SHARED: Audio Workspace (after file selected / recorded) ─── -->
+        <div [hidden]="!selectedFile()" class="p-4 sm:p-6 md:p-8">
+          <!-- File Info Card -->
+          <div class="file-info-row">
+            <button (click)="togglePlayback()" class="btn-play">
+              @if (!isPlaying()) {
+              <svg class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              }
+              @if (isPlaying()) {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+              </svg>
+              }
+            </button>
+            <div class="file-info-meta min-w-0 flex-1">
+              <div class="file-info-title">
+                <h4 class="truncate border-none">{{ activeTab() === 'upload' ? (selectedFile()?.name || 'Audio File') :
+                  'Live Recording' }}</h4>
+                <span class="info-badge shrink-0">{{ activeTab() === 'upload' ? 'Imported' : 'Recorded' }}</span>
+              </div>
+              <p class="file-info-detail">
+                {{ formatDuration(currentTime()) }} / {{ formatDuration(duration()) }} · {{ fileInfo()?.size }}
+              </p>
+            </div>
+            <button (click)="activeTab() === 'upload' ? uploadedFile.set(null) : recordedFile.set(null)"
+              class="btn-remove">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Waveform -->
+          <div class="waveform-container" (click)="onWaveformClick($event)" title="Click to seek">
+            <canvas #previewCanvas></canvas>
+          </div>
+
+          <!-- Actions -->
+          <div class="action-row">
+            @if (activeTab() === 'record') {
+            <button (click)="startRecording()" class="btn-action btn-outline-action btn-action-sm w-full sm:w-auto">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Re-Record
+            </button>
+            }
+            <button (click)="startAnalysis()"
+              class="btn-action btn-primary-action btn-action-sm w-full sm:w-auto sm:ml-auto">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Analyze Emotion
+            </button>
+          </div>
+        </div>
+
+        <!-- ─── TAB: UPLOAD ─── -->
+        @if (activeTab() === 'upload') {
+        <div class="p-4 sm:p-6 md:p-8">
+          @if (!selectedFile()) {
+          <div class="drop-zone" [class.dragging]="isDragging() && !isDraggingInvalid()"
+            [class.dragging-invalid]="isDraggingInvalid()" (dragover)="onDragOver($event)"
+            (dragenter)="onDragOver($event)" (dragleave)="onDragLeave()" (drop)="onFileDrop($event)">
+            <input type="file" (change)="onFileSelected($event)" class="absolute inset-0 opacity-0 cursor-pointer"
+              accept=".mp3,.wav,.ogg,.m4a,.webm" #fileInput>
+            <div class="drop-zone-icon">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6h.1a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+            </div>
+            <h4 class="text-lg sm:text-xl font-extrabold mb-1.5 tracking-tight" style="color: var(--text-primary)">
+              @if (isDraggingInvalid()) {
+              Unsupported file format
+              } @else if (isDragging()) {
+              Release to upload
+              } @else {
+              Upload Audio File
+              }
+            </h4>
+            <p class="text-xs sm:text-sm mb-5 font-medium" style="color: var(--text-muted)">Drag & drop or click to
+              browse from your device</p>
+            <div class="flex flex-wrap items-center justify-center gap-1.5 mb-5">
+              <span class="format-badge">MP3</span>
+              <span class="format-badge">WAV</span>
+              <span class="format-badge">OGG</span>
+              <span class="format-badge">M4A</span>
+              <span class="format-badge">≤ 25 MB</span>
+            </div>
+            <button class="btn-browse">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+              Browse Files
+            </button>
+          </div>
+          }
+        </div>
+        }
+
+        <!-- ─── TAB: RECORD ─── -->
+        @if (activeTab() === 'record') {
+        <div class="p-4 sm:p-6 md:p-8 flex flex-col items-center">
+          @if (isRecording()) {
+          <!-- Recording Status -->
+          <div class="recording-status-row">
+            <div class="live-indicator">
+              <span class="live-dot"></span>
+              REC
+            </div>
+            <span class="recording-timer">{{ formatDuration(recordingDuration()) }}</span>
+          </div>
+          <div class="w-full mb-6">
+            <app-audio-waveform [isRecording]="isRecording()"></app-audio-waveform>
+          </div>
+          <button (click)="stopRecording()" class="btn-action btn-stop-action w-full sm:w-auto">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+            </svg>
+            Stop Recording
+          </button>
+          }
+          @if (!isRecording() && !recordedFile()) {
+          <!-- Idle: Ready to Record -->
+          <div class="idle-empty-state">
+            <div
+              class="w-20 h-20 rounded-3xl flex items-center justify-center mb-3 border border-[color:var(--border-color)]"
+              style="background: var(--bg-secondary)">
+              <svg class="w-9 h-9" style="color: var(--brand-primary); opacity: 0.6" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+            </div>
+            <p class="text-base font-bold tracking-tight" style="color: var(--text-primary)">Ready to Record</p>
+            <p class="text-xs font-medium" style="color: var(--text-muted)">Click below to start capturing audio</p>
+          </div>
+          <button (click)="startRecording()" class="btn-action btn-primary-action w-full sm:w-auto mt-5">
+            <span class="record-dot" style="background: #fff"></span>
+            Start Recording
+          </button>
+          }
+        </div>
+        }
+      </div>
+
+      <!-- ═══ Bottom Bar ═══ -->
+      <div class="mt-5 flex flex-col sm:flex-row items-center justify-between gap-2 px-1">
+        <p class="text-[11px] font-medium order-2 sm:order-1" style="color: var(--text-muted)">
+          Powered by <strong style="color: var(--text-secondary)">Whisper AI + Multimodal Fusion</strong>
+        </p>
+        <div class="flex items-center gap-1.5 order-1 sm:order-2">
+          <span class="format-badge">Realtime</span>
+          <span class="format-badge">Multi-track</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+  }
+
+  <!-- ===================== STATE: LOADING ===================== -->
+  @if (state() === 'loading') {
+  <app-loading-tips [tips]="loadingTips"></app-loading-tips>
+  }
+
+  <!-- ===================== STATE: FETCHING (REPORT) ===================== -->
+  @if (state() === 'fetching') {
+  <div class="flex-1 flex flex-col items-center justify-center p-12 min-h-[60vh]">
+    <app-loading-state message="Retrieving audio analysis report..."></app-loading-state>
+  </div>
+  }
+
+  <!-- ===================== STATE: RESULTS ===================== -->
+  @if (state() === 'results' && result()) {
+  <!-- 3.1 Top Bar -->
+  <app-session-top-bar [sessionId]="sessionId()" (newAnalysis)="resetToInput()">
+  </app-session-top-bar>
+  <!-- Main Results Container -->
+  <main class="flex-1 min-w-0 py-12 px-4 sm:px-8 md:px-12" style="background: var(--bg-secondary)">
+    <div class="max-w-7xl mx-auto space-y-10 w-full min-w-0">
+      <!-- 3.2 Dominant Emotion Hero -->
+      <app-dominant-emotion-hero [emotionLabel]="result()!.final_multimodal_emotion.label"
+        [confidencePercent]="result()!.final_multimodal_emotion.confidence_percent"
+        [category]="result()!.final_multimodal_emotion.category" [sectionTitle]="'Fused Modal Result'"
+        [showConfidenceBar]="true">
+      </app-dominant-emotion-hero>
+
+      @if (result()!.audio_emotion.quality.clipping_detected) {
+      <div class="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 flex items-center gap-4 text-amber-500">
+        <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <div>
+          <h4 class="font-bold text-sm">Audio Clipping Detected</h4>
+          <p class="text-xs opacity-80">The recording contains distorted segments which may affect analysis accuracy.
+          </p>
+        </div>
+      </div>
+      }
+      <!-- 3.3 Transcription Card -->
+      <div
+        class="rounded-3xl p-5 sm:p-12 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] flex flex-col shadow-xl w-full max-w-[calc(100vw-2.5rem)] sm:max-w-full">
+        <p class="text-[10px] sm:text-xs font-bold uppercase tracking-[0.3em] opacity-40 mb-4 sm:mb-6"
+          style="color: var(--text-muted)">Transcribed Speech</p>
+        <div
+          class="flex-1 text-base sm:text-2xl leading-relaxed font-medium italic overflow-y-auto max-h-[160px] sm:max-h-[240px]"
+          style="color: var(--text-primary)">
+          "{{ result()!.transcribed_text }}"
+        </div>
+        <div class="mt-8 sm:mt-10 pt-6 border-t border-[color:var(--border-color)] flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="px-3 py-1 bg-[color:var(--bg-secondary)] rounded-lg text-[10px] sm:text-xs font-bold"
+              style="color: var(--text-muted)">
+              Whisper AI {{ result()!.model_info.whisper_model }}
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+            <!-- <span class="w-1.5 h-1.5 rounded-full bg-[color:var(--color-success)] animate-pulse"></span> -->
+            <span
+              class="text-[10px] sm:text-xs font-black uppercase text-[color:var(--color-success)] tracking-widest">Confidence
+              Verified</span>
+          </div>
+        </div>
+      </div>
+      <!-- 3.4 Emotion Timeline -->
+      <div
+        class="rounded-2xl p-5 sm:p-12 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] shadow-xl relative overflow-hidden w-full">
+        <div class="section-header mb-8 sm:mb-10">
+          <p class="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">
+            Temporal Logic</p>
+          <h3 class="text-2xl sm:text-3xl font-black tracking-tight font-heading" style="color: var(--text-primary)">
+            Emotion Timeline</h3>
+          <p class="text-xs sm:text-sm mt-1" style="color: var(--text-muted)">A chronological journey of detected
+            sentiments across speech segments</p>
+        </div>
+        <div class="mt-6 sm:mt-8 overflow-x-auto">
+          <app-emotion-timeline [data]="timelineData()" [dominant]="result()!.final_multimodal_emotion.label"
+            class="block w-full min-w-[300px] h-[300px] sm:h-[400px]">
+          </app-emotion-timeline>
+        </div>
+      </div>
+      <!-- 3.5 Distribution & Comparison -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Confidence Distribution -->
+        <div
+          class="rounded-2xl p-5 sm:p-10 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] shadow-xl w-full max-w-[calc(100vw-2.5rem)] sm:max-w-full">
+          <div class="section-header mb-6 sm:mb-8">
+            <p class="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] mb-2"
+              style="color: var(--text-muted)">Distribution</p>
+            <h3 class="text-xl sm:text-2xl font-black tracking-tight font-heading" style="color: var(--text-primary)">
+              Confidence Distribution</h3>
+            <p class="text-xs sm:text-sm mt-1" style="color: var(--text-muted)">Final confidence scores across the
+              emotional spectrum</p>
+          </div>
+          <div class="rounded-2xl p-4 sm:p-8 mt-6 sm:mt-8"
+            style="background: var(--bg-card); border: 1px solid var(--border-color)">
+            <app-emotion-distribution [data]="distributionData()" viewType="bar"
+              class="block w-full h-[220px] sm:h-[260px]">
+            </app-emotion-distribution>
+          </div>
+        </div>
+        <!-- Three Track Comparison -->
+        <div
+          class="rounded-3xl p-5 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] shadow-xl h-full flex flex-col">
+          <div class="mb-6">
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-2 opacity-40">Methodology</p>
+            <h3 class="text-xl sm:text-2xl font-black tracking-tight" style="color: var(--text-primary)">Track
+              Intersection</h3>
+          </div>
+          <div class="space-y-4 flex-1">
+            <!-- Audio Track -->
+            <div
+              class="p-4 rounded-2xl bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] flex items-center justify-between gap-2">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center bg-[color:var(--bg-card)]"
+                  [style.color]="colorService.getColor(getMostFrequentDominant())">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-[9px] font-black uppercase tracking-widest opacity-40 mb-0.5">Audio Dominant</p>
+                  <h4 class="text-base font-bold uppercase truncate"
+                    [style.color]="colorService.getColor(getMostFrequentDominant())">
+                    {{ getMostFrequentDominant() }}
+                  </h4>
+                </div>
+              </div>
+              <div class="text-[10px] font-bold uppercase opacity-30 tracking-widest shrink-0">Track 01</div>
+            </div>
+            <!-- Text Track -->
+            <div
+              class="p-4 rounded-2xl bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] flex items-center justify-between gap-2">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center bg-[color:var(--bg-card)]"
+                  [style.color]="colorService.getColor(result()!.text_emotion.combined_final_emotion.label)">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                  </svg>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-[9px] font-black uppercase tracking-widest opacity-40 mb-0.5">Text Combined</p>
+                  <h4 class="text-base font-bold uppercase truncate"
+                    [style.color]="colorService.getColor(result()!.text_emotion.combined_final_emotion.label)">
+                    {{ result()!.text_emotion.combined_final_emotion.label }}
+                  </h4>
+                </div>
+              </div>
+              <div class="text-[10px] font-bold uppercase opacity-30 tracking-widest shrink-0">Track 02</div>
+            </div>
+            <!-- Final Fused Separator -->
+            <div class="py-2 flex items-center justify-center">
+              <div class="h-px flex-1 bg-[color:var(--border-color)]"></div>
+              <div class="px-3">
+                <div
+                  class="w-6 h-6 rounded-full border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] flex items-center justify-center">
+                  <svg class="w-3 h-3 opacity-40" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                  </svg>
+                </div>
+              </div>
+              <div class="h-px flex-1 bg-[color:var(--border-color)]"></div>
+            </div>
+            <!-- Fused Result -->
+            <div class="p-4 rounded-2xl border flex items-center justify-between gap-2"
+              [style.background]="'color-mix(in srgb, ' + colorService.getColor(result()!.final_multimodal_emotion.label) + ', var(--bg-secondary) 90%)'"
+              [style.borderColor]="'color-mix(in srgb, ' + colorService.getColor(result()!.final_multimodal_emotion.label) + ', transparent 70%)'">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center"
+                  [style.background]="'color-mix(in srgb, ' + colorService.getColor(result()!.final_multimodal_emotion.label) + ', transparent 88%)'">
+                  <app-emotion-icon [emotion]="result()!.final_multimodal_emotion.label" [size]="26"></app-emotion-icon>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-[9px] font-black uppercase tracking-widest opacity-60 mb-0.5"
+                    [style.color]="colorService.getColor(result()!.final_multimodal_emotion.label)">Final Decision</p>
+                  <h4 class="text-xl font-black uppercase truncate"
+                    [style.color]="colorService.getColor(result()!.final_multimodal_emotion.label)">
+                    {{ result()!.final_multimodal_emotion.label }}
+                  </h4>
+                </div>
+              </div>
+              <div class="px-3 py-1 shrink-0 rounded-full text-[10px] font-black uppercase tracking-widest"
+                [style.background]="'color-mix(in srgb, ' + colorService.getColor(result()!.final_multimodal_emotion.label) + ', transparent 85%)'"
+                [style.color]="colorService.getColor(result()!.final_multimodal_emotion.label)">
+                Fused
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 3.6 Audio Segment Breakdown -->
+      <section class="px-0 py-12" style="border-top: 1px solid var(--border-color)">
+        <div class="section-header mb-6 sm:mb-8">
+          <p class="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">
+            Deep Dive</p>
+          <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight" style="color: var(--text-primary)">Segment
+            Analysis</h2>
+          <p class="text-xs sm:text-sm mt-1" style="color: var(--text-muted)">Detailed emotion analysis for each audio
+            segment</p>
+        </div>
+        <div class="space-y-4 pr-2" [class.max-h-[800px]]="result()!.audio_emotion.timeline.length > 8"
+          [class.overflow-y-auto]="result()!.audio_emotion.timeline.length > 8">
+          @for (seg of result()!.audio_emotion.timeline; track seg) {
+          <app-analysis-breakdown-card [index]="seg.segment_index" [emotionLabel]="seg.dominant.label"
+            [confidence]="seg.dominant.confidence" [probabilities]="seg.probabilities"
+            [timestampOffset]="seg.timestamp_offset" [intensityWeight]="seg.intensity_weight"
+            [isSpeech]="seg.is_speech">
+          </app-analysis-breakdown-card>
+          }
+        </div>
+      </section>
+      <!-- 3.7 Text Emotion Breakdown (Collapsible) -->
+      <section class="mb-10" style="border-top: 1px solid var(--border-color); padding-top: 2rem">
+        <button (click)="showTextAnalysis.set(!showTextAnalysis())"
+          class="w-full flex items-center justify-between p-5 rounded-2xl font-semibold"
+          style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary)">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: var(--bg-secondary)">
+              <svg class="w-4 h-4" style="color: var(--text-muted)" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
+            <span class="font-bold text-sm">{{ showTextAnalysis() ? 'Hide Text Emotion Breakdown' : 'Show Text Emotion
+              Breakdown' }}</span>
+          </div>
+          <svg class="w-5 h-5 transition-transform duration-300" [class.rotate-180]="showTextAnalysis()"
+            style="color: var(--text-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        @if (showTextAnalysis()) {
+        <div class="mt-4 space-y-4">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <div class="h-fit rounded-3xl p-8 sm:p-10"
+              style="background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow)">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-6 opacity-40">Global Profile</p>
+              <div class="mb-2">
+                <h4 class="text-lg font-bold mb-1">Text Analysis Only</h4>
+                <p class="text-[10px] uppercase tracking-widest opacity-50">Distribution across full text</p>
+              </div>
+              <app-emotion-distribution [data]="textDistributionData()" viewType="bar" class="block w-full h-[310px]">
+              </app-emotion-distribution>
+            </div>
+            <div class="lg:col-span-2 space-y-4 pr-2"
+              [class.max-h-[800px]]="result()!.text_emotion.sentences_analysis.length > 8"
+              [class.overflow-y-auto]="result()!.text_emotion.sentences_analysis.length > 8">
+              @for (sent of result()!.text_emotion.sentences_analysis; track sent; let i = $index) {
+              <app-analysis-breakdown-card [index]="i + 1" [emotionLabel]="sent.dominant.label"
+                [confidence]="sent.dominant.confidence" [probabilities]="sent.probabilities" [sentence]="sent.sentence"
+                [intensityWeight]="sent.intensity_weight">
+              </app-analysis-breakdown-card>
+              }
+            </div>
+          </div>
+        </div>
+        }
+      </section>
+      <!-- 3.8 Model Info Grid -->
+      <app-model-info-grid [chips]="modelChips()">
+      </app-model-info-grid>
+      <!-- 3.9 Raw JSON -->
+      <section style="border-top: 1px solid var(--border-color); padding-top: 2rem">
+        <app-raw-json-section [data]="result()"></app-raw-json-section>
+      </section>
+    </div>
+  </main>
+
+  <!-- Analysis Feedback -->
+  <section id="feedback-section" class="px-6 md:px-12 py-12" style="background: var(--bg-primary)">
+    <div class="max-w-7xl mx-auto w-full min-w-0">
+      <app-analysis-feedback [analysisId]="sessionId()"></app-analysis-feedback>
+    </div>
+  </section>
+  }
+
+
+  <app-footer-section></app-footer-section>
+</div>

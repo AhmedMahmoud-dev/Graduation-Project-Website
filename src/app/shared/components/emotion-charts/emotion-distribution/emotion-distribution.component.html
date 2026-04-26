@@ -1,0 +1,4 @@
+<div class="chart-wrapper h-full min-h-[160px] md:min-h-[240px] mt-2"
+  [style.height]="viewType() === 'pie' ? '450px' : '100%'">
+  <div echarts id="dist-chart-inner" [options]="chartOptions()" [autoResize]="true" class="w-full h-full"></div>
+</div>

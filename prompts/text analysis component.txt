@@ -1,0 +1,866 @@
+import { Component, signal, inject, computed, effect, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { NgxEchartsDirective } from 'ngx-echarts';
+import { EChartsOption } from 'echarts';
+import { TextAnalysisService } from '../../../core/services/text-analysis.service';
+import { ChartThemeService } from '../../../core/services/chart-theme.service';
+import { TextAnalysisResult, SentenceAnalysis } from '../../../core/models/text-analysis.model';
+import { finalize } from 'rxjs/operators';
+
+type AnalysisState = 'input' | 'loading' | 'results';
+
+const EMOTION_COLORS: Record<string, string> = {
+  anger: '#ef4444',
+  disgust: '#8b5cf6',
+  fear: '#f97316',
+  joy: '#eab308',
+  neutral: '#64748b',
+  sadness: '#3b82f6',
+  surprise: '#10b981'
+};
+
+const EMOTION_EMOJI: Record<string, string> = {
+  anger: '😠', disgust: '🤢', fear: '😨',
+  joy: '😄', neutral: '😐', sadness: '😢', surprise: '😲'
+};
+
+@Component({
+  selector: 'app-text-analysis',
+  standalone: true,
+  imports: [CommonModule, FormsModule, NgxEchartsDirective],
+  template: `
+    <!-- Page wrapper with landing-page style sections -->
+    <div class="min-h-screen flex flex-col">
+
+      <!-- =========================
+           STATE: INPUT
+           ========================= -->
+      <ng-container *ngIf="state() === 'input'">
+        <!-- Page Header -->
+        <section class="pt-28 pb-16 px-6 md:px-12 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+          <div class="max-w-4xl mx-auto">
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-3">Emotion Intelligence</p>
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-4 font-heading">Text Emotion Analysis</h1>
+            <p class="text-lg text-slate-500 dark:text-slate-400 max-w-2xl">
+              Paste or type your text to uncover the emotional journey within each sentence using our DistilRoBERTa model.
+            </p>
+          </div>
+        </section>
+
+        <!-- Input Area -->
+        <section class="flex-1 py-12 px-6 md:px-12 bg-slate-50 dark:bg-slate-900/50">
+          <div class="max-w-4xl mx-auto">
+
+            <!-- Error Banner -->
+            <div *ngIf="error()" class="mb-8 flex items-start gap-4 p-5 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+              <div class="w-9 h-9 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center shrink-0 mt-0.5">
+                <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="font-bold text-red-800 dark:text-red-300 mb-1">Analysis Failed</p>
+                <p class="text-sm text-red-600 dark:text-red-400">{{ error() }}</p>
+              </div>
+              <button (click)="error.set(null)" class="text-red-400 hover:text-red-600 transition-colors shrink-0 mt-0.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            <!-- Text Input Card -->
+            <div class="bg-white dark:bg-slate-950 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+              <div class="p-2">
+                <textarea
+                  [(ngModel)]="inputText"
+                  (ngModelChange)="onTextChange()"
+                  placeholder="Paste your text here... The more sentences you write, the richer the emotion timeline will be."
+                  class="w-full min-h-[260px] max-h-[480px] p-5 text-[15px] leading-[1.8] text-slate-800 dark:text-slate-100 bg-transparent placeholder-slate-400 dark:placeholder-slate-600 outline-none resize-none no-scrollbar font-sans"
+                ></textarea>
+              </div>
+
+              <!-- Input Footer Bar -->
+              <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-5 text-sm text-slate-500 dark:text-slate-400">
+                  <span><strong class="text-slate-700 dark:text-slate-300 font-bold">{{ charCount() }}</strong> chars</span>
+                  <span class="w-px h-3 bg-slate-300 dark:bg-slate-700"></span>
+                  <span><strong class="text-slate-700 dark:text-slate-300 font-bold">{{ sentenceCount() }}</strong> sentences</span>
+                  <span class="w-px h-3 bg-slate-300 dark:bg-slate-700"></span>
+                  <span><strong class="text-slate-700 dark:text-slate-300 font-bold">~{{ tokenEstimate() }}</strong> tokens</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span *ngIf="tokenEstimate() > 400" class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">
+                    ⚠ May truncate at 512 tokens
+                  </span>
+                  <button
+                    *ngIf="inputText().length > 0"
+                    (click)="inputText.set(''); onTextChange()"
+                    class="px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                    Clear
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Analyze Action -->
+            <div class="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p class="text-xs text-slate-400 dark:text-slate-500 order-2 sm:order-1">
+                Powered by <strong class="text-slate-600 dark:text-slate-300">j-hartmann/emotion-english-distilroberta-base</strong>
+              </p>
+              <button
+                [disabled]="inputText().length < 10"
+                (click)="startAnalysis()"
+                class="order-1 sm:order-2 w-full sm:w-auto px-10 py-4 rounded-full font-bold text-sm bg-slate-900 dark:bg-white text-white dark:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg shadow-slate-200 dark:shadow-none"
+              >
+                Run Analysis
+              </button>
+            </div>
+
+          </div>
+        </section>
+      </ng-container>
+
+      <!-- =========================
+           STATE: LOADING
+           ========================= -->
+      <ng-container *ngIf="state() === 'loading'">
+        <section class="flex-1 flex flex-col items-center justify-center px-6 py-24 bg-white dark:bg-slate-950">
+          <div class="relative w-20 h-20 mb-10">
+            <svg class="w-20 h-20 animate-spin-slow text-slate-200 dark:text-slate-800" viewBox="0 0 80 80" fill="none">
+              <circle cx="40" cy="40" r="36" stroke="currentColor" stroke-width="8"/>
+            </svg>
+            <svg class="absolute inset-0 w-20 h-20 animate-spin text-slate-900 dark:text-white" viewBox="0 0 80 80" fill="none" style="animation-duration: 1.2s">
+              <path d="M 40 4 A 36 36 0 0 1 76 40" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
+            </svg>
+          </div>
+
+          <div class="text-center w-full max-w-sm">
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2 h-8">{{ currentLoadingStep() }}</h3>
+            <div class="w-full h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mb-3">
+              <div
+                class="h-full bg-slate-900 dark:bg-white rounded-full transition-all duration-500"
+                [style.width.%]="loadingProgress()"
+              ></div>
+            </div>
+            <p class="text-xs text-slate-400 dark:text-slate-500 font-medium tracking-widest uppercase">Analyzing emotions...</p>
+          </div>
+        </section>
+      </ng-container>
+
+      <!-- =========================
+           STATE: RESULTS
+           ========================= -->
+      <ng-container *ngIf="state() === 'results' && result()">
+
+        <!-- Results Header Section -->
+        <section class="pt-28 pb-12 px-6 md:px-12 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+          <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-2">Analysis Complete</p>
+              <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white font-heading">
+                Text Emotion Analysis
+              </h1>
+            </div>
+            <button
+              (click)="resetToInput()"
+              class="shrink-0 px-6 py-3 rounded-full font-bold text-sm border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-900 dark:hover:border-white hover:text-slate-900 dark:hover:text-white transition-all"
+            >
+              ← Analyze Again
+            </button>
+          </div>
+        </section>
+
+        <!-- ================== DOMINANT EMOTION HERO ================== -->
+        <section class="px-6 md:px-12 py-12 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+          <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+              <!-- Main Result -->
+              <div class="lg:col-span-2 bg-white dark:bg-slate-950 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 md:p-10 flex flex-col sm:flex-row items-center sm:items-start gap-8 overflow-hidden">
+                <!-- Emotion Icon -->
+                <div class="shrink-0">
+                  <div
+                    class="w-24 h-24 md:w-28 md:h-28 rounded-3xl flex items-center justify-center text-5xl md:text-6xl"
+                    [style.backgroundColor]="getEmotionColor(result()!.combined_final_emotion.label) + '15'"
+                  >
+                    {{ getEmotionEmoji(result()!.combined_final_emotion.label) }}
+                  </div>
+                </div>
+                <!-- Result Details -->
+                <div class="flex-1 text-center sm:text-left">
+                  <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-2">Dominant Emotion</p>
+                  <h2
+                    class="text-5xl md:text-6xl font-black tracking-tight mb-3 capitalize"
+                    [style.color]="getEmotionColor(result()!.combined_final_emotion.label)"
+                  >
+                    {{ result()!.combined_final_emotion.label }}
+                  </h2>
+                  <div class="flex flex-wrap items-center gap-3 justify-center sm:justify-start">
+                    <span class="text-2xl font-bold text-slate-900 dark:text-white">
+                      {{ result()!.combined_final_emotion.confidence_percent | number:'1.1-1' }}%
+                      <span class="text-sm font-medium text-slate-400 dark:text-slate-500">confidence</span>
+                    </span>
+                    <span
+                      class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest"
+                      [class.bg-emerald-100]="result()!.combined_final_emotion.category === 'positive'"
+                      [class.text-emerald-700]="result()!.combined_final_emotion.category === 'positive'"
+                      [class.dark:bg-emerald-900/30]="result()!.combined_final_emotion.category === 'positive'"
+                      [class.dark:text-emerald-400]="result()!.combined_final_emotion.category === 'positive'"
+                      [class.bg-red-100]="result()!.combined_final_emotion.category === 'negative'"
+                      [class.text-red-700]="result()!.combined_final_emotion.category === 'negative'"
+                      [class.dark:bg-red-900/30]="result()!.combined_final_emotion.category === 'negative'"
+                      [class.dark:text-red-400]="result()!.combined_final_emotion.category === 'negative'"
+                      [class.bg-slate-100]="result()!.combined_final_emotion.category === 'neutral'"
+                      [class.text-slate-600]="result()!.combined_final_emotion.category === 'neutral'"
+                      [class.dark:bg-slate-800]="result()!.combined_final_emotion.category === 'neutral'"
+                      [class.dark:text-slate-400]="result()!.combined_final_emotion.category === 'neutral'"
+                    >{{ result()!.combined_final_emotion.category }}</span>
+                  </div>
+
+                  <!-- Confidence Bar -->
+                  <div class="mt-6 space-y-2">
+                    <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        class="h-full rounded-full transition-all duration-1000"
+                        [style.width.%]="result()!.combined_final_emotion.confidence_percent"
+                        [style.backgroundColor]="getEmotionColor(result()!.combined_final_emotion.label)"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <!-- Truncation Warning -->
+                  <div *ngIf="result()!.input_info.input_was_truncated" class="mt-4 flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    Text was truncated at 512 tokens. Results reflect the first 512 tokens only.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Stats Card -->
+              <div class="bg-white dark:bg-slate-950 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 grid grid-cols-2 gap-6 content-start">
+                <div *ngFor="let stat of getStats()" class="space-y-1">
+                  <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">{{ stat.label }}</p>
+                  <p class="text-xl font-bold text-slate-900 dark:text-white">{{ stat.value }}</p>
+                  <p *ngIf="stat.sub" class="text-xs text-slate-400 dark:text-slate-500">{{ stat.sub }}</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- ================== CHARTS SECTION ================== -->
+        <section class="px-6 md:px-12 py-12 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+          <div class="max-w-7xl mx-auto">
+            <div class="mb-8">
+              <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-2">Visualizations</p>
+              <h2 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white font-heading">Charts & Charts</h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+              <!-- Timeline Chart - Full width -->
+              <div class="lg:col-span-2 bg-white dark:bg-slate-950 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 md:p-8">
+                <div class="mb-6">
+                  <h3 class="font-bold text-slate-900 dark:text-white text-lg mb-1">Emotion Timeline</h3>
+                  <p class="text-sm text-slate-400 dark:text-slate-500">How emotions shifted sentence by sentence</p>
+                </div>
+                <div echarts [options]="timelineOptions" class="w-full h-[300px] md:h-[340px]" (chartInit)="onChartInit($event)"></div>
+
+                <!-- Sentence Chips -->
+                <div class="mt-6 flex flex-wrap gap-2">
+                  <div
+                    *ngFor="let s of result()!.sentences_analysis; let i = index"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border"
+                    [style.backgroundColor]="getEmotionColor(s.dominant.label) + '12'"
+                    [style.borderColor]="getEmotionColor(s.dominant.label) + '35'"
+                    [style.color]="getEmotionColor(s.dominant.label)"
+                  >
+                    <span class="opacity-70">S{{ i + 1 }}</span>
+                    <span>{{ s.dominant.label | titlecase }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Distribution Chart -->
+              <div class="bg-white dark:bg-slate-950 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 md:p-8">
+                <div class="mb-6">
+                  <h3 class="font-bold text-slate-900 dark:text-white text-lg mb-1">Distribution</h3>
+                  <p class="text-sm text-slate-400 dark:text-slate-500">Combined confidence scores</p>
+                </div>
+                <div echarts [options]="distributionOptions" class="w-full h-[220px]"></div>
+
+                <!-- Score Bars -->
+                <div class="mt-6 space-y-3">
+                  <div *ngFor="let res of getSortedCombinedResults().slice(0, 4)" class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                        <span class="w-2 h-2 rounded-full shrink-0" [style.backgroundColor]="getEmotionColor(res.label)"></span>
+                        {{ res.label | titlecase }}
+                      </span>
+                      <span class="text-xs font-bold text-slate-900 dark:text-white">{{ res.confidence_percent | number:'1.1-1' }}%</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        class="h-full rounded-full transition-all duration-1000"
+                        [style.width.%]="res.confidence_percent"
+                        [style.backgroundColor]="getEmotionColor(res.label)"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- ================== ANALYSIS TRACKS ================== -->
+        <section class="px-6 md:px-12 py-12 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+          <div class="max-w-7xl mx-auto">
+            <div class="mb-8">
+              <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-2">Methodology</p>
+              <h2 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white font-heading">Analysis Tracks</h2>
+              <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">How the two analysis tracks are combined into the final result</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Full Text Track -->
+              <div class="bg-white dark:bg-slate-950 rounded-3xl border border-slate-200 dark:border-slate-800 p-8">
+                <div class="flex items-start justify-between mb-6">
+                  <div>
+                    <span class="inline-block px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 mb-3">Track A</span>
+                    <h4 class="text-lg font-bold text-slate-900 dark:text-white">Full Text Analysis</h4>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Entire text processed as one unit</p>
+                  </div>
+                </div>
+                <div class="flex items-baseline gap-2 mb-6 pb-6 border-b border-slate-100 dark:border-slate-800">
+                  <span class="text-4xl font-black capitalize" [style.color]="getEmotionColor(result()!.full_text_analysis.dominant.label)">
+                    {{ result()!.full_text_analysis.dominant.label }}
+                  </span>
+                  <span class="text-lg font-bold text-slate-400 dark:text-slate-500">
+                    {{ (result()!.full_text_analysis.dominant.confidence * 100) | number:'1.1-1' }}%
+                  </span>
+                </div>
+                <div class="space-y-3">
+                  <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">All Emotion Scores</p>
+                  <div *ngFor="let item of getTopProbabilities(result()!.full_text_analysis.probabilities)" class="space-y-1">
+                    <div class="flex items-center justify-between text-xs">
+                      <span class="flex items-center gap-2 font-medium text-slate-600 dark:text-slate-400">
+                        <span class="w-1.5 h-1.5 rounded-full" [style.backgroundColor]="getEmotionColor(item.label)"></span>
+                        {{ item.label | titlecase }}
+                      </span>
+                      <span class="font-bold text-slate-700 dark:text-slate-300">{{ (item.value * 100) | number:'1.1-1' }}%</span>
+                    </div>
+                    <div class="w-full h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div class="h-full rounded-full" [style.width.%]="item.value * 100" [style.backgroundColor]="getEmotionColor(item.label)"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Combined Result Track -->
+              <div
+                class="bg-white dark:bg-slate-950 rounded-3xl border border-slate-200 dark:border-slate-800 p-8"
+                [style.borderLeftWidth]="'3px'"
+                [style.borderLeftColor]="getEmotionColor(result()!.combined_final_emotion.label)"
+              >
+                <div class="flex items-start justify-between mb-6">
+                  <div>
+                    <span class="inline-block px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 mb-3">Final Output</span>
+                    <h4 class="text-lg font-bold text-slate-900 dark:text-white">Combined Result</h4>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Per-sentence + full-text weighted merge</p>
+                  </div>
+                </div>
+                <div class="flex items-baseline gap-2 mb-6 pb-6 border-b border-slate-100 dark:border-slate-800">
+                  <span class="text-4xl font-black capitalize" [style.color]="getEmotionColor(result()!.combined_final_emotion.label)">
+                    {{ result()!.combined_final_emotion.label }}
+                  </span>
+                  <span class="text-lg font-bold text-slate-400 dark:text-slate-500">
+                    {{ result()!.combined_final_emotion.confidence_percent | number:'1.1-1' }}%
+                  </span>
+                </div>
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Sentence-level scores (weighted by emotional intensity) are merged with the global full-text result using a <strong class="text-slate-700 dark:text-slate-300">0.8 global weight factor</strong>, combining both analysis tracks.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================== SENTENCE BREAKDOWN ================== -->
+        <section class="px-6 md:px-12 py-12 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+          <div class="max-w-7xl mx-auto">
+            <div class="mb-8">
+              <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-2">Deep Dive</p>
+              <h2 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white font-heading">Sentence Breakdown</h2>
+              <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">Detailed emotion analysis for each sentence in your text</p>
+            </div>
+
+            <div class="space-y-4">
+              <div
+                *ngFor="let s of result()!.sentences_analysis; let i = index"
+                class="bg-white dark:bg-slate-950 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+              >
+                <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_280px]">
+
+                  <!-- Sentence Content -->
+                  <div class="p-6 md:p-8">
+                    <!-- Header Row -->
+                    <div class="flex items-center gap-3 mb-5">
+                      <div
+                        class="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black text-white shrink-0"
+                        [style.backgroundColor]="getEmotionColor(s.dominant.label)"
+                      >
+                        {{ i + 1 }}
+                      </div>
+                      <div class="flex-1 flex items-center gap-2 flex-wrap">
+                        <span
+                          class="px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider capitalize"
+                          [style.backgroundColor]="getEmotionColor(s.dominant.label) + '15'"
+                          [style.color]="getEmotionColor(s.dominant.label)"
+                        >
+                          {{ getEmotionEmoji(s.dominant.label) }} {{ s.dominant.label }}
+                        </span>
+                        <span class="text-xs font-bold text-slate-900 dark:text-white">{{ (s.dominant.confidence * 100) | number:'1.1-1' }}%</span>
+                      </div>
+                      <div class="flex items-center gap-1.5 shrink-0">
+                        <span class="text-xs text-slate-400 dark:text-slate-500">Intensity</span>
+                        <span class="px-2 py-0.5 rounded-md text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">{{ s.intensity_weight | number:'1.1-1' }}</span>
+                      </div>
+                    </div>
+
+                    <!-- Sentence Text -->
+                    <blockquote class="text-base leading-relaxed text-slate-700 dark:text-slate-300 pl-4 border-l-2" [style.borderLeftColor]="getEmotionColor(s.dominant.label)">
+                      "{{ s.sentence }}"
+                    </blockquote>
+
+                    <!-- Category Badge -->
+                    <div class="mt-5">
+                      <span
+                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold capitalize"
+                        [class.bg-emerald-100]="s.dominant.category === 'positive'"
+                        [class.text-emerald-700]="s.dominant.category === 'positive'"
+                        [class.dark:bg-emerald-900/30]="s.dominant.category === 'positive'"
+                        [class.dark:text-emerald-400]="s.dominant.category === 'positive'"
+                        [class.bg-red-100]="s.dominant.category === 'negative'"
+                        [class.text-red-700]="s.dominant.category === 'negative'"
+                        [class.dark:bg-red-900/30]="s.dominant.category === 'negative'"
+                        [class.dark:text-red-400]="s.dominant.category === 'negative'"
+                        [class.bg-slate-100]="s.dominant.category === 'neutral'"
+                        [class.text-slate-600]="s.dominant.category === 'neutral'"
+                        [class.dark:bg-slate-800]="s.dominant.category === 'neutral'"
+                        [class.dark:text-slate-400]="s.dominant.category === 'neutral'"
+                      >
+                        {{ s.dominant.category }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Divider -->
+                  <div class="hidden md:block w-px bg-slate-100 dark:bg-slate-800 my-6"></div>
+
+                  <!-- Probability Spectrum -->
+                  <div class="p-6 md:p-8 bg-slate-50 dark:bg-slate-900/50 md:bg-transparent md:dark:bg-transparent border-t md:border-t-0 border-slate-100 dark:border-slate-800">
+                    <p class="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500 mb-4">Probability Spectrum</p>
+                    <div class="space-y-3">
+                      <div *ngFor="let prob of getSortedEmotions(s.probabilities)" class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                          <span
+                            class="flex items-center gap-2 text-xs font-medium"
+                            [class.font-bold]="prob.label === s.dominant.label"
+                            [style.color]="prob.label === s.dominant.label ? getEmotionColor(prob.label) : ''"
+                            [class.text-slate-500]="prob.label !== s.dominant.label"
+                            [class.dark:text-slate-400]="prob.label !== s.dominant.label"
+                          >
+                            <span class="w-1.5 h-1.5 rounded-full shrink-0" [style.backgroundColor]="getEmotionColor(prob.label)"></span>
+                            {{ prob.label | titlecase }}
+                          </span>
+                          <span
+                            class="text-xs font-bold"
+                            [class.text-slate-900]="prob.label === s.dominant.label"
+                            [class.dark:text-white]="prob.label === s.dominant.label"
+                            [class.text-slate-400]="prob.label !== s.dominant.label"
+                            [class.dark:text-slate-500]="prob.label !== s.dominant.label"
+                          >{{ (prob.value * 100) | number:'1.1-1' }}%</span>
+                        </div>
+                        <div class="w-full h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div
+                            class="h-full rounded-full transition-all duration-700"
+                            [style.width.%]="prob.value * 100"
+                            [style.backgroundColor]="getEmotionColor(prob.label)"
+                            [style.opacity]="prob.label === s.dominant.label ? '1' : '0.35'"
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================== MODEL INFO ================== -->
+        <section class="px-6 md:px-12 py-12 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+          <div class="max-w-7xl mx-auto">
+            <div class="mb-8">
+              <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-2">Technical Details</p>
+              <h2 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white font-heading">Model Information</h2>
+            </div>
+
+            <div class="bg-white dark:bg-slate-950 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+              <table class="w-full text-sm">
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tr *ngFor="let row of getModelInfoRows()">
+                    <td class="px-6 py-4 font-semibold text-slate-500 dark:text-slate-400 w-1/3 md:w-1/4 bg-slate-50 dark:bg-slate-900/50">{{ row.label }}</td>
+                    <td class="px-6 py-4 text-slate-900 dark:text-white font-medium" [class.font-mono]="row.mono" [class.text-xs]="row.mono">
+                      <ng-container *ngIf="!row.badge">{{ row.value }}</ng-container>
+                      <span *ngIf="row.badge"
+                        class="inline-flex px-2 py-0.5 rounded text-xs font-bold uppercase"
+                        [class.bg-emerald-100]="row.value === 'No'"
+                        [class.text-emerald-700]="row.value === 'No'"
+                        [class.dark:bg-emerald-900/30]="row.value === 'No'"
+                        [class.dark:text-emerald-400]="row.value === 'No'"
+                        [class.bg-amber-100]="row.value === 'Yes'"
+                        [class.text-amber-700]="row.value === 'Yes'"
+                        [class.dark:bg-amber-900/30]="row.value === 'Yes'"
+                        [class.dark:text-amber-400]="row.value === 'Yes'"
+                      >{{ row.value }}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================== RAW JSON ================== -->
+        <section class="px-6 md:px-12 py-12 bg-white dark:bg-slate-950">
+          <div class="max-w-7xl mx-auto">
+            <button
+              (click)="showRaw.set(!showRaw())"
+              class="w-full flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 font-semibold text-slate-700 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-600 transition-colors"
+            >
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
+                  <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                </div>
+                <span class="font-bold">Raw API Response</span>
+              </div>
+              <svg class="w-5 h-5 text-slate-400 transition-transform duration-300" [class.rotate-180]="showRaw()" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+
+            <div *ngIf="showRaw()" class="mt-4">
+              <div class="relative group rounded-2xl overflow-hidden">
+                <pre class="bg-[#0d1117] text-[#e6edf3] p-6 md:p-8 overflow-auto max-h-[480px] text-xs leading-relaxed font-mono no-scrollbar"><code [innerHTML]="highlightedJson()"></code></pre>
+                <button
+                  (click)="copyJson()"
+                  class="absolute top-4 right-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 text-white/70 hover:text-white hover:bg-white/20 transition-all text-xs font-bold"
+                >
+                  <svg *ngIf="!copied()" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                  <svg *ngIf="copied()" class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  {{ copied() ? 'Copied!' : 'Copy JSON' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </ng-container>
+    </div>
+  `,
+  styles: [`
+    @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .animate-spin-slow { animation: spin-slow 2s linear infinite; }
+
+    ::ng-deep .json-key    { color: #79c0ff; }
+    ::ng-deep .json-string { color: #a5d6ff; }
+    ::ng-deep .json-number { color: #ffa657; }
+    ::ng-deep .json-bool   { color: #ff7b72; }
+    ::ng-deep .json-null   { color: #6e7681; }
+  `]
+})
+export class TextAnalysisComponent {
+  private analysisService = inject(TextAnalysisService);
+  private chartThemeService = inject(ChartThemeService);
+
+  state = signal<AnalysisState>('input');
+  inputText = signal<string>('');
+  error = signal<string | null>(null);
+  result = signal<TextAnalysisResult | null>(null);
+  showRaw = signal<boolean>(false);
+  copied = signal<boolean>(false);
+
+  charCount = computed(() => this.inputText().length);
+  tokenEstimate = computed(() => Math.ceil(this.inputText().length / 4));
+  sentenceCount = computed(() => {
+    const t = this.inputText().trim();
+    if (!t) return 0;
+    return (t.match(/[.!?]+/g) || []).length + 1;
+  });
+
+  loadingProgress = signal<number>(0);
+  currentLoadingStep = signal<string>('Preparing your text...');
+
+  private loadingSteps = [
+    'Preparing your text...',
+    'Splitting into sentences...',
+    'Analyzing sentence emotions...',
+    'Calculating intensity weights...',
+    'Running full text analysis...',
+    'Merging results...',
+    'Building your timeline...'
+  ];
+
+  timelineOptions: EChartsOption = {};
+  distributionOptions: EChartsOption = {};
+  private chartInstance: any;
+
+  constructor() {
+    effect(() => {
+      const theme = this.chartThemeService.getChartTheme();
+      if (this.result()) {
+        this.buildChartOptions(theme);
+      }
+    });
+  }
+
+  onTextChange() {
+    if (this.error()) this.error.set(null);
+  }
+
+  startAnalysis() {
+    this.state.set('loading');
+    this.error.set(null);
+    this.runLoadingSequence();
+
+    this.analysisService.analyze(this.inputText())
+      .pipe(finalize(() => this.loadingProgress.set(100)))
+      .subscribe({
+        next: (res) => {
+          setTimeout(() => {
+            this.result.set(res);
+            this.buildChartOptions(this.chartThemeService.getChartTheme());
+            this.state.set('results');
+          }, 600);
+        },
+        error: (err) => {
+          console.error(err);
+          this.error.set('Could not connect to the AI model. Make sure the server is running at http://127.0.0.1:8000');
+          this.state.set('input');
+        }
+      });
+  }
+
+  private runLoadingSequence() {
+    let idx = 0;
+    this.currentLoadingStep.set(this.loadingSteps[0]);
+    this.loadingProgress.set(5);
+
+    const interval = setInterval(() => {
+      if (this.state() !== 'loading') { clearInterval(interval); return; }
+      idx = (idx + 1) % this.loadingSteps.length;
+      this.currentLoadingStep.set(this.loadingSteps[idx]);
+      this.loadingProgress.update(v => Math.min(v + (88 / this.loadingSteps.length), 95));
+    }, 1100);
+  }
+
+  resetToInput() {
+    this.state.set('input');
+    this.showRaw.set(false);
+  }
+
+  getEmotionColor(label: string): string {
+    return EMOTION_COLORS[label?.toLowerCase()] ?? '#6c63ff';
+  }
+
+  getEmotionEmoji(label: string): string {
+    return EMOTION_EMOJI[label?.toLowerCase()] ?? '🤔';
+  }
+
+  getSortedEmotions(probs: any) {
+    return Object.entries(probs)
+      .map(([label, value]) => ({ label, value: value as number }))
+      .sort((a, b) => b.value - a.value);
+  }
+
+  getTopProbabilities(probs: any) {
+    return this.getSortedEmotions(probs).slice(0, 4);
+  }
+
+  getSortedCombinedResults() {
+    return [...(this.result()?.combined_results ?? [])].sort((a, b) => b.confidence_percent - a.confidence_percent);
+  }
+
+  getStats() {
+    const r = this.result()!;
+    return [
+      { label: 'Sentences', value: r.sentences_count.toString(), sub: 'analyzed' },
+      { label: 'Token Count', value: r.input_info.token_count.toString(), sub: 'total tokens' },
+      { label: 'Input Length', value: r.input_info.input_length.toString(), sub: 'characters' },
+      { label: 'Process Time', value: `${(r.processing_time_ms).toFixed(0)} ms`, sub: null },
+      { label: 'Device', value: r.model_info.device_used.toUpperCase(), sub: null },
+      { label: 'Version', value: r.model_info.version, sub: null },
+    ];
+  }
+
+  getModelInfoRows() {
+    const r = this.result()!;
+    return [
+      { label: 'Model Name', value: r.model_info.name, mono: true, badge: false },
+      { label: 'Version', value: r.model_info.version, mono: false, badge: false },
+      { label: 'Device Used', value: r.model_info.device_used.toUpperCase(), mono: false, badge: false },
+      { label: 'Processing Time', value: `${r.processing_time_ms.toFixed(2)} ms`, mono: false, badge: false },
+      { label: 'Token Count', value: `${r.input_info.token_count} tokens`, mono: false, badge: false },
+      { label: 'Input Length', value: `${r.input_info.input_length} characters`, mono: false, badge: false },
+      { label: 'Truncated', value: r.input_info.input_was_truncated ? 'Yes' : 'No', mono: false, badge: true },
+      { label: 'Timestamp', value: new Date(r.timestamp).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' }), mono: false, badge: false },
+    ];
+  }
+
+  onChartInit(ec: any) { this.chartInstance = ec; }
+
+  private buildChartOptions(theme: any) {
+    const res = this.result();
+    if (!res) return;
+
+    const emotions = Object.keys(EMOTION_COLORS);
+    const dominantEmotion = res.combined_final_emotion.label.toLowerCase();
+
+    // ---- Timeline ----
+    this.timelineOptions = {
+      ...theme,
+      backgroundColor: 'transparent',
+      tooltip: {
+        ...theme.tooltip,
+        trigger: 'axis',
+        axisPointer: { type: 'cross', crossStyle: { color: '#94a3b8' } },
+        formatter: (params: any) => {
+          const idx = params[0]?.dataIndex ?? 0;
+          const sentence = res.sentences_analysis[idx]?.sentence ?? '';
+          const preview = sentence.length > 60 ? sentence.slice(0, 60) + '…' : sentence;
+          let html = `<div style="font-weight:700;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(148,163,184,0.2);">
+            Sentence ${idx + 1}<br/><span style="font-weight:400;font-size:11px;opacity:0.7">"${preview}"</span>
+          </div>`;
+          params.sort((a: any, b: any) => b.value - a.value).forEach((p: any) => {
+            html += `<div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:3px 0">
+              <span style="display:flex;align-items:center;gap:8px">
+                <span style="width:8px;height:8px;border-radius:50%;background:${p.color};display:inline-block"></span>${p.seriesName}
+              </span>
+              <span style="font-weight:700">${(p.value * 100).toFixed(1)}%</span>
+            </div>`;
+          });
+          return html;
+        }
+      },
+      legend: {
+        ...theme.legend,
+        data: emotions.map(e => e.charAt(0).toUpperCase() + e.slice(1)),
+        top: 0,
+        type: 'scroll',
+        pageIconColor: '#94a3b8',
+        pageTextStyle: { color: '#94a3b8' }
+      },
+      grid: { left: 12, right: 24, bottom: 8, top: 40, containLabel: true },
+      xAxis: {
+        ...theme.xAxis,
+        type: 'category',
+        boundaryGap: false,
+        data: res.sentences_analysis.map((_, i) => `S${i + 1}`)
+      },
+      yAxis: {
+        ...theme.yAxis,
+        type: 'value',
+        min: 0, max: 1,
+        axisLabel: { ...theme.yAxis?.axisLabel, formatter: (v: number) => `${(v * 100).toFixed(0)}%` }
+      },
+      series: emotions.map(emotion => ({
+        name: emotion.charAt(0).toUpperCase() + emotion.slice(1),
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: emotion === dominantEmotion ? 8 : 5,
+        data: res.sentences_analysis.map(s => (s.probabilities as any)[emotion] ?? 0),
+        lineStyle: {
+          width: emotion === dominantEmotion ? 3 : 1.5,
+          color: EMOTION_COLORS[emotion],
+          type: emotion === dominantEmotion ? 'solid' : 'solid',
+          opacity: emotion === dominantEmotion ? 1 : 0.55
+        },
+        itemStyle: { color: EMOTION_COLORS[emotion] },
+        emphasis: { lineStyle: { width: 3, opacity: 1 }, symbolSize: 9 }
+      })) as any,
+      animation: true,
+      animationDuration: 1400,
+      animationEasing: 'cubicOut' as any
+    };
+
+    // ---- Distribution (Horizontal Bar) ----
+    const sorted = [...res.combined_results].sort((a, b) => a.confidence_percent - b.confidence_percent);
+    this.distributionOptions = {
+      ...theme,
+      backgroundColor: 'transparent',
+      tooltip: {
+        ...theme.tooltip,
+        trigger: 'item',
+        formatter: (p: any) => `<strong>${p.name}</strong>: ${p.value.toFixed(1)}%`
+      },
+      grid: { left: 8, right: 40, bottom: 4, top: 4, containLabel: true },
+      xAxis: { type: 'value', max: 100, show: false },
+      yAxis: {
+        type: 'category',
+        data: sorted.map(r => r.label.charAt(0).toUpperCase() + r.label.slice(1)),
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { ...theme.yAxis?.axisLabel }
+      },
+      series: [{
+        type: 'bar',
+        barMaxWidth: 16,
+        data: sorted.map(r => ({
+          value: r.confidence_percent,
+          name: r.label.charAt(0).toUpperCase() + r.label.slice(1),
+          itemStyle: { color: this.getEmotionColor(r.label), borderRadius: [0, 6, 6, 0] }
+        })),
+        label: {
+          show: true,
+          position: 'right' as any,
+          formatter: (p: any) => `${p.value.toFixed(1)}%`,
+          fontWeight: 700,
+          fontSize: 11,
+          color: 'inherit'
+        },
+        showBackground: true,
+        backgroundStyle: { color: 'rgba(148,163,184,0.08)', borderRadius: [0, 6, 6, 0] },
+        animationDuration: 1200,
+        animationEasing: 'cubicOut' as any
+      }]
+    };
+  }
+
+  highlightedJson(): string {
+    const json = JSON.stringify(this.result(), null, 2);
+    return json.replace(
+      /(\"(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*\"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+      (match) => {
+        let cls = 'json-number';
+        if (/^"/.test(match)) {
+          cls = /:$/.test(match) ? 'json-key' : 'json-string';
+        } else if (/true|false/.test(match)) {
+          cls = 'json-bool';
+        } else if (/null/.test(match)) {
+          cls = 'json-null';
+        }
+        return `<span class="${cls}">${match}</span>`;
+      }
+    );
+  }
+
+  copyJson() {
+    navigator.clipboard.writeText(JSON.stringify(this.result(), null, 2)).then(() => {
+      this.copied.set(true);
+      setTimeout(() => this.copied.set(false), 2000);
+    });
+  }
+}

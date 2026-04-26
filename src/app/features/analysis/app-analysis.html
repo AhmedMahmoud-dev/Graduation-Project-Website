@@ -1,0 +1,94 @@
+<div class="min-h-screen flex flex-col bg-[color:var(--color-bg)] text-[color:var(--color-text)]">
+  <!-- First Section - Header -->
+  <app-page-header title="Analysis Hub" subtitle="Multimodal Intelligence Mapping"
+    description="Select an analysis type to begin your emotional discovery with state-of-the-art neural architectures.">
+  </app-page-header>
+
+  <!-- Second Section - Analysis Grid -->
+  <section class="py-24 px-6 md:px-12 flex-1">
+    <div class="max-w-7xl mx-auto mt-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 sm:gap-8">
+        <!-- Text Analysis (Active) -->
+        <a routerLink="/analysis/text"
+          class="group p-6 xs:p-8 lg:p-8 rounded-3xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] shadow-sm transition-all duration-300 flex flex-col items-center text-center hover:border-[color:var(--color-primary)] relative overflow-hidden h-full">
+          <div
+            class="w-16 h-16 rounded-2xl bg-[color:var(--color-primary)]/10 flex items-center justify-center mb-6 transition-transform duration-300">
+            <svg class="w-8 h-8 text-[color:var(--color-primary)]" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-2 text-[color:var(--color-text)]">Text Analysis</h3>
+          <p class="text-sm text-[color:var(--color-text-muted)] mb-6 flex-1 font-medium leading-relaxed">Analyze emotional undertones, sentiment
+            intensity, and sentence-by-sentence progression.</p>
+          <span
+            class="text-sm font-semibold text-[color:var(--color-primary)] group-hover:underline inline-flex items-center">
+            Get Started <svg class="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </span>
+        </a>
+
+        <!-- Audio Analysis (Active) -->
+        <a routerLink="/analysis/audio"
+          class="group p-6 xs:p-8 lg:p-8 rounded-3xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] shadow-sm transition-all duration-300 flex flex-col items-center text-center hover:border-[color:var(--color-accent)] relative overflow-hidden h-full">
+          <div
+            class="w-16 h-16 rounded-2xl bg-[color:var(--color-accent)]/10 flex items-center justify-center mb-6 transition-transform duration-300">
+            <svg class="w-8 h-8 text-[color:var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-2 text-[color:var(--color-text)]">Audio Analysis</h3>
+          <p class="text-sm text-[color:var(--color-text-muted)] mb-6 flex-1 font-medium leading-relaxed">Voice tone, pitch, and speech patterns
+            analysis with multimodal fusion.</p>
+          <span
+            class="text-sm font-semibold text-[color:var(--color-accent)] group-hover:underline inline-flex items-center">
+            Get Started <svg class="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </span>
+        </a>
+
+        <!-- Image Analysis (Coming Soon) -->
+        <a routerLink="/models/image"
+          class="group p-6 xs:p-8 lg:p-8 rounded-3xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] shadow-sm transition-all duration-300 flex flex-col items-center text-center hover:border-emerald-500/50 relative overflow-hidden h-full">
+          <div
+            class="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6 transition-transform">
+            <svg class="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16l4.586-4.586a1 1 0 011.414 0L14 15.586m2.207-2.207l3.947-3.947a1 1 0 111.414 1.414L13.414 20.586a1 1 0 01-1.414 0L10 18.121l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 16z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-2 text-[color:var(--color-text)]">Image Analysis</h3>
+          <p class="text-sm text-[color:var(--color-text-muted)] mb-6 flex-1 font-medium leading-relaxed">Facial expressions and scene context detection.</p>
+          <div class="flex items-center gap-3">
+            <span
+              class="px-3 py-1 bg-emerald-500/10 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-wider">Coming Soon</span>
+            <span class="text-xs font-bold text-[color:var(--color-primary)] group-hover:underline">Explore →</span>
+          </div>
+        </a>
+
+        <!-- Video Analysis (Coming Soon) -->
+        <a routerLink="/models/video"
+          class="group p-6 xs:p-8 lg:p-8 rounded-3xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] shadow-sm transition-all duration-300 flex flex-col items-center text-center hover:border-rose-500/50 relative overflow-hidden h-full">
+          <div class="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center mb-6 transition-transform">
+            <svg class="w-8 h-8 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-2 text-[color:var(--color-text)]">Video Analysis</h3>
+          <p class="text-sm text-[color:var(--color-text-muted)] mb-6 flex-1 font-medium leading-relaxed">Dynamic multimodal analysis across the entire timeline.</p>
+          <div class="flex items-center gap-3">
+            <span
+              class="px-3 py-1 bg-rose-500/10 text-rose-600 rounded-full text-[10px] font-black uppercase tracking-wider">Coming Soon</span>
+            <span class="text-xs font-bold text-[color:var(--color-primary)] group-hover:underline">Explore →</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+  <app-footer-section></app-footer-section>
+</div>

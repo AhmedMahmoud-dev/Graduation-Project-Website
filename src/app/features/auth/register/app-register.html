@@ -1,0 +1,126 @@
+<div class="auth-card">
+  <!-- Header -->
+  <div class="flex flex-col items-center mb-6">
+    <div class="flex items-center gap-2 mb-4">
+      <svg class="w-8 h-8 text-[color:var(--brand-primary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 3v2M15 3v2M3 9h2M19 9h2M12 19c-3.866 0-7-3.134-7-7s3.134-7 7-7 7 3.134 7 7-7 3.134-7 7z" />
+        <path d="M9 12c.5-1 1.5-1.5 3-1.5s2.5.5 3 1.5M12 6q0 3 -2 5" />
+      </svg>
+      <span class="font-heading font-extrabold text-2xl tracking-tight text-[color:var(--text-primary)]">Emotra</span>
+    </div>
+
+    <div class="w-full h-px bg-[color:var(--border-color)] mb-4"></div>
+
+    <h1 class="text-2xl font-bold mb-1.5 font-heading tracking-tight text-[color:var(--text-primary)] text-center">
+      Create your account</h1>
+    <p class="text-[color:var(--text-secondary)] text-[14px] font-medium text-center">Start understanding your emotions
+      today</p>
+  </div>
+
+  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-5">
+
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="auth-label">First Name</label>
+        <input type="text" formControlName="first_name" class="auth-input" placeholder="Jane"
+          [class.error]="!!getFieldError('first_name')">
+        @if (registerForm.get('first_name')?.invalid && registerForm.get('first_name')?.touched &&
+        !getFieldError('first_name')) {
+        <app-form-field-error [errorText]="'Required.'"></app-form-field-error>
+        }
+        <app-form-field-error [errorText]="getFieldError('first_name')"></app-form-field-error>
+      </div>
+      <div>
+        <label class="auth-label">Last Name</label>
+        <input type="text" formControlName="last_name" class="auth-input" placeholder="Doe"
+          [class.error]="!!getFieldError('last_name')">
+        @if (registerForm.get('last_name')?.invalid && registerForm.get('last_name')?.touched &&
+        !getFieldError('last_name')) {
+        <app-form-field-error [errorText]="'Required.'"></app-form-field-error>
+        }
+        <app-form-field-error [errorText]="getFieldError('last_name')"></app-form-field-error>
+      </div>
+    </div>
+
+    <div>
+      <label class="auth-label">Email address</label>
+      <input type="email" formControlName="email" class="auth-input" placeholder="you@example.com"
+        [class.error]="!!getFieldError('email')">
+      @if (registerForm.get('email')?.invalid && registerForm.get('email')?.touched && !getFieldError('email')) {
+      <app-form-field-error [errorText]="'Valid email required.'"></app-form-field-error>
+      }
+      <app-form-field-error [errorText]="getFieldError('email')"></app-form-field-error>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <div class="flex justify-between items-center mb-[8px]">
+          <label class="auth-label mb-0">Password</label>
+        </div>
+        <app-password-input formControlName="password" [hasError]="!!getFieldError('password')"
+          placeholder="••••••••"></app-password-input>
+        @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched &&
+        !getFieldError('password')) {
+        <app-form-field-error [errorText]="'Min 6 chars.'"></app-form-field-error>
+        }
+        <app-form-field-error [errorText]="getFieldError('password')"></app-form-field-error>
+      </div>
+
+      <div>
+        <div class="flex justify-between items-center mb-[8px]">
+          <label class="auth-label mb-0">Confirm</label>
+        </div>
+        <app-password-input formControlName="confirmPassword" placeholder="••••••••"></app-password-input>
+        @if (registerForm.get('confirmPassword')?.hasError('passwordMismatch') &&
+        registerForm.get('confirmPassword')?.touched) {
+        <app-form-field-error [errorText]="'Mismatch.'"></app-form-field-error>
+        }
+      </div>
+    </div>
+
+    <div class="mt-2 flex items-center gap-3">
+      <div class="flex items-center h-5 mt-0.5 relative">
+        <input formControlName="terms" id="terms" type="checkbox"
+          class="auth-checkbox-input absolute opacity-0 w-4 h-4 cursor-pointer z-10">
+        <div
+          class="auth-checkbox-custom w-4 h-4 rounded-[4px] border-2 border-[color:var(--border-color)] flex items-center justify-center transition-colors">
+          <svg class="w-3 h-3 text-white opacity-0 transition-opacity" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" stroke-width="3">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+          </svg>
+        </div>
+      </div>
+      <label for="terms"
+        class="text-[13px] text-[color:var(--text-secondary)] leading-tight cursor-pointer font-medium select-none">
+        I agree to the <a href="#"
+          class="text-[color:var(--brand-primary)] hover:underline decoration-2 underline-offset-2">Terms of Service</a>
+        and <a href="#"
+          class="text-[color:var(--brand-primary)] hover:underline decoration-2 underline-offset-2">Privacy Policy</a>
+      </label>
+    </div>
+
+    <button type="submit" [disabled]="registerForm.invalid || isLoading" class="auth-button mt-1">
+      @if (!isLoading) {
+      <span>Create Account</span>
+      }
+      @if (isLoading) {
+      <svg class="animate-spin h-5 w-5 text-current" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+        </path>
+      </svg>
+      }
+    </button>
+  </form>
+
+  <!-- Bottom link -->
+  <div class="mt-8 text-center text-[14px]">
+    <span class="text-[color:var(--text-secondary)] font-medium">Already have an account? </span>
+    <a routerLink="/auth/login"
+      class="text-[color:var(--brand-primary)] font-medium hover:underline decoration-2 underline-offset-4">Sign in</a>
+  </div>
+
+</div>

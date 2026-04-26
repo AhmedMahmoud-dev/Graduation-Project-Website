@@ -1,0 +1,74 @@
+<div class="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] flex flex-col">
+  <!-- Top Padding for fixed Navbar -->
+  <div class="h-16 lg:h-20"></div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8 sm:py-12 flex flex-col lg:flex-row relative">
+    <!-- Main Content (Simplified Coming Soon) -->
+    <main class="flex-1 w-full max-w-4xl pt-16 lg:pt-0 overflow-hidden px-0">
+
+      <!-- Breadcrumb & Badges -->
+      <div class="mb-12">
+        <nav class="flex flex-wrap items-center gap-2 text-sm font-medium text-[color:var(--text-muted)] mb-6">
+          <a routerLink="/" class="hover:text-[color:var(--brand-primary)] text-[color:var(--brand-primary)]">Home</a>
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+          <span>Models</span>
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+          <span class="text-[color:var(--text-primary)]">Image Analysis</span>
+        </nav>
+
+        <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight mb-8 leading-tight">
+          Image Emotion Analysis
+        </h1>
+      </div>
+
+      <!-- Professional Coming Soon Section -->
+      <div
+        class="bg-[color:var(--bg-card)] rounded-[40px] border border-[color:var(--border-color)] p-8 sm:p-16 relative overflow-hidden group shadow-xl">
+        <!-- Background Decorative Patterns -->
+        <div
+          class="absolute -top-24 -right-24 w-64 h-64 bg-[color:var(--brand-primary)]/10 rounded-full blur-3xl group-hover:bg-[color:var(--brand-primary)]/20 transition-all duration-700">
+        </div>
+        <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-[color:var(--accent)]/10 rounded-full blur-3xl"></div>
+
+        <div class="relative z-10 flex flex-col items-center text-center">
+          <div
+            class="w-24 h-24 rounded-3xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-10 shadow-inner">
+            <svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+
+          <div
+            class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/5 border border-emerald-500/10 mb-8">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-xs font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">Under
+              Development</span>
+          </div>
+
+          <h2 class="text-3xl sm:text-5xl font-black mb-6 tracking-tight">Feature Coming Soon</h2>
+
+          <p class="text-lg sm:text-xl text-[color:var(--text-secondary)] leading-relaxed max-w-2xl font-medium mb-12">
+            Our advanced facial expression analysis and scene context engine is currently being fine-tuned by our AI
+            research team. We are committed to delivering the highest accuracy for emotional monitoring.
+          </p>
+
+          <a routerLink="/analysis"
+            class="mt-12 text-sm font-bold text-[color:var(--brand-primary)] flex items-center gap-1 hover:gap-2 transition-all">
+            <svg class="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path d="M9 5l7 7-7 7" />
+            </svg>
+            Back to Analysis Hub
+          </a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Footer Section -->
+  <app-footer-section></app-footer-section>
+</div>

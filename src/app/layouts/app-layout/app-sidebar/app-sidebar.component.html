@@ -1,0 +1,196 @@
+<!-- Mobile Backdrop -->
+<div class="fixed inset-0 bg-black/50 z-[80] transition-opacity duration-300 lg:hidden"
+  [class.opacity-100]="mobileOpen()" [class.pointer-events-auto]="mobileOpen()" [class.opacity-0]="!mobileOpen()"
+  [class.pointer-events-none]="!mobileOpen()" (click)="closeMobile()"></div>
+
+<aside (click)="!isExpanded() && !isMobile() && toggleSidebar()"
+  class="fixed top-0 left-0 h-screen bg-[color:var(--bg-primary)] border-r border-[color:var(--color-border)] z-[90] flex flex-col transition-[width,transform] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[width,transform]"
+  [ngClass]="{
+        'w-[260px]': isExpanded() || isMobile(),
+        'w-[72px]': !isExpanded() && !isMobile(),
+        '-translate-x-full': isMobile() && !mobileOpen(),
+        'translate-x-0': !isMobile() || (isMobile() && mobileOpen())
+      }">
+  <!-- Top Section -->
+  <div (click)="$event.stopPropagation()" class="flex items-center h-16 shrink-0 relative border-b border-[color:var(--color-border)] px-3">
+    <div (click)="goToHome()" class="flex items-center overflow-hidden whitespace-nowrap cursor-pointer">
+      <div class="w-12 h-12 flex items-center justify-center shrink-0">
+        <!-- Logo -->
+        <svg class="w-8 h-8 text-[color:var(--brand-primary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 3v2M15 3v2M3 9h2M19 9h2M12 19c-3.866 0-7-3.134-7-7s3.134-7 7-7 7 3.134 7 7-7 3.134-7 7z" />
+          <path d="M9 12c.5-1 1.5-1.5 3-1.5s2.5.5 3 1.5M12 6q0 3 -2 5" />
+        </svg>
+      </div>
+      <span
+        class="font-heading font-extrabold text-xl tracking-tighter text-[color:var(--color-text)] transition-opacity duration-300 ml-1"
+        [class.opacity-100]="isExpanded()" [class.opacity-0]="!isExpanded() && !isMobile()"
+        [class.w-0]="!isExpanded() && !isMobile()">
+        Emotra
+      </span>
+    </div>
+
+    <button (click)="$event.stopPropagation(); toggleSidebar()"
+      class="absolute -right-3 top-5 w-6 h-6 rounded-full bg-[color:var(--color-surface)] border border-[color:var(--color-border)] items-center justify-center text-[color:var(--color-text-muted)] hover:text-[color:var(--brand-primary)] hover:border-[color:var(--brand-primary)] transition-all z-10 hidden lg:flex shadow-sm">
+      <svg class="w-3.5 h-3.5 transition-transform duration-300" [class.rotate-180]="!isExpanded()" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Main Menu Section -->
+  <nav class="flex-1 py-6 px-3 flex flex-col gap-2">
+    <!-- APP NAV ITEMS -->
+    @if (!isLandingPage) {
+    @if (currentUser()) {
+    @for (item of appNavItems; track item.label) {
+    <a [routerLink]="item.path" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: item.path === '/'}"
+      class="flex items-center rounded-xl text-[color:var(--color-text-muted)] hover:bg-[color:var(--bg-surface)] hover:text-[color:var(--color-text)] transition-all group relative cursor-pointer h-12"
+      (click)="$event.stopPropagation(); handleNavClick()">
+      <div class="w-12 h-12 shrink-0 flex items-center justify-center transition-transform group-active:scale-90"
+        [innerHTML]="item.icon"></div>
+      <span class="transition-opacity duration-300 whitespace-nowrap font-semibold text-sm flex-1"
+        [ngClass]="(!isExpanded() && !isMobile()) ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto ml-1'">
+        {{ item.label }}
+      </span>
+
+      @if (item.label === 'Alerts' && hasUnreadAlerts()) {
+      <span
+        class="flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-[color:var(--brand-primary)] text-[10px] font-black text-white mr-2 transition-all"
+        [class.opacity-0]="!isExpanded() && !isMobile()" [class.scale-0]="!isExpanded() && !isMobile()">
+        {{ unreadCount() > 99 ? '99+' : unreadCount() }}
+      </span>
+
+      <div
+        class="absolute top-2 left-8 w-2 h-2 rounded-full bg-[color:var(--brand-primary)] border border-[color:var(--bg-primary)]">
+      </div>
+      }
+
+      <app-tooltip [text]="item.label" position="right" [visible]="!isExpanded() && !isMobile()"></app-tooltip>
+    </a>
+    }
+    } @else {
+    <div class="flex flex-col items-center justify-center py-6 opacity-40">
+      <div
+        class="w-10 h-10 rounded-full border-2 border-dashed border-[color:var(--color-border)] flex items-center justify-center text-[color:var(--color-text-muted)]">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 00-2 2h2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
+    </div>
+    }
+    }
+
+    <!-- LANDING/GUEST NAV ITEMS -->
+    @if (isLandingPage || (!currentUser() && (routerURL.includes('auth')))) {
+    <!-- Dashboard Link for logged in users on landing -->
+    @if (currentUser()) {
+    <a routerLink="/dashboard" routerLinkActive="active-link"
+      class="flex items-center rounded-xl text-[color:var(--color-text-muted)] hover:bg-[color:var(--bg-surface)] hover:text-[color:var(--color-text)] transition-all group relative cursor-pointer h-12 mb-4"
+      (click)="$event.stopPropagation(); handleNavClick()">
+      <div class="w-12 h-12 shrink-0 flex items-center justify-center transition-transform group-active:scale-90">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+      </div>
+      <span class="transition-opacity duration-300 whitespace-nowrap font-bold text-sm"
+        [ngClass]="(!isExpanded() && !isMobile()) ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto ml-1'">
+        Dashboard
+      </span>
+      <app-tooltip text="Dashboard" position="right" [visible]="!isExpanded() && !isMobile()"></app-tooltip>
+    </a>
+    }
+
+    @for (item of landingNavItems; track item.label) {
+    <a [href]="item.href" (click)="$event.stopPropagation(); handleLandingNavClick($event, item.href)"
+      class="flex items-center rounded-xl text-[color:var(--color-text-muted)] hover:bg-[color:var(--bg-surface)] hover:text-[color:var(--color-text)] transition-all group relative cursor-pointer h-12"
+      [class.active-link]="isActiveSection(item.href)">
+      <div class="w-12 h-12 shrink-0 flex items-center justify-center transition-transform group-active:scale-90"
+        [innerHTML]="item.icon"></div>
+      <span class="transition-opacity duration-300 whitespace-nowrap font-semibold text-sm"
+        [ngClass]="(!isExpanded() && !isMobile()) ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto ml-1'">
+        {{ item.label }}
+      </span>
+
+      <app-tooltip [text]="item.label" position="right" [visible]="!isExpanded() && !isMobile()"></app-tooltip>
+    </a>
+    }
+    }
+  </nav>
+
+  <!-- Bottom Profile / Settings / Auth Section -->
+  <div class="p-3 shrink-0 border-t border-[color:var(--color-border)]">
+
+    @if (currentUser()) {
+    <a routerLink="/settings" (click)="$event.stopPropagation(); handleNavClick()"
+      class="flex items-center rounded-xl text-[color:var(--color-text-muted)] hover:bg-[color:var(--bg-surface)] hover:text-[color:var(--color-text)] transition-all group relative cursor-pointer h-12 mb-2">
+      <div class="w-12 h-12 shrink-0 flex items-center justify-center transition-transform group-active:scale-90">
+        <svg class="w-[24px] h-[24px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+          </path>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+      </div>
+      <span class="transition-opacity duration-300 whitespace-nowrap font-semibold text-sm"
+        [ngClass]="(!isExpanded() && !isMobile()) ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto ml-1'">
+        Settings
+      </span>
+      <app-tooltip text="Settings" position="right" [visible]="!isExpanded() && !isMobile()"></app-tooltip>
+    </a>
+
+    <div (click)="$event.stopPropagation(); copyEmailToClipboard($event)"
+      class="flex items-center rounded-xl group relative h-12 cursor-pointer hover:bg-[color:var(--bg-surface)] transition-all"
+      [ngClass]="(!isExpanded() && !isMobile()) ? 'justify-start' : 'justify-start'">
+      <div class="w-12 h-12 shrink-0 flex items-center justify-center">
+        <div
+          class="w-10 h-10 rounded-full bg-[color:var(--color-bg)] text-[color:var(--brand-primary)] flex items-center justify-center font-bold shrink-0 border border-[color:var(--color-border)] select-none">
+          {{ getUserInitials() }}
+        </div>
+      </div>
+      <div class="transition-opacity duration-300 flex-1 flex flex-col truncate"
+        [ngClass]="(!isExpanded() && !isMobile()) ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto ml-1'">
+        <span class="text-sm font-bold text-[color:var(--color-text)] truncate">{{ currentUser()?.full_name || 'User'
+          }}</span>
+        <span class="text-[10px] text-[color:var(--color-text-muted)] truncate">{{ currentUser()?.email || '...'
+          }}</span>
+      </div>
+      <button (click)="$event.stopPropagation(); logout()"
+        class="p-2 mr-2 text-[color:var(--color-text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors focus:outline-none"
+        title="Logout" [class.hidden]="!isExpanded() && !isMobile()">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+        </svg>
+      </button>
+
+      <!-- Tooltip for collapsed state -->
+      <app-tooltip [text]="emailCopied() ? 'Copied!' : (currentUser()?.full_name || 'User')" position="right"
+        [visible]="!isExpanded() && !isMobile()"></app-tooltip>
+    </div>
+    } @else {
+    <!-- Guest Login Button -->
+    <button (click)="$event.stopPropagation(); navigateTo('/auth/login')"
+      class="flex items-center rounded-xl font-bold transition-all group relative focus:outline-none h-12 w-full bg-[color:var(--bg-card)] text-[color:var(--text-primary)] border border-[color:var(--border-color)] hover:bg-[color:var(--bg-surface)] hover:text-[color:var(--brand-primary)] shadow-sm">
+      <div class="w-12 h-12 shrink-0 flex items-center justify-center transition-transform group-active:scale-90">
+        <svg class="w-[24px] h-[24px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
+        </svg>
+      </div>
+      <span class="font-bold text-sm whitespace-nowrap transition-opacity duration-300"
+        [ngClass]="(!isExpanded() && !isMobile()) ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto ml-1'">
+        Sign In
+      </span>
+
+      <app-tooltip text="Sign In" position="right" [visible]="!isExpanded() && !isMobile()"></app-tooltip>
+    </button>
+    }
+  </div>
+
+</aside>

@@ -1,0 +1,24 @@
+<div class="min-h-screen bg-[color:var(--bg-primary)] flex text-[color:var(--text-primary)]">
+
+  <!-- Sidebar -->
+  @if (showSidebar()) {
+  <app-app-sidebar #sidebar></app-app-sidebar>
+  }
+
+  <!-- Main Content Area -->
+  <div
+    class="flex-1 flex flex-col min-h-screen transition-[margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[margin] min-w-0"
+    [style.margin-left]="showSidebar() ? 'var(--app-sidebar-width, 0px)' : '0px'">
+    <!-- Navbar -->
+    <app-app-navbar [hideToggle]="!showSidebar()" (toggleMenu)="toggleMobile()"></app-app-navbar>
+
+    <!-- Route Outlet Content -->
+    <main class="flex-1 w-full min-w-0" [class]="isFullWidthPage() ? '' : 'p-6 lg:p-8 max-w-[1600px] mx-auto'">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+
+</div>
+
+<!-- System Feedback Component (Handles its own button and modal) -->
+<app-system-feedback></app-system-feedback>

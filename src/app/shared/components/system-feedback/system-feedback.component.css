@@ -1,0 +1,116 @@
+:host {
+  display: block;
+  --feedback-gradient: linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%);
+}
+
+/* Professional Floating Button Redesign - ONLY THIS PART REDESIGNED */
+.floating-trigger {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.75rem;
+  background: var(--feedback-gradient);
+  color: white;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  overflow: hidden;
+}
+
+.floating-trigger::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.floating-trigger:hover {
+  box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.5);
+}
+
+.floating-trigger:hover::before {
+  transform: translateX(100%);
+}
+
+.floating-trigger span {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+
+/* RESTORING ORIGINAL CARD STYLES BELOW */
+
+.star-button {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure no scale on hover as per guidelines */
+button:not(.floating-trigger) {
+  transition: all 0.2s ease;
+  transform: none !important;
+}
+
+button:not(.floating-trigger):hover {
+  transform: none !important;
+}
+
+button:not(.floating-trigger):active {
+  transform: none !important;
+}
+
+textarea {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+textarea::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+textarea::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.5;
+}
+
+/* Tooltip positioning handles fixed spacing */
+app-tooltip {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 100%;
+  margin-bottom: 8px;
+}
+
+@media (min-width: 640px) {
+  .modal-container {
+    min-width: 620px;
+  }
+}
+
+@media (max-width: 640px) {
+  .floating-trigger {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    padding: 0.875rem 1.25rem;
+  }
+  
+  .floating-trigger span {
+    display: none;
+  }
+}

@@ -1,0 +1,118 @@
+<div class="min-h-screen bg-[color:var(--bg-primary)] flex flex-col">
+  <!-- Top Padding for fixed Navbar -->
+  <div class="h-16 lg:h-24"></div>
+
+  <div class="flex-1 flex flex-col px-4 xs:px-6 lg:px-12">
+    <div class="max-w-4xl mx-auto w-full py-8 sm:py-12">
+      <!-- Back Button -->
+      <button
+        id="model-details-back-btn"
+        (click)="goBack()"
+        class="flex items-center gap-2 text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)] transition-colors mb-8 sm:mb-12 group"
+        >
+        <svg class="w-5 h-5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        <span class="font-bold tracking-tight">Back to Home</span>
+      </button>
+
+      <!-- Content Card -->
+      <div 
+        id="model-details-card"
+        class="bg-[color:var(--bg-card)] rounded-[2rem] sm:rounded-[3rem] p-6 xs:p-8 sm:p-12 md:p-20 border border-[color:var(--border-color)] relative shadow-2xl transition-all duration-500">
+        <!-- Background Glow & Decorative Elements -->
+        <div class="absolute -top-32 -right-32 w-80 h-80 bg-[color:var(--brand-primary)] opacity-10 blur-[100px] rounded-full pointer-events-none"></div>
+        <div class="absolute -bottom-32 -left-32 w-80 h-80 bg-[color:var(--accent)] opacity-10 blur-[100px] rounded-full pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col items-center text-center">
+          <!-- Animated Icon -->
+          <div 
+            id="model-icon-container"
+            class="w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 mb-8 sm:mb-10 text-[color:var(--brand-primary)] bg-gradient-to-br from-[color:var(--brand-primary)]/10 to-[color:var(--brand-primary)]/5 rounded-2xl xs:rounded-[32px] flex items-center justify-center p-6 sm:p-8 shadow-inner ring-1 ring-[color:var(--brand-primary)]/20">
+            <div [innerHTML]="modelIcon" class="w-full h-full drop-shadow-2xl"></div>
+          </div>
+
+          <!-- Badges -->
+          <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">
+            <div class="px-4 py-1.5 rounded-full bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] text-[color:var(--text-muted)] text-[9px] xs:text-[10px] font-black uppercase tracking-widest">
+              Module: AI-{{ modelType | uppercase }}
+            </div>
+            @if (modelType !== 'text' && modelType !== 'audio') {
+              <div class="px-4 py-1.5 rounded-full bg-[color:var(--accent)]/10 text-[color:var(--accent)] border border-[color:var(--accent)]/20 text-[10px] font-black tracking-widest"
+                >
+                <span class="inline-block w-1.5 h-1.5 rounded-full bg-[color:var(--accent)] animate-ping mr-2"></span>
+                UNDER DEVELOPMENT
+              </div>
+            }
+            @if (modelType === 'text' || modelType === 'audio') {
+              <div class="px-4 py-1.5 rounded-full bg-green-500/10 text-green-500 border border-green-500/20 text-[10px] font-black tracking-widest"
+                >
+                <span class="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-2"></span>
+                STABLE RELEASE
+              </div>
+            }
+          </div>
+
+          <h1 
+            id="model-title"
+            class="text-2xl xs:text-3xl sm:text-5xl md:text-6xl font-black mb-6 sm:mb-8 tracking-tighter leading-[1.1] text-[color:var(--text-primary)]">
+            {{ modelTitle }} Analysis
+          </h1>
+
+          <p class="text-base xs:text-lg sm:text-xl text-[color:var(--text-secondary)] leading-relaxed max-w-2xl mb-12 sm:mb-16 font-medium">
+            @if (modelType !== 'text' && modelType !== 'audio') {
+              Our specialized neural architecture for <b>{{ modelTitle }} processing</b> is currently in the late stages of fine-tuning.
+              We're achieving 94%+ accuracy for high-arousal emotional detection.
+            }
+            @if (modelType === 'text' || modelType === 'audio') {
+              Our state-of-the-art {{ modelTitle.toLowerCase() }} model is fully calibrated for
+              <b>enterprise-grade</b> emotional intelligence and real-time sentiment extraction.
+            }
+          </p>
+
+          <!-- Newsletter / Launch Section -->
+          <div class="w-full max-w-md bg-gradient-to-br from-[color:var(--bg-secondary)] to-[color:var(--bg-card)] rounded-[2rem] p-6 xs:p-8 sm:p-10 border border-[color:var(--border-color)] shadow-xl relative group/form">
+            <div class="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] rounded-full text-[9px] font-black uppercase tracking-[0.2em] text-[color:var(--text-muted)] group-hover/form:text-[color:var(--brand-primary)] transition-colors">
+              {{ modelType !== 'text' && modelType !== 'audio' ? 'Coming Soon' : 'Get Started' }}
+            </div>
+
+            @if (modelType !== 'text' && modelType !== 'audio') {
+              <h4 class="text-base xs:text-lg font-black mb-2 text-[color:var(--text-primary)]">Join the Early Access</h4>
+              <p class="text-[color:var(--text-muted)] text-sm mb-8 leading-relaxed font-medium">Be the first to integrate {{ modelTitle }} Analysis when we launch.</p>
+              <div class="flex flex-col gap-4">
+                <div class="relative">
+                  <input
+                    id="early-access-email"
+                    type="email"
+                    placeholder="your@email.com"
+                    class="w-full px-6 h-14 rounded-2xl bg-[color:var(--bg-primary)] border-2 border-[color:var(--border-color)] focus:outline-none focus:border-[color:var(--brand-primary)] transition-all placeholder:text-[color:var(--text-muted)]/50 font-bold"
+                    >
+                  </div>
+                  <button 
+                    id="early-access-submit"
+                    class="w-full h-14 px-8 rounded-2xl bg-[color:var(--brand-primary)] text-white font-black hover:shadow-2xl hover:shadow-[color:var(--brand-primary)]/20 transition-all active:scale-95 flex items-center justify-center gap-3">
+                    Register Interest
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M12 19l7-7-7-7M5 12h14" /></svg>
+                  </button>
+                </div>
+              }
+
+              @if (modelType === 'text' || modelType === 'audio') {
+                <h4 class="text-base xs:text-lg font-black mb-4 text-[color:var(--text-primary)]">Access Analysis Hub</h4>
+                <button
+                  id="launch-model-btn"
+                  [routerLink]="'/analysis/' + modelType"
+                  class="w-full h-16 px-8 rounded-2xl bg-[color:var(--brand-primary)] text-white font-black text-lg xs:text-xl hover:shadow-2xl hover:shadow-[color:var(--brand-primary)]/30 transition-all active:scale-95 flex items-center justify-center gap-4 group/btn">
+                  Launch Model
+                  <svg class="w-6 h-6 group-hover/btn:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Section (Full Width Outside Padding) -->
+    <app-footer-section class="mt-12 sm:mt-16"></app-footer-section>
+  </div>

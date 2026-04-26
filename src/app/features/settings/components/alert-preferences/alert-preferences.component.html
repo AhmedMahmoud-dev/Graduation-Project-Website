@@ -1,0 +1,193 @@
+<div class="space-y-10 pb-12 mt-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+
+  <!-- Premium Header & Global Switch -->
+  <div
+    class="relative p-8 md:p-10 bg-[color:var(--color-surface)]/80 backdrop-blur-md border border-[color:var(--color-border)] rounded-[2.5rem] shadow-sm overflow-hidden group">
+    <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+      <div class="space-y-3">
+        <div class="flex items-center gap-4">
+          <div
+            class="w-12 h-12 rounded-2xl bg-[color:var(--color-primary)]/10 flex items-center justify-center text-[color:var(--color-primary)]">
+            <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold section-title text-[color:var(--color-text)] tracking-tight">Alert Preferences
+          </h2>
+        </div>
+        <p class="text-sm text-[color:var(--color-text-muted)] max-w-xl leading-relaxed font-medium">
+          Define your emotional safety thresholds and automated response protocols.
+          Our engine monitors patterns to ensure you stay informed of negative trends.
+        </p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+        <button (click)="saveSettings()" [disabled]="isSaving() || isLoading() || !isDirty()"
+          class="active-btn h-11 px-6 w-full sm:w-auto bg-[color:var(--color-primary)] text-white font-black rounded-xl text-[9px] uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 shadow-md shadow-[color:var(--color-primary)]/10">
+          {{ isSaving() ? 'Syncing...' : 'Sync Preferences' }}
+        </button>
+
+        <div
+          class="flex items-center justify-between w-full sm:w-auto min-w-[220px] bg-[color:var(--color-bg)]/40 border border-[color:var(--color-border)] rounded-[1.25rem] px-5 py-3 gap-6">
+          <div class="space-y-1">
+            <span
+              class="block text-[9px] font-black uppercase tracking-[0.2em] text-[color:var(--color-text-muted)] leading-none">Status</span>
+            <span class="text-xs font-bold leading-none"
+              [ngClass]="settings().alerts_enabled ? 'text-[color:var(--color-success)]' : 'text-[color:var(--color-text-muted)]'">
+              {{ settings().alerts_enabled ? 'Active' : 'Paused' }}
+            </span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer group/toggle">
+            <input type="checkbox" [ngModel]="settings().alerts_enabled"
+              (ngModelChange)="updateSetting('alerts_enabled', $event)" class="sr-only peer">
+            <div
+              class="w-11 h-6 bg-[color:var(--color-border)] rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[color:var(--color-primary)] transition-colors">
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid lg:grid-cols-12 gap-8 items-start"
+    [ngClass]="{'opacity-40 grayscale pointer-events-none transition-all duration-500': !settings().alerts_enabled}">
+
+    <!-- Left Column: Primary Logic (Logic & Thresholds) -->
+    <div class="lg:col-span-8">
+
+      <!-- Detection Thresholds -->
+      <div
+        class="p-8 bg-[color:var(--color-surface)]/80 backdrop-blur-md border border-[color:var(--color-border)] rounded-[2.5rem] shadow-sm space-y-10">
+        <div class="flex items-start justify-between">
+          <div class="space-y-1">
+            <h3 class="font-bold text-lg text-[color:var(--color-text)]">Detection Sensitivity</h3>
+            <p class="text-xs text-[color:var(--color-text-muted)] font-medium">Fine-tune how sensitive the engine is to
+              negative emotional patterns.</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-10">
+          <!-- Negative Threshold -->
+          <div class="space-y-5">
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-bold text-[color:var(--color-text)]">Confidence Threshold</label>
+              <p class="text-[10px] text-[color:var(--color-text-muted)] leading-relaxed">Minimum score to classify an
+                emotion as negative</p>
+            </div>
+            <div class="relative group">
+              <input type="number" step="0.05" min="0" max="1" class="settings-input pr-16"
+                [ngModel]="settings().alert_negative_threshold"
+                (ngModelChange)="updateSetting('alert_negative_threshold', $event)">
+              <div
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-[color:var(--color-primary)] uppercase tracking-tighter">
+                Score</div>
+            </div>
+          </div>
+
+          <!-- Consecutive Count -->
+          <div class="space-y-5">
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-bold text-[color:var(--color-text)]">Consecutive Triggers</label>
+              <p class="text-[10px] text-[color:var(--color-text-muted)] leading-relaxed">Number of repeated negative
+                analysis needed to alert</p>
+            </div>
+            <div class="relative group">
+              <input type="number" step="1" min="1" class="settings-input pr-16"
+                [ngModel]="settings().alert_consecutive_count"
+                (ngModelChange)="updateSetting('alert_consecutive_count', $event)">
+              <div
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-[color:var(--color-primary)] uppercase tracking-tighter">
+                Steps</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Sidebar (Channels & Filtering) -->
+    <div class="lg:col-span-4 space-y-8">
+
+      <!-- Alert Filtering -->
+      <div
+        class="relative z-20 p-8 bg-[color:var(--color-surface)]/80 backdrop-blur-md border border-[color:var(--color-border)] rounded-[2.5rem] shadow-sm space-y-6">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-xl bg-[color:var(--color-primary)]/10 flex items-center justify-center text-[color:var(--color-primary)]">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+          </div>
+          <h3 class="font-bold text-base text-[color:var(--color-text)]">Alert Filtering</h3>
+        </div>
+
+        <div class="space-y-4">
+          <div class="flex flex-col gap-3">
+            <label
+              class="text-[10px] font-black uppercase tracking-widest text-[color:var(--color-text-muted)] ml-1">Minimum
+              Severity</label>
+            <app-dropdown-menu [options]="severityOptions" [selectedValue]="settings().alert_severity_level"
+              (selectedValueChange)="updateSetting('alert_severity_level', $event)"
+              [disabled]="!settings().alerts_enabled">
+            </app-dropdown-menu>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notification Channels -->
+      <div
+        class="relative z-10 p-8 bg-[color:var(--color-surface)]/80 backdrop-blur-md border border-[color:var(--color-border)] rounded-[2.5rem] shadow-sm space-y-8">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-xl bg-[color:var(--color-primary)]/10 flex items-center justify-center text-[color:var(--color-primary)]">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          </div>
+          <h3 class="font-bold text-base text-[color:var(--color-text)]">Delivery Channels</h3>
+        </div>
+
+        <div class="space-y-6">
+          <!-- Push In-App -->
+          <div class="flex items-center justify-between">
+            <div class="space-y-1">
+              <p class="text-sm font-bold text-[color:var(--color-text)]">Push Notifications</p>
+              <p class="text-[10px] text-[color:var(--color-text-muted)]">Real-time alerts inside Emotra</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer group/toggle">
+              <input type="checkbox" [ngModel]="settings().push_notifications"
+                (ngModelChange)="updateSetting('push_notifications', $event)" class="sr-only peer">
+              <div
+                class="w-11 h-6 bg-[color:var(--color-border)] rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[color:var(--color-primary)] transition-colors">
+              </div>
+            </label>
+          </div>
+
+          <div class="h-px bg-[color:var(--color-border)]/50"></div>
+
+          <!-- Email -->
+          <div class="flex items-center justify-between opacity-50">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <p class="text-sm font-bold text-[color:var(--color-text-muted)]">Email Protocol</p>
+                <span
+                  class="px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-tighter badge-soon">Upcoming</span>
+              </div>
+              <p class="text-[10px] text-[color:var(--color-text-muted)]">Periodic digests and high alerts</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-not-allowed">
+              <div class="w-11 h-6 bg-[color:var(--color-border)] opacity-30 rounded-full"></div>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

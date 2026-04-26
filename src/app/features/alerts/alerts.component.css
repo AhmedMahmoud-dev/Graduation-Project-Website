@@ -1,0 +1,55 @@
+:host {
+  display: block;
+}
+
+.search-input:focus {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-primary), transparent 85%);
+}
+
+.dropdown-item {
+  @apply w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest text-[color:var(--text-muted)] hover:bg-[color:var(--bg-secondary)] hover:text-[color:var(--brand-primary)] transition-all;
+}
+
+.dropdown-item.active {
+  @apply bg-[color:var(--bg-secondary)] text-[color:var(--brand-primary)];
+}
+
+/* Severity Colors for logic-based mapping in CSS */
+/* These map to the variables referenced in the prompting instructions */
+:host {
+  --severity-critical: var(--brand-primary);
+  --severity-high: var(--accent);
+  --severity-medium: var(--text-secondary);
+  --severity-low: var(--text-muted);
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* History-like card enhancements */
+.bg-\[color\:var\(--bg-card\)\] {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bg-\[color\:var\(--bg-card\)\]:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .bg-\[color\:var\(--bg-card\)\]:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Button interactive states are handled by global styles.css */

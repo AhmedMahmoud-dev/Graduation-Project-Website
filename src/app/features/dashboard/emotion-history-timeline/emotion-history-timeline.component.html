@@ -1,0 +1,106 @@
+<section class="ej-section">
+  <div class="ej-inner">
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SECTION HEADER
+    ════════════════════════════════════════════════════════════════════════ -->
+    <div class="ej-header">
+      <div>
+        <h3 class="ej-title">Emotion Journey</h3>
+        <p class="ej-subtitle">How your dominant emotion shifts across every analysis</p>
+      </div>
+      <a routerLink="/history" class="ej-archive-link">View Full Archive →</a>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         FILTER ROWS
+    ════════════════════════════════════════════════════════════════════════ -->
+    <!-- Type filter & Time-range filter -->
+    <!-- Type filter & Time-range filter -->
+    <div class="filter-row">
+      <div class="w-full lg:w-max">
+        <app-segmented-nav [options]="typeTabs" [selectedValue]="typeFilter()"
+          (selectedValueChange)="setTypeFilter($event)">
+        </app-segmented-nav>
+      </div>
+      <div class="w-full lg:w-max">
+        <app-segmented-nav [options]="rangeTabs" [selectedValue]="rangeFilter()"
+          (selectedValueChange)="setRangeFilter($event)">
+        </app-segmented-nav>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         JOURNEY CHART
+    ════════════════════════════════════════════════════════════════════════ -->
+    <div class="chart-card">
+      <div class="chart-card__head">
+        <span class="chart-card__label">Emotion Journey</span>
+
+        <p class="chart-card__desc">Each dot's color shows the dominant emotion — the line connects them over time</p>
+      </div>
+
+      @if (isLoading()) {
+      <div class="flex items-center justify-center p-12 min-h-[240px]">
+        <app-loading-state message="Tracing Emotional Evolution..." [fullPage]="false"></app-loading-state>
+      </div>
+      } @else if (filteredEntries().length > 0) {
+      <div echarts id="journey-chart" [options]="journeyChartOptions()" [autoResize]="true" class="ej-chart-host">
+      </div>
+      } @else {
+      <app-empty-state minHeight="240px">
+        <svg empty-icon fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        <ng-container empty-msg>No entries match the selected filters.</ng-container>
+        <ng-container empty-hint>Try switching to All Tracks or All Time.</ng-container>
+      </app-empty-state>
+      }
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         DEEP DIVE CHART
+    ════════════════════════════════════════════════════════════════════════ -->
+    <div class="chart-card">
+      <div class="chart-card__head">
+        <span class="chart-card__label">Emotion Deep Dive</span>
+
+        <p class="chart-card__desc">Confidence trend for one selected emotion over time</p>
+      </div>
+
+      <!-- Emotion badge selector -->
+      <div class="badge-row">
+        @for (emo of emotions; track emo) {
+        <button type="button" class="emo-badge" [class.emo-badge--active]="selectedEmotion() === emo"
+          [style.--emo-color]="emotionCssVar(emo)" (click)="selectEmotion(emo)">
+          <span class="emo-badge__dot" [style.background]="emotionCssVar(emo)"></span>
+          {{ emo }}
+        </button>
+        }
+      </div>
+
+      @if (isLoading()) {
+      <div class="flex items-center justify-center p-12 min-h-[240px]">
+        <app-loading-state message="Deep Diving into Resonance..." [fullPage]="false"></app-loading-state>
+      </div>
+      } @else if (filteredEntries().length > 0 && hasEmotionData(selectedEmotion())) {
+      <div echarts id="deep-dive-chart" [options]="deepDiveChartOptions()" [autoResize]="true" class="ej-chart-host">
+      </div>
+      } @else {
+      <app-empty-state minHeight="240px">
+        <svg empty-icon fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+        </svg>
+        <ng-container empty-msg>
+          No <strong class="capitalize" [style.color]="emotionCssVar(selectedEmotion())">{{ selectedEmotion()
+            }}</strong> entries in this filter window.
+        </ng-container>
+        <ng-container empty-hint>Click a different emotion badge or change the filters.</ng-container>
+      </app-empty-state>
+      }
+    </div>
+
+  </div>
+</section>

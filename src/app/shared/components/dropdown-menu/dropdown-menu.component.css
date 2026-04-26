@@ -1,0 +1,83 @@
+.emotra-dropdown-trigger {
+  width: 100%;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+}
+
+@media (min-width: 640px) {
+  .emotra-dropdown-trigger {
+    height: 46px;
+    font-size: 11px;
+  }
+}
+
+.emotra-dropdown-trigger:hover:not(:disabled) {
+  border-color: var(--brand-primary);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--brand-primary), transparent 85%);
+}
+
+.emotra-dropdown-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.emotra-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  min-width: 160px;
+}
+
+.emotra-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all 0.2s;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  margin-top: 8px;
+}
+
+.emotra-dropdown-item:first-child {
+  margin-top: 0;
+}
+
+.emotra-dropdown-item:hover {
+  background: var(--bg-secondary);
+}
+
+.emotra-dropdown-item.active {
+  background: var(--brand-primary);
+  color: white;
+}

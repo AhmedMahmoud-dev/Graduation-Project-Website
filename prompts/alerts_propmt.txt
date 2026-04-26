@@ -1,0 +1,215 @@
+You are working on Emotra, an Angular 20 app. You are building the Alerts page from scratch. A reference React implementation exists at:
+C:\Users\Ahmed Mahmoud\Downloads\Complete UI_UX Design Emotion Detection Website\src\components\AlertsView.tsx
+Read this file and all files it imports before writing any code. Use it as a visual and structural reference only — do not copy React patterns, use Angular 20 patterns throughout.
+
+Also read ALL of the following before writing any code:
+- src/app/features/history/history.component.ts + .html + .css — reference for how list pages are structured in Emotra
+- src/app/core/services/auth.service.ts — to add login pre-fetch and logout cache wipe
+- src/app/core/services/analysis-v2.service.ts — to understand how API calls and caching are done
+- src/app/shared/components/toast/ — reuse existing toast system
+- src/app/layouts/app-layout/app-navbar.component.ts + .html — to wire the unread badge later (read only, do not modify yet)
+- src/app/features/alerts/alerts.component.ts + .html + .css — the existing empty placeholder, modify this file
+- src/styles.css — global CSS variables and theme tokens
+- src/environments/environment.ts — API base URL
+
+---
+
+## New Service — AlertService
+
+Create src/app/core/services/alert.service.ts
+
+This service handles all alert API calls and localStorage caching.
+
+localStorage keys used by this service:
+- emotra_alerts_meta — stores the full paginated API response data array (items array only, not the wrapper)
+- emotra_alerts_stats — stores the stats object (total_alerts, unread_alerts, critical_alerts, high_alerts)
+
+All API calls use the JWT interceptor — never attach Authorization header manually.
+
+Methods to implement:
+
+getAlerts(page, pageSize, severity?, resolved?):
+- Calls GET /api/alerts with query params
+- Returns Observable<ApiResponse<AlertsPagedResult>>
+
+getStats():
+- Calls GET /api/alerts/stats
+- Returns Observable<ApiResponse<AlertStats>>
+
+resolveAlert(id):
+- Calls PATCH /api/alerts/{id}/resolve
+- Returns Observable<ApiResponse<AlertItem>>
+
+deleteAlert(id):
+- Calls DELETE /api/alerts/{id}
+- Returns Observable<ApiResponse<boolean>>
+
+---
+
+## New Models — alert.model.ts
+
+Create src/app/core/models/alert.model.ts
+
+Interfaces to create based on the API documentation (all field names match API snake_case exactly):
+
+AlertItem:
+- id: number
+- user_id: string
+- analysis_v2_id: number | null
+- client_id: string | null
+- message: string
+- severity: string (values: low, medium, high, critical)
+- triggered_at: string
+- resolved: boolean
+- resolved_at: string | null
+- recommended_action: string
+
+AlertStats:
+- total_alerts: number
+- unread_alerts: number
+- critical_alerts: number
+- high_alerts: number
+
+AlertsPagedResult:
+- items: AlertItem[]
+- page: number
+- page_size: number
+- total_count: number
+
+---
+
+## Pre-fetch on Login
+
+In auth.service.ts, inside the successful login handler (after token and user are saved), add two fire-and-forget background calls:
+- GET /api/alerts with page=1, pageSize=50 → save items array into emotra_alerts_meta
+- GET /api/alerts/stats → save data into emotra_alerts_stats
+
+These are background calls. Do NOT block login navigation. Do NOT show any toast. Do NOT use takeUntilDestroyed. On failure, silently ignore.
+
+---
+
+## Logout Cache Wipe
+
+In auth.service.ts, in the logout method, add these two keys to the existing wipe list:
+- emotra_alerts_meta
+- emotra_alerts_stats
+
+---
+
+## Alerts Page Component
+
+Modify the existing alerts component at src/app/features/alerts/alerts.component.ts + .html + .css
+
+### Page Structure
+
+Use the existing shared page header component that all other pages use — do not build a custom header, reuse the shared one exactly as other pages do.
+
+Below the shared header, build the following sections:
+
+**Section 1 — Page title row:**
+- Left: page title "Alerts" + subtitle "Monitor and manage your emotion alerts"
+- Right: a toggle button that switches between "Show All" (shows resolved + unresolved) and "Hide Read" (shows unresolved only). Default state is Hide Read (unresolved only shown).
+
+**Section 2 — Stats cards (3 cards in a row, responsive):**
+- Card 1: "Unread Alerts" — shows unread_alerts count, subtitle "Require attention"
+- Card 2: "Critical Alerts" — shows critical_alerts count styled with --brand-primary color, subtitle "High priority"
+- Card 3: "Total Alerts" — shows total_alerts count, subtitle "All time"
+- Cards use --bg-card background, --border-color border, --text-primary for numbers, --text-muted for subtitles
+
+**Section 3 — Filters bar (inside a card):**
+- Search input with search icon on the left, placeholder "Search alerts..." — filters client-side on message field
+- Severity dropdown on the right: All Severity, Critical, High, Medium, Low
+- Both filters are client-side only — no API call on filter change
+- Use --bg-surface for input background, --border-color for borders
+
+**Section 4 — Alerts list:**
+Each alert card contains:
+- Left: severity icon (triangle warning SVG for critical/high, info circle for medium/low)
+- Icon color uses CSS variables based on severity:
+  - critical → --brand-primary color (the red/accent for critical)
+  - high → use --accent or appropriate variable — do NOT hardcode any hex color
+  - medium → --text-secondary
+  - low → --text-muted
+- Alert message as bold title
+- "New" badge if resolved = false
+- Severity badge top right (Critical / High / Medium / Low) — colored by severity using CSS variables only, no hardcoded hex
+- Metadata row below title: triggered_at formatted as locale date string
+- Recommended Action box: subtle bordered box below metadata showing recommended_action text
+- Resolved alerts have reduced opacity (0.6)
+- Action buttons row:
+  - "Mark as Read" button — only shown if resolved = false
+  - "View Session" button — always shown — navigates using client_id and analysis_v2_id via the same Open Report logic used in history page (check emotra_text_sessions or emotra_audio_sessions by client_id first, fallback to GET /api/analysis/{id}, then navigate to result)
+  - "Delete" button — always shown — delete icon, subtle destructive color using CSS variables
+
+**Empty state:**
+- When filtered list is empty: centered card with checkmark icon, "No alerts found" title, appropriate subtitle based on current filter state
+
+**Loading state:**
+- When page first loads and localStorage is empty: show skeleton cards (3 skeleton stat cards + 3 skeleton alert cards) using --bg-surface color with subtle pulse animation
+- When localStorage has cached data: render immediately from cache, fire API in background silently
+
+### Data Loading Pattern (Stale-While-Revalidate)
+
+On component init:
+1. Read emotra_alerts_meta from localStorage → if exists, render list immediately
+2. Read emotra_alerts_stats from localStorage → if exists, render stats immediately
+3. Fire GET /api/alerts (page=1, pageSize=50) in background → on success update list + save to emotra_alerts_meta
+4. Fire GET /api/alerts/stats in background → on success update stats + save to emotra_alerts_stats
+5. Use takeUntilDestroyed on both subscriptions
+6. On API failure: if cache exists keep showing cache silently, if no cache show inline error state — no toast on load failure
+
+### Actions
+
+Mark as Read (resolve):
+- Show loading state on that specific button while request is in flight
+- Call PATCH /api/alerts/{id}/resolve
+- On success: update that item in the local list (resolved = true, resolved_at set), update emotra_alerts_meta, decrement unread_alerts in stats, update emotra_alerts_stats, show success toast
+- On failure: show error toast, revert button state
+
+Delete:
+- Call DELETE /api/alerts/{id}
+- On success: remove item from local list immediately, update emotra_alerts_meta, update stats counts accordingly, update emotra_alerts_stats, show success toast
+- On failure: show error toast, item stays in list
+
+View Session:
+- Get client_id and analysis_v2_id from the alert item
+- If client_id exists: check emotra_text_sessions then emotra_audio_sessions for matching client_id
+- If found in localStorage: navigate to result immediately
+- If not found: call GET /api/analysis/{analysis_v2_id}, save result to correct sessions array (with duplicate check by client_id), then navigate
+- If API fails: show error toast
+
+### Pagination
+- Load first page (pageSize=50) on init
+- If total_count > 50, show a "Load More" button at the bottom
+- On Load More: fetch next page, append items to existing list
+- Update emotra_alerts_meta with the full merged list after load more
+
+---
+
+## Styling Rules
+
+- Use CSS variables exclusively — no hardcoded hex colors anywhere
+- Follow the exact same card style as history and compare pages
+- Severity badges and icons must use CSS variables — map severity levels to existing theme variables
+- All interactive states (hover, active) follow the global button styles already in styles.css
+- Fully responsive: single column on mobile, 3-column stats grid on desktop
+- No scale-on-hover effects
+- Subtle color-shift transitions only, max 200ms
+- Both light and dark mode must look intentional — test all CSS variables work in both themes
+- Skeleton loading uses --bg-surface with opacity pulse, no third-party skeleton library
+
+---
+
+## Rules
+- Read every file listed before writing any code — no exceptions
+- Reuse existing shared components — never rebuild what exists
+- Do not modify any component other than alerts.component and auth.service
+- Do not add any new dependencies or libraries
+- Signal-based state management throughout — use Angular signals for all UI state
+- Use takeUntilDestroyed for all page-load subscriptions
+- Fire-and-forget background saves do NOT use takeUntilDestroyed
+- No inline templates, no inline styles
+- No hardcoded hex colors anywhere in .html or .css files
+
+## Output
+List every file you created or modified and show the full content of each changed file.

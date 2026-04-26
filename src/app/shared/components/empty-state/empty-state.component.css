@@ -1,0 +1,15 @@
+/* Reset custom styles in favor of Tailwind CSS in the template */
+:host {
+  display: block;
+  width: 100%;
+}
+
+.shadow-inner-lg {
+  box-shadow: inset 0 2px 15px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Ensure projected SVGs inherit the correct size if not specified */
+::ng-deep .empty-state svg {
+  width: 100%;
+  height: 100%;
+}

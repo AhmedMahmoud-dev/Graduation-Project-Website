@@ -1,0 +1,5 @@
+/* Section header left accent */
+.section-header {
+  padding-left: 16px;
+  border-left: 4px solid var(--brand-primary);
+}

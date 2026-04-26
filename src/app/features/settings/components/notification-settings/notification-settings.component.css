@@ -1,0 +1,64 @@
+/* Optimized Backdrop Effects */
+.backdrop-blur-md {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Specific Card Styling */
+.bg-\[color\:var\(--color-surface\)\]\/80 {
+  background: color-mix(in srgb, var(--color-surface), transparent 20%);
+}
+
+/* Smooth Button Interactions - Rule Matched (No Scale) */
+button {
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Inactive Button Hover: Subtle color-mix shift */
+button:hover:not(:disabled):not(.active-setting):not(.active-danger) {
+  background-color: color-mix(in srgb, currentColor, transparent 92%) !important;
+  border-color: color-mix(in srgb, currentColor, transparent 70%) !important;
+}
+
+/* Active Button Hover: Vibrant brightness shift (NO GRAY) */
+button.active-setting:hover:not(:disabled) {
+  background-color: var(--color-primary) !important;
+  color: white !important;
+  filter: brightness(1.1) saturate(1.1);
+  box-shadow: 0 4px 15px color-mix(in srgb, var(--color-primary), transparent 80%);
+}
+
+button.active-danger:hover:not(:disabled) {
+  background-color: var(--color-danger) !important;
+  color: white !important;
+  filter: brightness(1.1) saturate(1.1);
+  box-shadow: 0 4px 15px color-mix(in srgb, var(--color-danger), transparent 80%);
+}
+
+/* Toggle Customization */
+.peer-checked\:bg-\[color\:var\(--color-primary\)\]:checked ~ div {
+  background-color: var(--color-primary);
+}
+
+/* Ensure font consistency */
+h2, h3, h4 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+}
+
+/* Button Group Focus States */
+button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+  .rounded-\[2\.5rem\] {
+    border-radius: 1.5rem;
+  }
+  
+  .p-8, .p-10 {
+    padding: 1.25rem;
+  }
+}

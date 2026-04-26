@@ -1,0 +1,18 @@
+<div
+  class="flex items-center gap-2 p-1.5 bg-[color:var(--bg-secondary)] rounded-2xl border border-[color:var(--border-color)] w-full sm:w-auto overflow-x-auto no-scrollbar shadow-sm">
+  @for (option of options; track option.value) {
+  <button #navButton (click)="selectOption(option, navButton)"
+    class="px-5 md:px-8 py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest md:tracking-[0.15em] transition-all flex items-center justify-center gap-2 shrink-0 whitespace-nowrap outline-none flex-1 sm:flex-none border border-transparent"
+    [class.opacity-50]="option.disabled" [class.cursor-not-allowed]="option.disabled"
+    [class.pointer-events-none]="option.disabled"
+    [class.bg-[color:var(--brand-primary)]]="!option.disabled && selectedValue === option.value"
+    [class.text-white]="!option.disabled && selectedValue === option.value"
+    [class.shadow-md]="!option.disabled && selectedValue === option.value"
+    [class.text-[color:var(--text-muted)]]="option.disabled || selectedValue !== option.value"
+    [class.hover:bg-[color:var(--bg-surface)]]="!option.disabled && selectedValue !== option.value"
+    [class.hover:text-[color:var(--text-primary)]]="!option.disabled && selectedValue !== option.value"
+    [class.hover:border-[color:var(--border-color)]]="!option.disabled && selectedValue !== option.value">
+    {{ option.label }}
+  </button>
+  }
+</div>

@@ -1,0 +1,160 @@
+@if (emotionA() && emotionB() && diffState()) {
+<div
+  class="grid grid-cols-1 md:grid-cols-3 gap-8 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-3xl p-6 md:p-10 shadow-sm relative overflow-hidden group">
+  <!-- subtle gradient glow around the edges -->
+  <div
+    class="absolute inset-0 bg-gradient-to-r from-[color:var(--emotion-a)]/5 via-transparent to-[color:var(--emotion-b)]/5 pointer-events-none"
+    [style.--emotion-a]="getEmotionColor(emotionA()?.label)" [style.--emotion-b]="getEmotionColor(emotionB()?.label)">
+  </div>
+
+  <!-- A Column -->
+  <div class="flex flex-col items-center justify-center text-center z-10">
+    <span class="text-[10px] font-black uppercase text-[color:var(--text-muted)] tracking-[0.2em] mb-4">First
+      Analysis</span>
+
+    <div class="text-4xl sm:text-5xl font-black tracking-tight mb-2 uppercase drop-shadow-sm"
+      [style.color]="getEmotionColor(emotionA()?.label)">
+      {{ emotionA()?.label }}
+    </div>
+
+    <div class="text-2xl font-black text-[color:var(--text-primary)] mb-4 flex items-baseline gap-1">
+      {{ emotionA()?.confidence | number:'1.1-1' }}<span class="text-base text-[color:var(--text-muted)]">%</span>
+    </div>
+
+    <div class="flex items-center gap-2 mb-4">
+      <span
+        class="px-3 py-1 bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] rounded-lg text-[10px] font-black uppercase tracking-widest"
+        [ngClass]="{
+              'text-[color:var(--emotion-success)]': emotionA()?.category === 'positive',
+              'text-[color:var(--emotion-danger)]': emotionA()?.category === 'negative',
+              'text-[color:var(--text-muted)]': emotionA()?.category === 'neutral'
+            }">
+        {{ emotionA()?.category }}
+      </span>
+    </div>
+
+    <div
+      class="text-[11px] font-bold text-[color:var(--text-muted)] mt-auto pt-4 border-t border-[color:var(--border-color)] w-full max-w-[200px]">
+      {{ dateA() | date:'medium' }}
+    </div>
+  </div>
+
+  <!-- Center Diff Column -->
+  <div
+    class="flex flex-col items-center justify-center text-center z-10 relative py-8 md:py-0 border-y md:border-y-0 md:border-x border-[color:var(--border-color)] border-dashed border-opacity-60 bg-[color:var(--bg-surface)]/50 rounded-2xl md:rounded-none md:bg-transparent">
+    <span class="text-xs font-black uppercase text-[color:var(--text-muted)] tracking-widest mb-6">Change</span>
+
+    @if (diffState()?.isSameEmotion) {
+    <div class="flex flex-col items-center">
+      <div
+        class="w-12 h-12 rounded-full border-2 border-[color:var(--border-color)] flex items-center justify-center text-[color:var(--text-muted)] mb-3 bg-[color:var(--bg-surface)]">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4">
+          </path>
+        </svg>
+      </div>
+      <span class="text-sm font-black uppercase tracking-wider text-[color:var(--text-muted)]">Same Emotion</span>
+    </div>
+    } @else {
+    <div class="flex items-center justify-center gap-3 w-full max-w-[200px] mb-4">
+      <span class="text-xs font-black uppercase truncate flex-1 text-right"
+        [style.color]="getEmotionColor(emotionA()?.label)">{{ emotionA()?.label }}</span>
+      <svg class="w-5 h-5 text-[color:var(--text-muted)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+        stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+      </svg>
+      <span class="text-xs font-black uppercase truncate flex-1 text-left"
+        [style.color]="getEmotionColor(emotionB()?.label)">{{ emotionB()?.label }}</span>
+    </div>
+
+    <!-- Shift State Label -->
+    <div class="mb-4">
+      @if (diffState()?.shiftState === 'Improved') {
+      <span
+        class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-500 text-xs font-black uppercase tracking-widest border border-emerald-500/20">
+        <svg class="shrink-0" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          stroke-width="3">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+        </svg>
+        <span>Improved</span>
+      </span>
+      } @else if (diffState()?.shiftState === 'Worsened') {
+      <span
+        class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-500/10 text-red-500 text-xs font-black uppercase tracking-widest border border-red-500/20">
+        <svg class="shrink-0" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          stroke-width="3">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+        </svg>
+        <span>Worsened</span>
+      </span>
+      } @else if (diffState()?.shiftState === 'Declined') {
+      <span
+        class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-500/10 text-red-500 text-xs font-black uppercase tracking-widest border border-red-500/20">
+        <svg class="shrink-0" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          stroke-width="3">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+        </svg>
+        <span>Declined</span>
+      </span>
+      } @else if (diffState()?.shiftState === 'Stabilized') {
+      <span
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[color:var(--bg-secondary)] text-[color:var(--text-muted)] text-xs font-black uppercase tracking-widest border border-[color:var(--border-color)]">
+        Stabilized
+      </span>
+      } @else if (diffState()?.shiftState === 'No Change') {
+      <span
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[color:var(--bg-secondary)] text-[color:var(--text-muted)] text-xs font-black uppercase tracking-widest border border-[color:var(--border-color)]">
+        No Change
+      </span>
+      } @else {
+      <span
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[color:var(--bg-secondary)] text-[color:var(--text-muted)] text-xs font-black uppercase tracking-widest border border-[color:var(--border-color)]">
+        Similar Shift
+      </span>
+      }
+    </div>
+    }
+
+    <!-- Confidence Delta -->
+    <div class="mt-2 flex items-center justify-center gap-2">
+      <span class="text-[10px] font-black uppercase tracking-widest opacity-50">Score Delta:</span>
+      <span class="text-xs font-black uppercase px-2 rounded-lg" [style.color]="diffState()?.deltaColor">
+        {{ diffState()!.confidenceDelta > 0 ? '+' : '' }}{{ diffState()!.confidenceDelta | number:'1.1-1' }}%
+      </span>
+    </div>
+  </div>
+
+  <!-- B Column -->
+  <div class="flex flex-col items-center justify-center text-center z-10">
+    <span class="text-[10px] font-black uppercase text-[color:var(--text-muted)] tracking-[0.2em] mb-4">Second
+      Analysis</span>
+
+    <div class="text-4xl sm:text-5xl font-black tracking-tight mb-2 uppercase drop-shadow-sm"
+      [style.color]="getEmotionColor(emotionB()?.label)">
+      {{ emotionB()?.label }}
+    </div>
+
+    <div class="text-2xl font-black text-[color:var(--text-primary)] mb-4 flex items-baseline gap-1">
+      {{ emotionB()?.confidence | number:'1.1-1' }}<span class="text-base text-[color:var(--text-muted)]">%</span>
+    </div>
+
+    <div class="flex items-center gap-2 mb-4">
+      <span
+        class="px-3 py-1 bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] rounded-lg text-[10px] font-black uppercase tracking-widest"
+        [ngClass]="{
+              'text-[color:var(--emotion-success)]': emotionB()?.category === 'positive',
+              'text-[color:var(--emotion-danger)]': emotionB()?.category === 'negative',
+              'text-[color:var(--text-muted)]': emotionB()?.category === 'neutral'
+            }">
+        {{ emotionB()?.category }}
+      </span>
+    </div>
+
+    <div
+      class="text-[11px] font-bold text-[color:var(--text-muted)] mt-auto pt-4 border-t border-[color:var(--border-color)] w-full max-w-[200px]">
+      {{ dateB() | date:'medium' }}
+    </div>
+  </div>
+
+</div>
+}

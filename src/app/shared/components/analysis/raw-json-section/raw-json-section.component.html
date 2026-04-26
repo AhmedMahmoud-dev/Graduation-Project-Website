@@ -1,0 +1,40 @@
+<div>
+  <button (click)="toggleRaw()"
+    class="w-full flex items-center justify-between p-5 rounded-2xl font-semibold transition-colors"
+    style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary)">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+        style="background: var(--bg-surface, var(--bg-secondary))">
+        <svg class="w-4 h-4" style="color: var(--text-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+        </svg>
+      </div>
+      <span class="font-bold text-sm">{{ showRaw() ? 'Hide Raw JSON' : 'Show Raw JSON' }}</span>
+    </div>
+    <svg class="w-5 h-5 transition-transform duration-300" [class.rotate-180]="showRaw()"
+      style="color: var(--text-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
+
+  @if (showRaw()) {
+    <div class="mt-4 code-block">
+      <button (click)="copyJson()" class="code-copy-btn code-copy-float" [class.is-copied]="copiedJson()">
+        @if (!copiedJson()) {
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+        }
+        @if (copiedJson()) {
+          <svg class="w-4 h-4" style="color:var(--color-success)" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        }
+      </button>
+      <pre class="code-pre"><code [innerHTML]="highlightedJson()"></code></pre>
+    </div>
+  }
+</div>

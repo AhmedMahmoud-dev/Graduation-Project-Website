@@ -1,0 +1,228 @@
+<div class="min-h-screen flex flex-col bg-[color:var(--color-bg)] text-[color:var(--color-text)]">
+  <!-- Shared Page Header -->
+  <app-page-header title="Alerts" subtitle="Security & Monitoring"
+    description="Intelligent emotional pattern notifications and real-time triggers.">
+  </app-page-header>
+
+  <main class="flex-1 px-4 md:px-8 max-w-7xl mx-auto w-full py-8">
+
+
+    @if (!isLoading() && stats().total_alerts > 0) {
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <!-- Unread Alerts -->
+      <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] p-6 rounded-3xl shadow-sm">
+        <h3 class="text-xs font-black uppercase tracking-widest text-[color:var(--text-muted)] mb-1">Unread Alerts</h3>
+        <div class="text-4xl font-black text-[color:var(--text-primary)] mb-1">{{ stats().unread_alerts }}</div>
+        <p class="text-xs font-bold text-[color:var(--text-muted)] opacity-60">Require attention</p>
+      </div>
+
+      <!-- Critical Alerts -->
+      <div
+        class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] p-6 rounded-3xl shadow-sm border-l-4"
+        style="border-left-color: var(--emotion-anger)">
+        <h3 class="text-xs font-black uppercase tracking-widest text-[color:var(--text-muted)] mb-1">Critical Alerts
+        </h3>
+        <div class="text-4xl font-black text-[color:var(--emotion-anger)] mb-1">{{ stats().critical_alerts }}</div>
+        <p class="text-xs font-bold text-[color:var(--text-muted)] opacity-60">High priority</p>
+      </div>
+
+      <!-- Total Alerts -->
+      <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] p-6 rounded-3xl shadow-sm">
+        <h3 class="text-xs font-black uppercase tracking-widest text-[color:var(--text-muted)] mb-1">Total Alerts</h3>
+        <div class="text-4xl font-black text-[color:var(--text-primary)] mb-1">{{ stats().total_alerts }}</div>
+        <p class="text-xs font-bold text-[color:var(--text-muted)] opacity-60">All time</p>
+      </div>
+    </div>
+
+    <!-- Filters Bar -->
+    <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] p-4 rounded-3xl shadow-sm mb-8">
+      <div class="flex flex-col lg:flex-row items-center gap-4">
+        <!-- Search -->
+        <div class="flex-1 w-full relative">
+          <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[color:var(--text-muted)] opacity-40"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
+            placeholder="Search alerts..."
+            class="w-full pl-12 pr-4 py-3 rounded-2xl bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] focus:border-[color:var(--brand-primary)] outline-none text-sm font-medium transition-all">
+        </div>
+
+        <!-- Additional Filters -->
+        <div class="flex items-center gap-4 w-full lg:w-auto">
+          <!-- Severity Filter -->
+          <div class="w-full sm:w-48">
+            <app-dropdown-menu [options]="severityOptions" [selectedValue]="severityFilter()"
+              (selectedValueChange)="severityFilter.set($event)">
+            </app-dropdown-menu>
+          </div>
+
+          <!-- Hide Read Toggle -->
+          <button (click)="hideRead.set(!hideRead())"
+            class="shrink-0 inline-flex items-center justify-center gap-2 h-[42px] px-5 rounded-2xl bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] text-[10px] font-black uppercase tracking-widest hover:border-[color:var(--brand-primary)] transition-all sm:h-[46px]">
+            <span class="w-2 h-2 rounded-full" [class.bg-green-500]="hideRead()"
+              [class.bg-gray-400]="!hideRead()"></span>
+            <span class="hidden sm:inline">{{ hideRead() ? 'Show All' : 'Hide Read' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Alerts List -->
+    <div class="space-y-4">
+      <!-- Loading Skeletons -->
+      @if (isLoading()) {
+      <div class="grid grid-cols-1 gap-4">
+        @for (i of [1,2,3]; track i) {
+        <div
+          class="bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] rounded-3xl p-6 animate-pulse">
+          <div class="flex gap-4">
+            <div class="w-12 h-12 bg-[color:var(--border-color)] rounded-2xl"></div>
+            <div class="flex-1 space-y-3">
+              <div class="h-4 bg-[color:var(--border-color)] rounded w-3/4"></div>
+              <div class="h-3 bg-[color:var(--border-color)] rounded w-1/4"></div>
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+      } @else if (filteredAlerts().length > 0) {
+      @for (alert of filteredAlerts(); track alert.id) {
+      <div
+        class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-3xl p-6 transition-all relative overflow-hidden flex flex-col md:flex-row md:items-start gap-6"
+        [class.opacity-60]="alert.resolved" [style.--severity-color]="getSeverityColor(alert.severity)">
+
+        <!-- Left: Icon -->
+        <div class="shrink-0">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner-sm"
+            [style.background]="'color-mix(in srgb, var(--severity-color), transparent 85%)'">
+            @if (alert.severity === 'critical' || alert.severity === 'high') {
+            <svg class="w-7 h-7" [style.color]="'var(--severity-color)'" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            } @else {
+            <svg class="w-7 h-7" [style.color]="'var(--severity-color)'" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            }
+          </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="flex-1 min-w-0">
+          <!-- Top Row: Title + Status + Severity Badge -->
+          <div class="flex items-start justify-between gap-4 mb-3">
+            <div class="min-w-0">
+              <div class="flex items-center gap-3 flex-wrap mb-1">
+                <h2 class="text-sm font-black truncate text-[color:var(--text-primary)]">
+                  {{ alert.message }}
+                </h2>
+                @if (!alert.resolved) {
+                <span
+                  class="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-md bg-[color:var(--brand-primary)] text-white shadow-sm">New</span>
+                }
+              </div>
+              <div class="flex items-center gap-2 text-xs font-bold text-[color:var(--text-muted)] opacity-60">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {{ formatDate(alert.triggered_at) }}
+              </div>
+            </div>
+            <!-- Severity Badge -->
+            <div
+              class="hidden sm:block shrink-0 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border"
+              [style.border-color]="'color-mix(in srgb, var(--severity-color), transparent 60%)'"
+              [style.background]="'color-mix(in srgb, var(--severity-color), transparent 92%)'"
+              [style.color]="'var(--severity-color)'">
+              {{ alert.severity }}
+            </div>
+          </div>
+
+          <!-- Recommended Action -->
+          <div class="p-4 rounded-2xl bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] mb-5">
+            <div
+              class="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-muted)] opacity-40 mb-1">
+              Recommended Action</div>
+            <p class="text-sm font-medium text-[color:var(--text-primary)]">{{ alert.recommended_action }}</p>
+          </div>
+
+          <!-- Actions Row -->
+          <div class="flex items-center gap-3 flex-wrap">
+            @if (!alert.resolved) {
+            <button (click)="resolveAlert(alert.id)" [disabled]="isResolving() === alert.id"
+              class="btn-primary h-11 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md flex items-center gap-2">
+              @if (isResolving() === alert.id) {
+              <svg class="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+              </svg>
+              } @else {
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+              </svg>
+              }
+              Mark as Read
+            </button>
+            }
+            <button (click)="viewSession(alert)"
+              class="btn-secondary h-11 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              View Session
+            </button>
+            <div class="flex-1"></div>
+            <button (click)="deleteAlert(alert.id)"
+              class="w-11 h-11 rounded-xl flex items-center justify-center text-[color:var(--color-danger)] opacity-40 hover:opacity-100 hover:bg-red-500/10 transition-all">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- Load More -->
+      @if (canLoadMore()) {
+      <div class="pt-8 flex justify-center">
+        <button (click)="loadMore()" [disabled]="isLoadingMore()"
+          class="px-8 py-4 rounded-2xl bg-[color:var(--bg-card)] border border-[color:var(--border-color)] text-xs font-black uppercase tracking-widest hover:border-[color:var(--brand-primary)] transition-all disabled:opacity-50">
+          {{ isLoadingMore() ? 'Loading...' : 'Load More Alerts' }}
+        </button>
+      </div>
+      }
+      } @else {
+      <!-- Empty State -->
+      <app-empty-state minHeight="40vh">
+        <svg empty-icon fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <ng-container empty-msg>No alerts found</ng-container>
+        <ng-container empty-hint>
+          {{ hideRead() ? 'All caught up! No unread alerts matching your filters.' : 'Your alert list is empty. Triggers
+          will appear here during analysis.' }}
+        </ng-container>
+      </app-empty-state>
+      }
+    </div>
+  </main>
+
+  <app-footer-section></app-footer-section>
+</div>

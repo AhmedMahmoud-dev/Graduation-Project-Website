@@ -1,0 +1,47 @@
+<!-- Header bar with title + copy -->
+@if (title()) {
+<div class="code-header">
+  <div class="code-header-icon">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+    </svg>
+  </div>
+  <span class="code-header-title">{{ title() }}</span>
+  <button class="code-copy-btn" [class.is-copied]="copied()" (click)="copyCode()">
+    @if (copied()) {
+    <svg class="w-4 h-4" style="color:var(--color-success)" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+      stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+    <span style="color:var(--color-success)">Copied!</span>
+    } @else {
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    </svg>
+    <span>Copy</span>
+    }
+  </button>
+</div>
+}
+
+<!-- Code block -->
+<div class="code-block" [class.has-header]="!!title()">
+  <!-- Floating copy button (when no header) -->
+  @if (!title()) {
+  <button class="code-copy-btn code-copy-float" [class.is-copied]="copied()" (click)="copyCode()">
+    @if (copied()) {
+    <svg class="w-4 h-4" style="color:var(--color-success)" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+    } @else {
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    </svg>
+    }
+  </button>
+  }
+
+  <pre class="code-pre" [innerHTML]="highlightedCode()"></pre>
+</div>

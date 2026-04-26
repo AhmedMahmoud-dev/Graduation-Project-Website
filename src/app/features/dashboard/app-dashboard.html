@@ -1,0 +1,258 @@
+<div class="min-h-screen flex flex-col bg-[color:var(--color-bg)] text-[color:var(--color-text)]">
+
+  <!-- Page Header -->
+  <app-page-header title="Insights Hub" subtitle="Intelligence Dashboard"
+    description="Analytics, trends, and emotional summaries across all your text and audio analysis sessions.">
+
+    @if (stats()) {
+    <div actions class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+      <a routerLink="/analysis/text" class="w-full sm:w-auto btn-primary px-8 py-4 text-sm text-center">
+        New Text Analysis
+      </a>
+      <a routerLink="/history" class="w-full sm:w-auto btn-secondary px-8 py-4 text-sm text-center">
+        View History
+      </a>
+    </div>
+    }
+  </app-page-header>
+
+  <!-- Loading or Loaded Content -->
+  @if (isLoading()) {
+  <div class="flex-1 flex items-center justify-center p-12 bg-[color:var(--bg-secondary)]">
+    <app-loading-state message="Gathering Emotional Insights..." [fullPage]="false"></app-loading-state>
+  </div>
+  } @else {
+  @if (stats(); as s) {
+  <!-- Grid Level 1: Global Platform Stats -->
+  <section class="py-12 px-6 md:px-12 border-b border-[color:var(--border-color)]"
+    style="background: var(--bg-secondary)">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Total Analyses -->
+      <div class="rounded-3xl p-6 sm:p-8 border border-[color:var(--border-color)] flex flex-col"
+        style="background: var(--bg-card); box-shadow: var(--shadow)">
+        <div class="w-12 h-12 flex items-center justify-center mb-6 text-[color:var(--brand-primary)]">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12h10m-10 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <div class="mt-auto">
+          <span class="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-muted)] block mb-1">Total
+            Logs</span>
+          <span class="text-3xl sm:text-4xl font-black text-[color:var(--text-primary)] tracking-tighter">{{ s.total
+            }}</span>
+          <p class="mt-3 text-[10px] font-bold text-[color:var(--text-muted)] uppercase tracking-wide">
+            {{ s.textCount }} Text, {{ s.audioCount }} Audio
+          </p>
+        </div>
+      </div>
+      <!-- Dominant Emotion -->
+      <div class="rounded-3xl p-6 sm:p-8 border border-[color:var(--border-color)] flex flex-col"
+        style="background: var(--bg-card); box-shadow: var(--shadow)">
+        <div class="w-12 h-12 flex items-center justify-center mb-6" [style.color]="getEmotionColor(s.mostCommonLabel)">
+          <app-emotion-icon [emotion]="s.mostCommonIcon" [size]="24"></app-emotion-icon>
+        </div>
+        <div class="mt-auto">
+          <span class="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-muted)] block mb-1">Top
+            Resonance</span>
+          <span class="text-3xl sm:text-4xl font-black tracking-tighter capitalize"
+            [style.color]="getEmotionColor(s.mostCommonLabel)">
+            {{ s.mostCommonLabel }}
+          </span>
+          <p class="mt-3 text-[10px] font-bold text-[color:var(--text-muted)] uppercase tracking-wide">Most frequent
+            detected</p>
+        </div>
+      </div>
+      <!-- Confidence Average -->
+      <div class="rounded-3xl p-6 sm:p-8 border border-[color:var(--border-color)] flex flex-col"
+        style="background: var(--bg-card); box-shadow: var(--shadow)">
+        <div class="w-12 h-12 flex items-center justify-center mb-6 text-[color:var(--accent)]">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="mt-auto">
+          <span class="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-muted)] block mb-1">Avg
+            Confidence</span>
+          <span class="text-3xl sm:text-4xl font-black text-[color:var(--text-primary)] tracking-tighter">{{
+            s.avgConfidence }}%</span>
+          <p class="mt-3 text-[10px] font-bold text-[color:var(--text-muted)] uppercase tracking-wide">Across all
+            models</p>
+        </div>
+      </div>
+      <!-- Total Compute Volume -->
+      <div class="rounded-3xl p-6 sm:p-8 border border-[color:var(--border-color)] flex flex-col"
+        style="background: var(--bg-card); box-shadow: var(--shadow)">
+        <div class="w-12 h-12 flex items-center justify-center mb-6 text-[color:var(--text-muted)]">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+        </div>
+        <div class="mt-auto">
+          <span class="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-muted)] block mb-1">Data
+            Evaluated</span>
+          <span class="text-2xl sm:text-3xl font-black text-[color:var(--text-primary)] tracking-tighter">{{
+            s.totalTokens | number }}</span>
+          <span
+            class="text-[10px] font-bold text-[color:var(--text-muted)] uppercase tracking-widest ml-1">Tokens</span>
+          <p class="mt-3 text-[10px] font-bold text-[color:var(--text-muted)] uppercase tracking-wide">
+            Plus {{ s.totalDurationMinutes }}m {{ s.totalDurationSeconds }}s Audio Processed
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- ── Emotion Journey & Deep Dive ─────────────────────────────────── -->
+  <app-emotion-history-timeline></app-emotion-history-timeline>
+  <!-- Recent Processing Feed -->
+  <section class="py-12 px-6 md:px-12 border-b border-[color:var(--border-color)]"
+    style="background: var(--bg-primary)">
+    <div class="max-w-7xl mx-auto w-full min-w-0">
+      <div class="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h3 class="text-2xl font-black tracking-tight" style="color: var(--text-primary)">Recent Processing Feed
+          </h3>
+          <p class="text-xs font-bold text-[color:var(--text-muted)] uppercase tracking-widest mt-2">Latest verified
+            evaluations</p>
+        </div>
+        <a routerLink="/history"
+          class="text-xs font-bold text-[color:var(--brand-primary)] uppercase tracking-widest py-2 hover:opacity-70 transition-opacity">
+          View Full Archive →
+        </a>
+      </div>
+      <div class="space-y-4">
+        @for (activity of s.recentActivity; track activity.clientId) {
+        <div class="w-full rounded-2xl p-5 border flex flex-col sm:flex-row sm:items-center gap-5"
+          [style.background]="'var(--bg-card)'"
+          [style.borderColor]="'color-mix(in srgb, ' + getEmotionColor(activity.label) + ', transparent 50%)'">
+          <div class="w-14 h-14 shrink-0 flex items-center justify-center"
+            [style.color]="getEmotionColor(activity.label)">
+            <app-emotion-icon [emotion]="activity.label" [size]="28"></app-emotion-icon>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-3 mb-1">
+              <span class="text-lg font-black uppercase tracking-tight truncate"
+                [style.color]="getEmotionColor(activity.label)">
+                {{ activity.label }}
+              </span>
+              <span class="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest"
+                style="background: var(--bg-secondary); color: var(--text-muted);">
+                {{ activity.type === 'text' ? 'Text' : 'Audio' }}
+              </span>
+            </div>
+            <p class="text-sm font-medium italic truncate" style="color: var(--text-primary)">
+              "{{ activity.snippet }}"
+            </p>
+          </div>
+          <div
+            class="shrink-0 flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-1 border-t sm:border-t-0 border-[color:var(--border-color)] pt-3 sm:pt-0 mt-2 sm:mt-0">
+            <span class="text-[10px] font-black uppercase tracking-widest opacity-40">Confidence</span>
+            <span class="text-lg font-bold" style="color: var(--text-primary)">{{ activity.confidence | number:'1.1-1'
+              }}%</span>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+  </section>
+  <!-- Grid Level 2: Timeline & Distribution -->
+  <section class="py-12 pb-24 px-6 md:px-12" style="background: var(--bg-secondary)">
+    <div class="max-w-7xl mx-auto space-y-12">
+      <!-- Precision Trend -->
+      <div>
+        <div class="mb-6">
+          <h3 class="text-2xl font-black mb-1 tracking-tight" style="color: var(--text-primary)">Precision Trend</h3>
+          <p class="text-[10px] font-bold text-[color:var(--text-muted)] uppercase tracking-widest">Historical
+            confidence accuracy over time</p>
+        </div>
+        <div class="rounded-3xl p-6 sm:p-8 border border-[color:var(--border-color)]"
+          style="background: var(--bg-card); box-shadow: var(--shadow)">
+          <app-emotion-timeline id="precision-trend-chart" [data]="activityData()" class="block w-full min-h-[300px] h-[320px]">
+          </app-emotion-timeline>
+        </div>
+      </div>
+      <!-- Distribution & Sentiment -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Emotion Distribution Pie -->
+        <div class="lg:col-span-2 flex flex-col">
+          <div class="mb-8">
+            <h3 class="text-2xl font-black mb-1 tracking-tight" style="color: var(--text-primary)">Global Distribution
+            </h3>
+            <p class="text-[10px] font-bold text-[color:var(--text-muted)] uppercase tracking-widest">Total emotional
+              presence landscape</p>
+          </div>
+          <div class="flex-1 rounded-3xl p-8 border border-[color:var(--border-color)] flex items-center justify-center"
+            style="background: var(--bg-card); box-shadow: var(--shadow)">
+            <app-emotion-distribution id="global-distribution-chart" [data]="distributionData()" viewType="pie"
+              class="block w-full min-h-[350px] h-[450px]">
+            </app-emotion-distribution>
+          </div>
+        </div>
+        <!-- Sentiment Breakdown -->
+        <div class="lg:col-span-1 flex flex-col">
+          <div class="mb-8">
+            <h3 class="text-2xl font-black mb-1 tracking-tight" style="color: var(--text-primary)">Sentiment Map</h3>
+            <p class="text-[10px] font-bold text-[color:var(--text-muted)] uppercase tracking-widest">Higher-level
+              resonance</p>
+          </div>
+          <div class="flex-1 rounded-3xl p-8 border border-[color:var(--border-color)] flex flex-col justify-center"
+            style="background: var(--bg-card); box-shadow: var(--shadow)">
+            <div class="space-y-8 flex-1 flex flex-col justify-center w-full">
+              @for (cat of ['positive', 'negative', 'neutral']; track cat) {
+              <div class="space-y-4">
+                <div class="flex justify-between items-center px-1">
+                  <span class="text-xs font-black uppercase tracking-widest opacity-60">{{ cat }}</span>
+                  <span class="text-lg font-black">{{ (s.categoryShare[cat] / s.total * 100) | number:'1.0-0'
+                    }}%</span>
+                </div>
+                <div class="h-3 w-full rounded-full bg-[color:var(--bg-secondary)] overflow-hidden">
+                  <div class="h-full rounded-full transition-all duration-1000"
+                    [style.width.%]="s.categoryShare[cat] / s.total * 100"
+                    [style.background]="cat === 'positive' ? 'var(--color-success)' : cat === 'negative' ? 'var(--color-danger)' : 'var(--text-muted)'">
+                  </div>
+                </div>
+              </div>
+              }
+            </div>
+            <div class="mt-10 pt-8 border-t border-[color:var(--border-color)]">
+              <p class="text-xs leading-relaxed font-medium text-[color:var(--text-muted)]">
+                Your dataset currently leans towards a <strong class="font-bold opacity-100"
+                  [style.color]="getEmotionColor(s.mostCommonLabel)">{{ s.mostCommonLabel }}</strong> tendency,
+                creating a profile dominated by
+                <strong class="font-bold opacity-100 text-[color:var(--text-primary)]">{{ s.categoryShare['positive']
+                  > s.categoryShare['negative'] ? 'positivity' : 'emotional intensity' }}</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  } @else {
+  <div class="flex-1 bg-[color:var(--bg-secondary)]">
+    <app-empty-state [isFullPage]="true">
+      <svg empty-icon fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+      <ng-container empty-msg>Empty Insights</ng-container>
+      <ng-container empty-hint>
+        There isn't enough data to generate charts or insights yet. Complete a few analysis sessions to unlock the
+        dashboard.
+      </ng-container>
+      <div empty-actions class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
+        <a routerLink="/analysis/text" class="w-full sm:w-auto btn-primary px-8 py-4 text-sm text-center">New Text
+          Analysis</a>
+        <a routerLink="/analysis/audio" class="w-full sm:w-auto btn-secondary px-8 py-4 text-sm text-center">New Audio
+          Analysis</a>
+      </div>
+    </app-empty-state>
+  </div>
+  }
+  }
+
+
+  <app-footer-section></app-footer-section>
+</div>

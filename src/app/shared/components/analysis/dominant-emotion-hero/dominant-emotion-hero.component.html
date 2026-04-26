@@ -1,0 +1,50 @@
+<div
+  class="rounded-2xl p-5 min-[480px]:p-7 flex flex-col min-[480px]:flex-row items-center min-[480px]:items-start gap-5 min-[480px]:gap-7 w-full min-w-0"
+  [style.background]="heroCardBg()" style="border: 1px solid var(--border-color)">
+
+  <!-- Emoji -->
+  <div class="shrink-0 w-20 h-20 min-[480px]:w-24 min-[480px]:h-24 rounded-2xl flex items-center justify-center"
+    [style.background]="'color-mix(in srgb, ' + colorService.getColor(emotionLabel()) + ', transparent 88%)'">
+    <app-emotion-icon [emotion]="emotionLabel()" [size]="48"></app-emotion-icon>
+  </div>
+
+  <!-- Details -->
+  <div class="flex-1 min-w-0 text-center min-[480px]:text-left w-full">
+    <p class="text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">
+      {{ sectionTitle() }}
+    </p>
+    <h2 class="text-2xl min-[480px]:text-3xl md:text-4xl font-black tracking-tight mb-3 uppercase break-words min-w-0"
+      [style.color]="colorService.getColor(emotionLabel())">
+      {{ emotionLabel() }}
+    </h2>
+
+    <div class="flex flex-wrap items-center gap-3 justify-center min-[480px]:justify-start">
+      <span class="text-xl min-[480px]:text-2xl font-bold" style="color: var(--text-primary)">
+        {{ confidencePercent() | number:'1.1-1' }}%
+        <span class="text-sm font-medium" style="color: var(--text-muted)">confidence</span>
+      </span>
+      <span class="category-badge" [attr.data-category]="category()">
+        {{ category() }}
+      </span>
+    </div>
+
+    <!-- Confidence bar -->
+    @if (showConfidenceBar()) {
+    <div class="mt-4 w-full h-2 rounded-full overflow-hidden" style="background: var(--border-color)">
+      <div class="h-full rounded-full transition-all duration-1000" [style.width.%]="confidencePercent()"
+        [style.background]="colorService.getColor(emotionLabel())"></div>
+    </div>
+    }
+
+    <!-- Truncation warning -->
+    @if (truncationWarning()) {
+    <div class="mt-4 flex items-center gap-2 text-xs" style="color: #fd9644">
+      <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+      {{ truncationWarning() }}
+    </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,84 @@
+<div
+  class="flex-1 flex flex-col items-center justify-center p-6 md:p-12 w-full h-full text-center relative select-none">
+  <!-- Glowing subtle background effect -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div
+      class="absolute top-[20%] left-[50%] -translate-x-1/2 w-full max-w-[600px] aspect-square bg-[color:var(--brand-primary)] opacity-[0.03] rounded-full blur-[100px]">
+    </div>
+  </div>
+
+  <div class="z-10 flex flex-col items-center justify-center w-full max-w-2xl mx-auto">
+    <!-- Premium Spinner -->
+    <div class="mb-8 md:mb-10 relative">
+      <div class="spinner-ring"></div>
+      <div class="spinner-glow"></div>
+    </div>
+
+    <!-- Title and message to explicitly indicate loading -->
+    <h2 class="text-xl sm:text-2xl md:text-4xl font-bold mb-3 md:mb-4 tracking-wide text-[color:var(--text-primary)]">
+      Analyzing Wait Please...
+    </h2>
+    <p
+      class="text-[color:var(--text-muted)] text-xs sm:text-sm md:text-base mb-8 md:mb-12 max-w-lg mx-auto leading-relaxed px-4">
+      We are processing your data. Our AI models are running the analysis. This takes just a few moments, please don't
+      close the page.
+    </p>
+
+    <!-- Tips Section -->
+    <div (mousedown)="pause()" (touchstart)="pause()" (mouseup)="resume()" (touchend)="resume()" (mouseleave)="resume()"
+      class="w-full bg-[color:var(--bg-card)] backdrop-blur-md border border-[color:var(--border-color)] rounded-3xl p-6 md:p-8 relative shadow-[var(--shadow-hover)] overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+
+      <!-- Header of Tips Area -->
+      <div
+        class="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] mb-6 opacity-80 flex items-center justify-center gap-2 text-[color:var(--brand-primary)]">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        {{ title }}
+      </div>
+
+      <!-- Tips Container -->
+      <div class="relative w-full h-[140px] xs:h-[110px] sm:h-[80px] flex items-center justify-center">
+        @for (tip of tips; track tip; let i = $index) {
+        <div class="tip-container absolute inset-0 flex items-center justify-center w-full px-4"
+          [class.active]="i === currentTipIndex && !isPaused" [class.paused]="i === currentTipIndex && isPaused"
+          [class.previous]="i === previousTipIndex">
+          <p
+            class="text-sm xs:text-base sm:text-lg md:text-xl font-medium leading-relaxed m-0 text-center text-[color:var(--text-primary)]">
+            {{ tip }}
+          </p>
+        </div>
+        }
+      </div>
+
+      <!-- Indicator / Play State -->
+      <div
+        class="absolute top-4 right-5 flex items-center text-[color:var(--text-muted)] transition-opacity duration-300">
+        @if (!isPaused) {
+        <span
+          class="text-[9px] sm:text-[10px] uppercase font-black flex items-center gap-1.5 opacity-40 group-hover:opacity-100 transition-opacity">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+          </svg>
+          Hold to pause
+        </span>
+        } @else {
+        <span
+          class="text-[9px] sm:text-[10px] uppercase font-black flex items-center gap-1.5 text-[color:var(--brand-primary)] animate-pulse">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M6 4h4v16H6zm8 0h4v16h-4z" />
+          </svg>
+          Paused
+        </span>
+        }
+      </div>
+
+      <!-- Bottom Decorative Line -->
+      <div
+        class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[color:var(--brand-primary)] to-transparent opacity-30">
+      </div>
+    </div>
+  </div>
+</div>

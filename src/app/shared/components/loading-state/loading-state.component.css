@@ -1,0 +1,18 @@
+/* loading-state.component.css */
+.logo-animate-path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: draw-logo 2s ease-in-out infinite;
+}
+
+@keyframes draw-logo {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  50% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -100;
+  }
+}

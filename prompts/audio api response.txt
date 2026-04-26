@@ -1,0 +1,265 @@
+{
+    "audio_filename": "1774303416397_test audio.mp3",
+    "transcribed_text": " Hey, hello, my name is Ahmed Mahmoud.",
+    "audio_emotion": {
+        "timeline": [
+            {
+                "segment_index": 0,
+                "timestamp_offset": 0.0,
+                "probabilities": {
+                    "anger": 0.3493,
+                    "disgust": 0.0699,
+                    "fear": 0.0005,
+                    "joy": 0.4721,
+                    "neutral": 0.011,
+                    "sadness": 0.0026,
+                    "surprise": 0.0944
+                },
+                "dominant": {
+                    "label": "joy",
+                    "confidence": 0.4721,
+                    "category": "positive"
+                },
+                "intensity_weight": 1.7095991821658245,
+                "frame_reference": "audio_seg_0"
+            },
+            {
+                "segment_index": 1,
+                "timestamp_offset": 1.0,
+                "probabilities": {
+                    "anger": 0.5423,
+                    "disgust": 0.1085,
+                    "fear": 0.0052,
+                    "joy": 0.2522,
+                    "neutral": 0.0153,
+                    "sadness": 0.0261,
+                    "surprise": 0.0504
+                },
+                "dominant": {
+                    "label": "anger",
+                    "confidence": 0.5423,
+                    "category": "negative"
+                },
+                "intensity_weight": 1.8248140829978023,
+                "frame_reference": "audio_seg_1"
+            },
+            {
+                "segment_index": 2,
+                "timestamp_offset": 2.0,
+                "probabilities": {
+                    "anger": 0.4163,
+                    "disgust": 0.0833,
+                    "fear": 0.0018,
+                    "joy": 0.4042,
+                    "neutral": 0.0045,
+                    "sadness": 0.0091,
+                    "surprise": 0.0808
+                },
+                "dominant": {
+                    "label": "anger",
+                    "confidence": 0.4163,
+                    "category": "negative"
+                },
+                "intensity_weight": 1.768907927916695,
+                "frame_reference": "audio_seg_2"
+            },
+            {
+                "segment_index": 3,
+                "timestamp_offset": 3.0,
+                "probabilities": {
+                    "anger": 0.5261,
+                    "disgust": 0.1052,
+                    "fear": 0.0067,
+                    "joy": 0.2638,
+                    "neutral": 0.0116,
+                    "sadness": 0.0337,
+                    "surprise": 0.0528
+                },
+                "dominant": {
+                    "label": "anger",
+                    "confidence": 0.5261,
+                    "category": "negative"
+                },
+                "intensity_weight": 1.3242296994213292,
+                "frame_reference": "audio_seg_3"
+            },
+            {
+                "segment_index": 4,
+                "timestamp_offset": 4.0,
+                "probabilities": {
+                    "anger": 0.1544,
+                    "disgust": 0.0309,
+                    "fear": 0.0356,
+                    "joy": 0.4996,
+                    "neutral": 0.0019,
+                    "sadness": 0.1778,
+                    "surprise": 0.0999
+                },
+                "dominant": {
+                    "label": "joy",
+                    "confidence": 0.4996,
+                    "category": "positive"
+                },
+                "intensity_weight": 1.0787365593231812,
+                "frame_reference": "audio_seg_4"
+            }
+        ],
+        "combined_probs": [
+            0.41349291518124526,
+            0.08269858303624907,
+            0.007904935459386607,
+            0.37250539857048154,
+            0.009372410741608423,
+            0.03952467729693303,
+            0.0745010797140963
+        ],
+        "segments_count": 5,
+        "duration_seconds": 4.704
+    },
+    "text_emotion": {
+        "text": " Hey, hello, my name is Ahmed Mahmoud.",
+        "sentences_count": 1,
+        "sentences_analysis": [
+            {
+                "sentence": "Hey, hello, my name is Ahmed Mahmoud",
+                "probabilities": {
+                    "anger": 0.0266,
+                    "disgust": 0.0114,
+                    "fear": 0.0105,
+                    "joy": 0.1735,
+                    "neutral": 0.7071,
+                    "sadness": 0.0046,
+                    "surprise": 0.0665
+                },
+                "dominant": {
+                    "label": "neutral",
+                    "confidence": 0.7071,
+                    "category": "neutral"
+                },
+                "intensity_weight": 1.0
+            }
+        ],
+        "full_text_analysis": {
+            "probabilities": {
+                "anger": 0.0148,
+                "disgust": 0.0095,
+                "fear": 0.0118,
+                "joy": 0.0786,
+                "neutral": 0.8372,
+                "sadness": 0.0041,
+                "surprise": 0.044
+            },
+            "dominant": {
+                "label": "neutral",
+                "confidence": 0.8372,
+                "category": "neutral"
+            }
+        },
+        "combined_final_emotion": {
+            "label": "neutral",
+            "confidence": 0.7648787829611037,
+            "confidence_percent": 76.49,
+            "category": "neutral"
+        },
+        "combined_results": [
+            {
+                "label": "neutral",
+                "confidence": 0.7648787829611037,
+                "confidence_percent": 76.49
+            },
+            {
+                "label": "joy",
+                "confidence": 0.13128787941402859,
+                "confidence_percent": 13.13
+            },
+            {
+                "label": "surprise",
+                "confidence": 0.05649788594908184,
+                "confidence_percent": 5.65
+            },
+            {
+                "label": "anger",
+                "confidence": 0.02132407348189089,
+                "confidence_percent": 2.13
+            },
+            {
+                "label": "fear",
+                "confidence": 0.011093029855853982,
+                "confidence_percent": 1.11
+            },
+            {
+                "label": "disgust",
+                "confidence": 0.01055941948046287,
+                "confidence_percent": 1.06
+            },
+            {
+                "label": "sadness",
+                "confidence": 0.004358973819762468,
+                "confidence_percent": 0.44
+            }
+        ],
+        "input_info": {
+            "input_length": 38,
+            "token_count": 12,
+            "input_was_truncated": false
+        },
+        "timestamp": "2026-03-24T00:03:41.051914",
+        "processing_time_ms": 179.952,
+        "model_info": {
+            "name": "j-hartmann/emotion-english-distilroberta-base",
+            "version": "weighted-intensity-v3",
+            "device_used": "cpu"
+        }
+    },
+    "final_multimodal_emotion": {
+        "label": "neutral",
+        "confidence": 0.5382268712952551,
+        "confidence_percent": 53.82,
+        "category": "neutral"
+    },
+    "final_multimodal_results": [
+        {
+            "label": "anger",
+            "confidence": 0.1389747259916972,
+            "confidence_percent": 13.9
+        },
+        {
+            "label": "disgust",
+            "confidence": 0.032201168547198726,
+            "confidence_percent": 3.22
+        },
+        {
+            "label": "fear",
+            "confidence": 0.010136601536913769,
+            "confidence_percent": 1.01
+        },
+        {
+            "label": "joy",
+            "confidence": 0.20365313516096445,
+            "confidence_percent": 20.37
+        },
+        {
+            "label": "neutral",
+            "confidence": 0.5382268712952551,
+            "confidence_percent": 53.82
+        },
+        {
+            "label": "sadness",
+            "confidence": 0.014908684862913637,
+            "confidence_percent": 1.49
+        },
+        {
+            "label": "surprise",
+            "confidence": 0.061898844078586174,
+            "confidence_percent": 6.19
+        }
+    ],
+    "timestamp": "2026-03-24T00:03:47.160607",
+    "processing_time_ms": 10763.325,
+    "model_info": {
+        "audio_model": "superb/hubert-large-superb-er",
+        "text_model_api": "http://127.0.0.1:8000/emotion/text_model",
+        "whisper_model": "small",
+        "fusion_version": "v1.0"
+    }
+}

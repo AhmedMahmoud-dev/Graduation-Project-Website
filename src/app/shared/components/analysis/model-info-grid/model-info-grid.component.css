@@ -1,0 +1,23 @@
+:host {
+  display: block;
+}
+
+.section-header {
+  padding-left: 16px;
+  border-left: 4px solid var(--brand-primary);
+}
+
+.info-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 20px;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+}
+
+.truncated-chip {
+  border-color: rgba(253, 150, 68, 0.3);
+  background: rgba(253, 150, 68, 0.06);
+}

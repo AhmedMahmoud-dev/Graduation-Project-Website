@@ -1,0 +1,54 @@
+<section id="hero"
+  class="relative bg-[color:var(--color-bg)] text-[color:var(--color-text)] px-4 xs:px-6 pb-10 sm:pb-12 md:pb-16 pt-[90px] sm:pt-[100px] md:pt-[110px] overflow-hidden">
+  <!-- CSS-based Background Grid -->
+  <div class="grid-background"></div>
+
+  <!-- Brand Glow (CSS only, no animation) -->
+  <div class="hero-glow"></div>
+
+  <div class="relative max-w-5xl mx-auto flex flex-col items-center text-center">
+    <!-- Premium Badge -->
+    <div id="hero-badge"
+      class="mt-4 xs:mt-0 inline-flex items-center justify-center flex-wrap gap-1.5 xs:gap-2 px-4 py-2 rounded-full bg-[color:color-mix(in_srgb,var(--brand-primary),transparent_92%)] border border-[color:color-mix(in_srgb,var(--brand-primary),transparent_75%)] text-[color:var(--color-text)] font-bold text-[10px] xs:text-xs sm:text-sm mb-6 sm:mb-10 max-w-full">
+      <span class="flex h-2 w-2 shrink-0 rounded-full bg-[color:var(--brand-primary)]"></span>
+      <span class="truncate whitespace-normal text-center">AI-Powered Emotion Intelligence</span>
+    </div>
+
+    <!-- High-Impact Heading -->
+    <h1 id="hero-heading"
+      class="text-[1.5rem] leading-[1.2] xs:text-[1.75rem] min-[375px]:text-3xl min-[375px]:leading-[1.1] sm:text-5xl md:text-6xl lg:text-[5rem] font-black tracking-tight text-[color:var(--color-text)] lg:leading-[1.08] mb-6 sm:mb-8 break-words w-full px-2">
+      Understand how <br class="hidden min-[375px]:block" />
+      <span class="text-[color:var(--brand-primary)]">emotions evolve.</span>
+    </h1>
+
+    <!-- Subheading -->
+    <p id="hero-subheading"
+      class="text-sm xs:text-base sm:text-lg md:text-2xl text-[color:var(--color-text-muted)] max-w-2xl mb-8 sm:mb-10 font-medium leading-relaxed px-2 sm:px-0">
+      Deep-dive into <span class="text-[color:var(--color-text)] font-semibold">text, audio, image, and video</span> to
+      map the
+      journey of human sentiments with scientific precision.
+    </p>
+
+    <!-- CTA Buttons -->
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5 w-full sm:w-auto px-4 sm:px-0">
+      <button id="hero-cta-get-started" (click)="navigateTo('/auth/register')"
+        class="group flex items-center justify-center gap-2.5 w-full sm:w-auto px-6 xs:px-10 py-4 bg-[color:var(--brand-primary)] text-white font-black rounded-full transition-all duration-300 hover:bg-[color:color-mix(in_srgb,var(--brand-primary),white_10%)] shadow-lg shadow-[color:color-mix(in_srgb,var(--brand-primary),transparent_85%)] text-sm sm:text-base">
+        <span>Get Started Free</span>
+        <svg class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1.5" fill="none"
+          viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+      </button>
+
+      <a id="hero-cta-learn-more" href="#how-it-works"
+        class="group flex items-center justify-center gap-2.5 w-full sm:w-auto px-6 xs:px-10 py-3.5 bg-transparent text-[color:var(--color-text)] font-semibold rounded-full transition-all duration-300 hover:bg-[color:color-mix(in_srgb,var(--brand-primary),transparent_94%)] hover:text-[color:var(--brand-primary)] text-sm sm:text-base">
+        <span>Learn More</span>
+        <svg
+          class="w-4 h-4 text-[color:var(--color-text-muted)] transition-transform duration-300 group-hover:translate-y-1"
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>

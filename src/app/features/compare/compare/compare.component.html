@@ -1,0 +1,39 @@
+<div
+  class="compare-page min-h-screen flex flex-col bg-[color:var(--color-bg)] text-[color:var(--color-text)] w-full overflow-x-hidden min-w-0">
+
+  <!-- Page Header -->
+  <app-page-header title="Compare Analyses" subtitle="Emotional Diff"
+    description="Select two past logs and view a deep side-by-side emotional comparison.">
+  </app-page-header>
+
+  <!-- Main Content Area -->
+  <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 md:px-12 py-8 flex flex-col gap-12">
+    <!-- SECTION 1: SELECTION PANEL -->
+    <app-compare-selector [type]="compareType()" [analysisA]="analysisA()" [analysisB]="analysisB()"
+      [loadingA]="loadingA()" [loadingB]="loadingB()" (typeChange)="onTypeChange($event)" (selectA)="onSelectA($event)"
+      (selectB)="onSelectB($event)"></app-compare-selector>
+
+    @if (isComparisonReady()) {
+    <div class="flex flex-col gap-12 sm:gap-16">
+
+      <!-- SECTION 2: HERO ROW -->
+      <app-compare-hero [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-hero>
+
+      <!-- SECTION 3: TIMELINE OVERLAY -->
+      <app-compare-timeline [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-timeline>
+
+      <!-- SECTION 4: DISTRIBUTION -->
+      <app-compare-distribution [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-distribution>
+
+      <!-- SECTION 5: SENTENCE DIFF -->
+      <app-compare-diff [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-diff>
+
+      <!-- SECTION 6: STATS BOX -->
+      <app-compare-stats [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-stats>
+
+    </div>
+    }
+  </div>
+
+  <app-footer-section></app-footer-section>
+</div>

@@ -1,0 +1,62 @@
+:host {
+  display: block;
+}
+
+/* Fix for buttons and projected content across any screen size */
+.actions-container {
+  display: block;
+}
+
+.actions-container:empty {
+  display: none !important;
+}
+
+@media (max-width: 1023px) {
+  .actions-container:not(:empty) {
+    margin-top: 2rem;
+  }
+}
+
+/* Ensure that projected elements (like the div marked with [actions]) take full width on mobile/tablet */
+:host ::ng-deep [actions] {
+  width: 100% !important;
+}
+
+@media (min-width: 1024px) {
+  :host ::ng-deep [actions] {
+    width: auto !important;
+  }
+}
+
+/* Ensure that on small-to-medium screens, the buttons inside the actions container fill the width */
+/* On 'sm' breakpoint (640px), we let them go back to 'auto' if they have sm:w-auto applied (standard pattern in this project) */
+:host ::ng-deep [actions]>button,
+:host ::ng-deep [actions]>a {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+
+  :host ::ng-deep [actions]>button,
+  :host ::ng-deep [actions]>a {
+    width: auto;
+  }
+}
+
+/* Stability for very long titles on desktop */
+h1 {
+  min-width: 0;
+  hyphens: auto;
+}
+
+/* Fluid typography for extra small screens */
+@media (max-width: 375px) {
+  h1 {
+    font-size: 1.75rem !important;
+    /* ~28px */
+  }
+
+  .pt-20 {
+    padding-top: 5rem !important;
+  }
+}

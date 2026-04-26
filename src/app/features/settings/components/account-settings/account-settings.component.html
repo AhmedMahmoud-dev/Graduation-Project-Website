@@ -1,0 +1,150 @@
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+
+  <!-- Section 1: Profile Information -->
+  <div
+    class="bg-[color:var(--color-surface)] rounded-3xl p-6 md:p-8 border border-[color:var(--color-border)] shadow-sm h-fit">
+    <div class="flex items-center gap-4 mb-8">
+      <div class="w-16 h-16 rounded-2xl bg-[color:var(--color-primary)]/10 flex items-center justify-center">
+        <svg class="w-8 h-8 text-[color:var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold font-heading text-[color:var(--color-text)]">Profile Details</h2>
+        <p class="text-sm text-[color:var(--color-text-muted)]">Your account information visibility.</p>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      <div>
+        <label class="block text-xs font-black uppercase tracking-widest text-[color:var(--color-text-muted)] mb-3">Full
+          Name</label>
+        <div
+          class="px-5 py-4 bg-[color:var(--color-bg)] border border-[color:var(--color-border)] rounded-2xl text-[color:var(--color-text)] font-bold break-all">
+          {{ authService.currentUser()?.full_name || 'Not available' }}
+        </div>
+      </div>
+      <div>
+        <label
+          class="block text-xs font-black uppercase tracking-widest text-[color:var(--color-text-muted)] mb-3">Email
+          Address</label>
+        <div
+          class="px-5 py-4 bg-[color:var(--color-bg)] border border-[color:var(--color-border)] rounded-2xl text-[color:var(--color-text)] font-bold break-all">
+          {{ authService.currentUser()?.email || 'Not available' }}
+        </div>
+      </div>
+      <div class="pt-4">
+        <button
+          class="text-sm font-bold text-[color:var(--color-text-muted)] hover:text-[color:var(--color-primary)] transition-colors inline-flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+          Edit Profile Info (Soon)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Security & Password -->
+  <div
+    class="bg-[color:var(--color-surface)] rounded-3xl p-6 md:p-8 border border-[color:var(--color-border)] shadow-sm h-fit">
+    <div class="flex items-center gap-4 mb-8">
+      <div class="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center">
+        <svg class="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold font-heading text-[color:var(--color-text)]">Security</h2>
+        <p class="text-sm text-[color:var(--color-text-muted)]">Manage your access and password.</p>
+      </div>
+    </div>
+
+    <!-- Security Policy Warning -->
+    <div class="mb-8 p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-start gap-3">
+      <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
+        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div>
+        <p class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-tight mb-1">Security Policy</p>
+        <p class="text-[11px] text-blue-600/80 dark:text-blue-400/80 font-medium leading-relaxed">
+          For your protection, password resets are limited to **once every 30 days**. Please ensure you keep your new
+          password secure.
+        </p>
+      </div>
+    </div>
+
+    @if (!passwordResetStep()) {
+    <div class="p-5 sm:p-6 bg-[color:var(--color-bg)] rounded-3xl border border-[color:var(--color-border)] mb-8">
+      <p class="text-sm text-[color:var(--color-text-muted)] leading-relaxed mb-6 font-medium">To change your password,
+        we'll send a secure validation code to your email.</p>
+      <button (click)="sendResetCode()" [disabled]="isResetLoading()"
+        class="w-full sm:w-auto px-6 py-3 bg-[color:var(--color-primary)] text-white font-bold rounded-2xl hover:opacity-90 transition-all shadow-md shadow-[color:var(--color-primary)]/10 disabled:opacity-50 flex items-center justify-center gap-2">
+        @if (!isResetLoading()) {
+        <span>Send Reset Code</span>
+        }
+        @if (isResetLoading()) {
+        <svg class="animate-spin h-5 w-5 text-current" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+          </path>
+        </svg>
+        }
+      </button>
+    </div>
+    } @else {
+    <div class="space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
+      <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl mb-4">
+        <p class="text-xs text-amber-600 dark:text-amber-400 font-bold">Code sent! Check your inbox for the 6-digit
+          confirmation key.</p>
+      </div>
+
+      <div>
+        <label
+          class="block text-xs font-black uppercase tracking-widest text-[color:var(--color-text-muted)] mb-3">Confirmation
+          Code</label>
+        <input type="text" [(ngModel)]="resetCode"
+          class="w-full px-5 py-4 bg-[color:var(--color-bg)] border border-[color:var(--color-border)] rounded-2xl text-[color:var(--color-text)] font-mono text-xl tracking-[0.2em] sm:tracking-[0.5em] text-center focus:ring-2 focus:ring-[color:var(--color-primary)] outline-none"
+          maxlength="6" placeholder="000000">
+      </div>
+
+      <div>
+        <label class="block text-xs font-black uppercase tracking-widest text-[color:var(--color-text-muted)] mb-3">New
+          Password</label>
+        <input type="password" [(ngModel)]="newPassword"
+          class="w-full px-5 py-4 bg-[color:var(--color-bg)] border border-[color:var(--color-border)] rounded-2xl text-[color:var(--color-text)] font-bold focus:ring-2 focus:ring-[color:var(--color-primary)] outline-none"
+          placeholder="••••••••">
+      </div>
+
+      <div class="pt-4 flex flex-col sm:flex-row gap-3">
+        <button (click)="confirmPasswordReset()"
+          [disabled]="isResetLoading() || resetCode.length < 6 || newPassword.length < 6"
+          class="w-full sm:flex-1 py-3 bg-[color:var(--color-primary)] text-white font-bold rounded-2xl hover:opacity-90 transition-all shadow-lg disabled:opacity-50">
+          @if (!isResetLoading()) {
+          <span>Update Password</span>
+          }
+          @if (isResetLoading()) {
+          <svg class="animate-spin h-5 w-5 mx-auto text-current" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+          </svg>
+          }
+        </button>
+        <button (click)="passwordResetStep.set(false)"
+          class="w-full sm:w-auto px-6 py-3 bg-[color:var(--color-bg)] text-[color:var(--color-text-muted)] font-bold rounded-2xl border border-[color:var(--color-border)] hover:bg-[color:var(--color-border)] hover:text-[color:var(--color-text)] transition-all">
+          Cancel
+        </button>
+      </div>
+    </div>
+    }
+  </div>
+</div>

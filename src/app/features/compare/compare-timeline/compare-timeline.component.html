@@ -1,0 +1,40 @@
+<div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-3xl p-6 md:p-8 shadow-sm">
+  <div class="mb-8">
+    <div class="flex items-center gap-3 mb-2">
+      <div class="w-1.5 h-6 bg-[color:var(--brand-primary)] rounded-full"></div>
+      <h2 class="text-xl md:text-2xl font-black text-[color:var(--text-primary)] tracking-tight">Emotion Timeline
+        Comparison</h2>
+    </div>
+    <p class="text-sm text-[color:var(--text-muted)] font-medium pl-4.5">Both emotional journeys overlaid on one chart
+    </p>
+  </div>
+
+  <div class="w-full relative mt-6">
+    <app-emotion-timeline [data]="timelineDataA()" [secondaryData]="timelineDataB()" [dominant]="dominantA()"
+      [secondaryDominant]="dominantB()" [compareMode]="true">
+    </app-emotion-timeline>
+  </div>
+
+  <!-- this is the part -->
+  <div class="flex flex-wrap items-center justify-center gap-8 mt-10 border-t border-[color:var(--border-color)] pt-8">
+    <div class="flex flex-col items-center gap-3">
+      <div class="h-1 w-24 rounded-full" [style.background]="getEmotionColor(dominantA())"></div>
+      <div class="flex flex-col items-center">
+        <span class="text-[10px] font-black uppercase tracking-[0.2em] text-[color:var(--text-muted)] mb-1">Analysis
+          A</span>
+        <span class="text-xs font-bold text-[color:var(--text-primary)]">{{ dominantA() | titlecase }} Journey</span>
+      </div>
+    </div>
+
+    <div class="flex flex-col items-center gap-3">
+      <div class="h-1 w-24 rounded-full" [style.background]="getEmotionColor(dominantB()) + '44'" 
+           [style.border-top]="'2.5px dashed ' + getEmotionColor(dominantB())"
+           style="background: transparent; height: 0; border-radius: 0;"></div>
+      <div class="flex flex-col items-center">
+        <span class="text-[10px] font-black uppercase tracking-[0.2em] text-[color:var(--text-muted)] mb-1">Analysis
+          B</span>
+        <span class="text-xs font-bold text-[color:var(--text-primary)]">{{ dominantB() | titlecase }} Journey</span>
+      </div>
+    </div>
+  </div>
+</div>

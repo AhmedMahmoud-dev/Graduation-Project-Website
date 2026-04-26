@@ -1,0 +1,121 @@
+:host {
+  display: block;
+}
+
+/* Code block container — matches python-code-block */
+.code-block {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  overflow: hidden;
+  width: 100%;
+}
+
+/* Code content — matches python-code-block */
+.code-pre {
+  margin: 0;
+  padding: 16px 24px;
+  overflow-x: auto;
+  max-height: 400px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--code-text);
+  tab-size: 4;
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+/* Copy button — refinement */
+.code-copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--brand-primary), transparent 85%);
+  background: color-mix(in srgb, var(--brand-primary), transparent 95%);
+  color: var(--brand-primary);
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.code-copy-btn:hover {
+  background: color-mix(in srgb, var(--brand-primary), transparent 85%);
+  border-color: color-mix(in srgb, var(--brand-primary), transparent 70%);
+}
+
+.code-copy-btn.is-copied {
+  background: color-mix(in srgb, var(--color-success), transparent 94%);
+  border-color: color-mix(in srgb, var(--color-success), transparent 80%);
+}
+
+.code-copy-float {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+}
+
+/* JSON syntax colors - Theme Aware */
+:host ::ng-deep .json-key {
+  color: var(--code-key);
+  font-weight: 600;
+}
+
+:host ::ng-deep .json-string {
+  color: var(--code-string);
+}
+
+:host ::ng-deep .json-number {
+  color: var(--code-number);
+}
+
+:host ::ng-deep .json-bool {
+  color: var(--code-bool);
+}
+
+:host ::ng-deep .json-null {
+  color: var(--code-null);
+}
+
+/* Custom scrollbar for raw JSON - Webkit */
+.code-pre::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.code-pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.code-pre::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.code-pre::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-muted);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .code-pre {
+    font-size: 10px;
+    padding: 16px;
+  }
+  
+  .code-copy-float {
+    top: 8px;
+    right: 8px;
+  }
+}

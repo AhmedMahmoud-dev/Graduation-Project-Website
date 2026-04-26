@@ -1,0 +1,10 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+svg {
+  flex-shrink: 0;
+}
