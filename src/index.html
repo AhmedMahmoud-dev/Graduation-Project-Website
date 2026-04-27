@@ -1,16 +1,136 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <title>Emotra</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link id="app-favicon" rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Syne:wght@400..800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Syne:wght@400..800&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      /* Shared constants */
+      --splash-primary: #6c63ff;
+
+      /* Light mode defaults */
+      --splash-bg: #f8f9fc;
+      --splash-text: #1a1a2e;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --splash-bg: #0d0d14;
+        --splash-text: #e2e8f0;
+      }
+    }
+
+    .splash-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--splash-bg);
+      z-index: 9999;
+      gap: 2.5rem;
+      transition: background-color 0.3s ease;
+    }
+
+    .splash-logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      user-select: none;
+    }
+
+    .splash-logo .e {
+      color: var(--splash-primary);
+    }
+
+    .splash-logo .motra {
+      color: var(--splash-text);
+    }
+
+    .splash-loader svg {
+      width: 64px;
+      height: 64px;
+      color: var(--splash-primary);
+    }
+
+    .logo-animate-path {
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+      animation: draw-logo 2s ease-in-out infinite;
+    }
+
+    @keyframes draw-logo {
+      0% {
+        stroke-dashoffset: 100;
+      }
+
+      50% {
+        stroke-dashoffset: 0;
+      }
+
+      100% {
+        stroke-dashoffset: -100;
+      }
+    }
+  </style>
+  <script>
+    (function () {
+      try {
+        const theme = localStorage.getItem('emotra_theme');
+        const resolvedTheme = theme === 'system' || !theme
+          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : theme;
+
+        if (resolvedTheme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+
+        const colors = JSON.parse(localStorage.getItem('emotra_theme_colors') || '{}');
+        const currentColors = colors[resolvedTheme] || {};
+
+        // DRY: Map app color variables to splash variables
+        ['bg', 'text', 'primary'].forEach(key => {
+          const value = currentColors[`--color-${key}`];
+          if (value) document.documentElement.style.setProperty(`--splash-${key}`, value);
+        });
+      } catch (e) { }
+    })();
+  </script>
 </head>
+
 <body>
-  <app-root></app-root>
+  <app-root>
+    <!-- The real splash screen inside app-root (Angular will remove this) -->
+    <div class="splash-container">
+      <div class="splash-logo">
+        <span class="e">E</span><span class="motra">motra</span>
+      </div>
+      <div class="splash-loader">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path class="logo-animate-path" pathLength="100"
+            d="M9 3v2M15 3v2M3 9h2M19 9h2M12 19c-3.866 0-7-3.134-7-7s3.134-7 7-7 7 3.134 7 7-7 3.134-7 7z" />
+          <path class="logo-animate-path" pathLength="100" style="animation-delay: 0.15s"
+            d="M9 12c.5-1 1.5-1.5 3-1.5s2.5.5 3 1.5M12 6q0 3 -2 5" />
+        </svg>
+      </div>
+    </div>
+  </app-root>
+
 </body>
+
 </html>

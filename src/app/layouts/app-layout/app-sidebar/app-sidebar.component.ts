@@ -59,6 +59,13 @@ export class AppSidebarComponent {
         }
         document.documentElement.style.setProperty('--app-sidebar-width', width);
         localStorage.setItem(this.APP_SIDEBAR_STATE_KEY, this.isExpanded().toString());
+
+        // Prevent body scroll when mobile menu is open
+        if (this.mobileOpen()) {
+          document.body.classList.add('no-scroll');
+        } else {
+          document.body.classList.remove('no-scroll');
+        }
       }
     });
   }

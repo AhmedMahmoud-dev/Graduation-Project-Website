@@ -22,7 +22,7 @@
         <!-- ─── Tab Switcher ─── -->
         <div class="px-4 py-4 sm:px-8 sm:py-5 flex justify-center border-b border-[color:var(--border-color)]"
           style="background: var(--bg-card)">
-          <div class="w-full sm:w-max min-w-0">
+          <div class="w-full flex justify-center min-w-0">
             <app-segmented-nav [options]="tabOptions" [selectedValue]="activeTab()"
               (selectedValueChange)="activeTab.set($event !== 'upload' && $event !== 'record' ? 'upload' : $event)">
             </app-segmented-nav>

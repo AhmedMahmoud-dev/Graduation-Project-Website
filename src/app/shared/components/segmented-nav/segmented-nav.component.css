@@ -1,3 +1,7 @@
+:host {
+  display: block;
+  max-width: 100%;
+}
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

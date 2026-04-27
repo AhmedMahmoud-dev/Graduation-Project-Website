@@ -44,7 +44,7 @@ export class SegmentedNavComponent implements AfterViewInit, OnChanges {
   private scrollToActive() {
     // Small timeout to ensure view is updated and QueryList is populated
     setTimeout(() => {
-      const activeButton = this.navButtons.find((btn, index) => 
+      const activeButton = this.navButtons.find((btn, index) =>
         this.options[index].value === this.selectedValue
       );
       if (activeButton) {
