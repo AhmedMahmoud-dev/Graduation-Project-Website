@@ -1,4 +1,5 @@
-import { Component, signal, inject, computed, effect, OnInit, OnDestroy, ViewChild, ElementRef, untracked, HostListener } from '@angular/core';
+import { Component, signal, inject, computed, effect, OnInit, OnDestroy, ViewChild, ElementRef, untracked, HostListener, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -71,6 +72,7 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   colorService = inject(EmotionColorService);
   private shouldScrollToFeedback = false;
+  private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   @ViewChild('previewCanvas') previewCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('audioElement') audioElement?: ElementRef<HTMLAudioElement>;
@@ -97,6 +99,62 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
   recordedUrl = signal<SafeUrl | null>(null);
   recordedPeaks: number[] = [];
   showPermissionGuide = signal<boolean>(false);
+  micStillBlocked = signal<boolean>(false);
+
+  permissionSteps = computed(() => {
+    if (!this.isBrowser) return [];
+    const ua = navigator.userAgent;
+    const isAndroid = /Android/i.test(ua);
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    const isChrome = /Chrome/i.test(ua) && !/Edge|OPR|Firefox/i.test(ua);
+    const isFirefox = /Firefox/i.test(ua);
+    const isSafari = /Safari/i.test(ua) && !/Chrome|Firefox/i.test(ua);
+
+    if (isAndroid && isChrome) {
+      return [
+        'Tap the <strong>lock icon</strong> 🔒 in the address bar',
+        'Tap <strong>Permissions</strong> → <strong>Microphone</strong>',
+        'Select <strong>Allow</strong>',
+        'Tap <strong>Start Recording</strong> again'
+      ];
+    }
+    if (!isIOS && isChrome) {
+      return [
+        'Click the <strong>lock icon</strong> 🔒 in the address bar (left of the URL)',
+        'Find <strong>Microphone</strong> and change it to <strong>Allow</strong>',
+        'Refresh the page and try again'
+      ];
+    }
+    if (isFirefox) {
+      return [
+        'Click the <strong>lock icon</strong> 🔒 in the address bar',
+        'Click the <strong>arrow</strong> next to <strong>Connection Secure</strong>',
+        'Find <strong>Microphone</strong> → set to <strong>Allow</strong>',
+        'Refresh the page and try again'
+      ];
+    }
+    if (isIOS && isSafari) {
+      return [
+        'Open the <strong>Settings</strong> app on your device',
+        'Scroll down and tap <strong>Safari</strong>',
+        'Tap <strong>Microphone</strong> and set it to <strong>Allow</strong>',
+        'Return to the browser and tap <strong>Start Recording</strong> again'
+      ];
+    }
+    if (!isIOS && isSafari) {
+      return [
+        'Click <strong>Safari</strong> in the menu bar → <strong>Settings for This Website</strong>',
+        'Find <strong>Microphone</strong> and set to <strong>Allow</strong>',
+        'Refresh the page and try again'
+      ];
+    }
+    return [
+      'Open your browser <strong>Settings</strong>',
+      'Find <strong>Site Permissions</strong> → <strong>Microphone</strong>',
+      'Allow access for this site',
+      'Refresh and try again'
+    ];
+  });
 
   private recordingInterval?: ReturnType<typeof setInterval>;
   private mediaRecorder?: MediaRecorder;
@@ -215,6 +273,7 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.isMobile.set(window.innerWidth < 640);
+    this.setupPermissionListener();
 
 
     this.route.params.subscribe(params => {
@@ -453,7 +512,7 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
 
   async startRecording() {
     this.error.set(null);
-    
+
     try {
       this.audioChunks = [];
       this.recordedFile.set(null);
@@ -484,14 +543,22 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
       };
 
       this.isRecording.set(true);
+      this.showPermissionGuide.set(false);
+      this.micStillBlocked.set(false);
       this.mediaRecorder.start();
       this.startTimer();
     } catch (err: any) {
       console.error('Microphone access error:', err);
-      
+
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
         const msg = 'Microphone access is blocked. Please allow it to continue.';
         this.error.set(msg);
+
+        if (this.showPermissionGuide()) {
+          this.micStillBlocked.set(true);
+          setTimeout(() => this.micStillBlocked.set(false), 3000);
+        }
+
         this.showPermissionGuide.set(true);
         this.toastService.show('Microphone Blocked', 'Please allow microphone access to start recording.', 'error', 'error');
       } else if (err.message === 'BROWSER_NOT_SUPPORTED') {
@@ -499,6 +566,25 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
       } else {
         this.error.set('Could not access microphone. Please check your connection and permissions.');
         this.toastService.show('Hardware Error', 'Failed to initialize microphone.', 'error', 'error');
+      }
+    }
+  }
+
+  private setupPermissionListener() {
+    if (this.isBrowser && navigator.permissions && (navigator.permissions as any).query) {
+      try {
+        navigator.permissions.query({ name: 'microphone' as any }).then(status => {
+          status.onchange = () => {
+            if (status.state === 'granted') {
+              this.showPermissionGuide.set(false);
+              this.error.set(null);
+              this.micStillBlocked.set(false);
+            }
+          };
+        });
+      } catch (e) {
+        // Some browsers don't support microphone query in Permissions API
+        console.warn('Microphone permission query not supported');
       }
     }
   }
