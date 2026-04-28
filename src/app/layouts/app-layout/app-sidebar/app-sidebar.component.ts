@@ -90,8 +90,52 @@ export class AppSidebarComponent {
       `)
     },
     { label: 'How It Works', href: '#how-it-works', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>') },
-    { label: 'Pricing', href: '#pricing', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>') }
+    {
+      label: 'Success Stories',
+      href: '#testimonials',
+      icon: this.sanitizer.bypassSecurityTrustHtml(`
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+      `)
+    },
+    { label: 'Pricing', href: '#pricing', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>') },
+    {
+      label: 'FAQ',
+      href: '#faq',
+      icon: this.sanitizer.bypassSecurityTrustHtml(`
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      `)
+    }
   ];
+
+  @HostListener('window:scroll')
+  onScroll() {
+    if (!this.isBrowser || !this.isLandingPage) return;
+
+    const sections = ['#features', '#how-it-works', '#testimonials', '#pricing', '#faq'];
+    let currentSection = '';
+
+    for (const section of sections) {
+      const element = document.querySelector(section);
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        // If section is near top of viewport (with some offset)
+        if (rect.top <= 150 && rect.bottom >= 150) {
+          currentSection = section;
+          break;
+        }
+      }
+    }
+
+    if (currentSection && this.activeLandingSection() !== currentSection) {
+      this.activeLandingSection.set(currentSection);
+    }
+  }
 
   @HostListener('window:resize')
   onResize() {
@@ -143,7 +187,7 @@ export class AppSidebarComponent {
   logout() {
     this.authService.logout();
   }
- 
+
   copyEmailToClipboard(event: Event) {
     event.stopPropagation();
     const email = this.currentUser()?.email;
