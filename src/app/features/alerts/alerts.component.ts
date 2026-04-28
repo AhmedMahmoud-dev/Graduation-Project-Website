@@ -14,11 +14,12 @@ import { PageHeaderComponent } from '../../shared/components/layout/page-header/
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { DropdownMenuComponent, DropdownOption } from '../../shared/components/dropdown-menu/dropdown-menu.component';
 import { FooterSectionComponent } from '../../shared/components/footer/footer.component';
+import { LoadingStateComponent } from '../../shared/components/loading-state/loading-state.component';
 
 @Component({
   selector: 'app-alerts',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, EmptyStateComponent, DropdownMenuComponent, FooterSectionComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, EmptyStateComponent, DropdownMenuComponent, FooterSectionComponent, LoadingStateComponent],
   templateUrl: './alerts.component.html',
   styleUrl: './alerts.component.css'
 })

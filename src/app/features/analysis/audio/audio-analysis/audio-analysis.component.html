@@ -71,7 +71,7 @@
           <!-- Actions -->
           <div class="action-row">
             @if (activeTab() === 'record') {
-            <button (click)="startRecording()" class="btn-action btn-outline-action btn-action-sm w-full sm:w-auto">
+            <button (click)="startRecording()" class="btn-action btn-outline-action btn-action-sm w-full sm:w-48">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -149,7 +149,7 @@
           <div class="w-full mb-6">
             <app-audio-waveform [isRecording]="isRecording()"></app-audio-waveform>
           </div>
-          <button (click)="stopRecording()" class="btn-action btn-stop-action w-full sm:w-auto">
+          <button (click)="stopRecording()" class="btn-action btn-stop-action w-full sm:w-64">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -163,21 +163,45 @@
           <!-- Idle: Ready to Record -->
           <div class="idle-empty-state">
             <div
-              class="w-20 h-20 rounded-3xl flex items-center justify-center mb-3 border border-[color:var(--border-color)]"
+              class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl flex items-center justify-center mb-4 border border-[color:var(--border-color)]"
               style="background: var(--bg-secondary)">
-              <svg class="w-9 h-9" style="color: var(--brand-primary); opacity: 0.6" fill="none" stroke="currentColor"
+              <svg class="w-9 h-9 sm:w-11 sm:h-11" style="color: var(--brand-primary); opacity: 0.6" fill="none" stroke="currentColor"
                 viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                   d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
               </svg>
             </div>
-            <p class="text-base font-bold tracking-tight" style="color: var(--text-primary)">Ready to Record</p>
-            <p class="text-xs font-medium" style="color: var(--text-muted)">Click below to start capturing audio</p>
+            <p class="text-base sm:text-lg font-bold tracking-tight" style="color: var(--text-primary)">Ready to Record</p>
+            <p class="text-xs sm:text-sm font-medium" style="color: var(--text-muted)">Click below to start capturing audio</p>
           </div>
-          <button (click)="startRecording()" class="btn-action btn-primary-action w-full sm:w-auto mt-5">
+          <button (click)="startRecording()" class="btn-action btn-primary-action w-full sm:w-72 mt-5">
             <span class="record-dot" style="background: #fff"></span>
             Start Recording
           </button>
+
+          <!-- Permission Guide -->
+          @if (showPermissionGuide()) {
+          <div class="mt-6 p-5 rounded-2xl border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] w-full max-w-md animate-fade-in">
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div class="flex-1">
+                <h5 class="text-sm font-bold mb-1" style="color: var(--text-primary)">How to unblock?</h5>
+                <ol class="text-xs space-y-2 leading-relaxed" style="color: var(--text-muted)">
+                  <li>1. Click the <strong>lock icon</strong> <svg class="inline w-3 h-3 mb-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" /></svg> in the address bar.</li>
+                  <li>2. Find <strong>Microphone</strong> and toggle it to <strong>Allow</strong>.</li>
+                  <li>3. Close the settings and click <strong>Start Recording</strong> again.</li>
+                </ol>
+                <button (click)="startRecording()" class="mt-4 text-xs font-bold underline hover:opacity-80" style="color: var(--brand-primary)">
+                  Already done? Try again
+                </button>
+              </div>
+            </div>
+          </div>
+          }
           }
         </div>
         }
@@ -206,7 +230,7 @@
   <!-- ===================== STATE: FETCHING (REPORT) ===================== -->
   @if (state() === 'fetching') {
   <div class="flex-1 flex flex-col items-center justify-center p-12 min-h-[60vh]">
-    <app-loading-state message="Retrieving audio analysis report..."></app-loading-state>
+    <app-loading-state message="Retrieving audio analysis report..." subtitle="Decoding emotional markers from the voice track"></app-loading-state>
   </div>
   }
 

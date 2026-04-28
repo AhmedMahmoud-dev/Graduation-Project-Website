@@ -96,6 +96,7 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
   recordedFile = signal<File | null>(null);
   recordedUrl = signal<SafeUrl | null>(null);
   recordedPeaks: number[] = [];
+  showPermissionGuide = signal<boolean>(false);
 
   private recordingInterval?: ReturnType<typeof setInterval>;
   private mediaRecorder?: MediaRecorder;
@@ -489,8 +490,9 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
       console.error('Microphone access error:', err);
       
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        const msg = 'Microphone access is blocked. Please click the lock icon in your browser address bar and set Microphone to "Allow" to record.';
+        const msg = 'Microphone access is blocked. Please allow it to continue.';
         this.error.set(msg);
+        this.showPermissionGuide.set(true);
         this.toastService.show('Microphone Blocked', 'Please allow microphone access to start recording.', 'error', 'error');
       } else if (err.message === 'BROWSER_NOT_SUPPORTED') {
         this.error.set('Your browser does not support audio recording. Please try a modern browser like Chrome or Firefox.');

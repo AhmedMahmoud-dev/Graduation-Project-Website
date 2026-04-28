@@ -10,6 +10,7 @@ import { CommonModule } from '@angular/common';
 })
 export class LoadingStateComponent {
   message = input<string>('Loading Data...');
+  subtitle = input<string>('Securely establishing connection with the intelligence server');
   size = input<'sm' | 'md' | 'lg'>('md');
   fullPage = input<boolean>(false);
 }
