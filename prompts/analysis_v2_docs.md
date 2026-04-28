@@ -1,4 +1,4 @@
-# Analysis V2 API Documentation
+# Analysis API Documentation
 
 This document outlines the version 2 (V2) endpoints for the Analysis service. All responses follow the unified `ApiResponse<T>` structure with `snake_case` naming conventions.
 

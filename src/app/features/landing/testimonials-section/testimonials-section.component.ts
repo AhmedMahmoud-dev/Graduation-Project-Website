@@ -1,5 +1,5 @@
-import { Component, inject, signal, OnInit, effect, untracked, PLATFORM_ID } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, inject, signal, OnInit, effect, untracked } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FeedbackService } from '../../../core/services/feedback.service';
 import { TestimonialsResponse, TestimonialItem, TestimonialsStats } from '../../../core/models/feedback.model';
 import { finalize } from 'rxjs';
@@ -15,14 +15,12 @@ import { SystemFeedbackUIService } from '../../../core/services/system-feedback-
 export class TestimonialsSectionComponent implements OnInit {
   private feedbackService = inject(FeedbackService);
   private uiService = inject(SystemFeedbackUIService);
-  private platformId = inject(PLATFORM_ID);
-  private isBrowser = isPlatformBrowser(this.platformId);
+
 
   private readonly CACHE_KEY = 'emotra_public_testimonials';
 
   // Carousel state
   activeIndex = signal(0);
-  private autoPlayTimer: ReturnType<typeof setInterval> | null = null;
   private touchStartX = 0;
   private touchDeltaX = 0;
 
@@ -79,7 +77,6 @@ export class TestimonialsSectionComponent implements OnInit {
 
   ngOnInit() {
     this.loadTestimonials();
-    this.startAutoPlay();
   }
 
   loadTestimonials() {
@@ -134,7 +131,6 @@ export class TestimonialsSectionComponent implements OnInit {
     const total = this.testimonials().length;
     if (total === 0) return;
     this.activeIndex.set(((index % total) + total) % total);
-    this.restartAutoPlay();
   }
 
   next() {
@@ -145,27 +141,11 @@ export class TestimonialsSectionComponent implements OnInit {
     this.goTo(this.activeIndex() - 1);
   }
 
-  private startAutoPlay() {
-    if (!this.isBrowser) return;
-    this.stopAutoPlay();
-    this.autoPlayTimer = setInterval(() => this.next(), 6000);
-  }
 
-  private stopAutoPlay() {
-    if (this.autoPlayTimer) {
-      clearInterval(this.autoPlayTimer);
-      this.autoPlayTimer = null;
-    }
-  }
-
-  private restartAutoPlay() {
-    this.startAutoPlay();
-  }
 
   onTouchStart(e: TouchEvent) {
     this.touchStartX = e.touches[0].clientX;
     this.touchDeltaX = 0;
-    this.stopAutoPlay();
   }
 
   onTouchMove(e: TouchEvent) {
@@ -180,10 +160,7 @@ export class TestimonialsSectionComponent implements OnInit {
         this.prev();
       }
     }
-    this.startAutoPlay();
   }
 
-  ngOnDestroy() {
-    this.stopAutoPlay();
-  }
+
 }

@@ -451,12 +451,19 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
   // ─── RECORDING ────────────────────────────────────────────────────────────
 
   async startRecording() {
+    this.error.set(null);
+    
     try {
       this.audioChunks = [];
       this.recordedFile.set(null);
       this.recordedUrl.set(null);
       this.recordedPeaks = [];
       this.canvasInitialized = false;
+
+      // Check for browser support
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('BROWSER_NOT_SUPPORTED');
+      }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       this.mediaRecorder = new MediaRecorder(stream);
@@ -478,8 +485,19 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
       this.isRecording.set(true);
       this.mediaRecorder.start();
       this.startTimer();
-    } catch (err) {
-      this.error.set('Could not access microphone. Please check permissions.');
+    } catch (err: any) {
+      console.error('Microphone access error:', err);
+      
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        const msg = 'Microphone access is blocked. Please click the lock icon in your browser address bar and set Microphone to "Allow" to record.';
+        this.error.set(msg);
+        this.toastService.show('Microphone Blocked', 'Please allow microphone access to start recording.', 'error', 'error');
+      } else if (err.message === 'BROWSER_NOT_SUPPORTED') {
+        this.error.set('Your browser does not support audio recording. Please try a modern browser like Chrome or Firefox.');
+      } else {
+        this.error.set('Could not access microphone. Please check your connection and permissions.');
+        this.toastService.show('Hardware Error', 'Failed to initialize microphone.', 'error', 'error');
+      }
     }
   }
 
