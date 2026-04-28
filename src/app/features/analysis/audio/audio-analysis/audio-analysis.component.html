@@ -302,14 +302,12 @@
       <!-- 3.4 Emotion Timeline -->
       <div
         class="rounded-2xl p-5 sm:p-12 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] shadow-xl relative overflow-hidden w-full">
-        <div class="section-header mb-8 sm:mb-10">
-          <p class="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">
-            Temporal Logic</p>
-          <h3 class="text-2xl sm:text-3xl font-black tracking-tight font-heading" style="color: var(--text-primary)">
-            Emotion Timeline</h3>
-          <p class="text-xs sm:text-sm mt-1" style="color: var(--text-muted)">A chronological journey of detected
-            sentiments across speech segments</p>
-        </div>
+        <app-analysis-section-header 
+          title="Emotion Timeline" 
+          subtitle="Temporal Logic" 
+          description="A chronological journey of detected sentiments across speech segments">
+        </app-analysis-section-header>
+
         <div class="mt-6 sm:mt-8 overflow-x-auto">
           <app-emotion-timeline [data]="timelineData()" [dominant]="result()!.final_multimodal_emotion.label"
             class="block w-full min-w-[300px] h-[300px] sm:h-[400px]">
@@ -321,14 +319,12 @@
         <!-- Confidence Distribution -->
         <div
           class="rounded-2xl p-5 sm:p-10 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] shadow-xl w-full max-w-[calc(100vw-2.5rem)] sm:max-w-full">
-          <div class="section-header mb-6 sm:mb-8">
-            <p class="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] mb-2"
-              style="color: var(--text-muted)">Distribution</p>
-            <h3 class="text-xl sm:text-2xl font-black tracking-tight font-heading" style="color: var(--text-primary)">
-              Confidence Distribution</h3>
-            <p class="text-xs sm:text-sm mt-1" style="color: var(--text-muted)">Final confidence scores across the
-              emotional spectrum</p>
-          </div>
+          <app-analysis-section-header 
+            title="Confidence Distribution" 
+            subtitle="Distribution" 
+            description="Final confidence scores across the emotional spectrum">
+          </app-analysis-section-header>
+
           <div class="rounded-2xl p-4 sm:p-8 mt-6 sm:mt-8"
             style="background: var(--bg-card); border: 1px solid var(--border-color)">
             <app-emotion-distribution [data]="distributionData()" viewType="bar"
@@ -429,14 +425,12 @@
       </div>
       <!-- 3.6 Audio Segment Breakdown -->
       <section class="px-0 py-12" style="border-top: 1px solid var(--border-color)">
-        <div class="section-header mb-6 sm:mb-8">
-          <p class="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">
-            Deep Dive</p>
-          <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight" style="color: var(--text-primary)">Segment
-            Analysis</h2>
-          <p class="text-xs sm:text-sm mt-1" style="color: var(--text-muted)">Detailed emotion analysis for each audio
-            segment</p>
-        </div>
+        <app-analysis-section-header 
+          title="Segment Analysis" 
+          subtitle="Deep Dive" 
+          description="Detailed emotion analysis for each audio segment">
+        </app-analysis-section-header>
+
         <div class="space-y-4 pr-2" [class.max-h-[800px]]="result()!.audio_emotion.timeline.length > 8"
           [class.overflow-y-auto]="result()!.audio_emotion.timeline.length > 8">
           @for (seg of result()!.audio_emotion.timeline; track seg) {

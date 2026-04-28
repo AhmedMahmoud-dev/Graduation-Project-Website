@@ -1,13 +1,11 @@
 <section [id]="sectionId()" class="mb-14 sm:mb-16">
-  <h2
-    class="text-xl sm:text-2xl font-extrabold tracking-tight mb-2 pl-4 border-l-4 border-[color:var(--brand-primary)] text-[color:var(--text-primary)]">
-    {{ title() }}
-  </h2>
-  @if (subtitle()) {
-  <p class="text-sm sm:text-base text-[color:var(--text-muted)] mb-6 pl-4 leading-relaxed font-medium">
-    {{ subtitle() }}
-  </p>
-  }
+  <app-analysis-section-header 
+    [title]="title()" 
+    [description]="subtitle()" 
+    variant="border"
+    marginBottom="mb-6">
+  </app-analysis-section-header>
+
   <div class="mt-6">
     <ng-content />
   </div>

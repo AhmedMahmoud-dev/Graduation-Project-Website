@@ -1,16 +1,21 @@
-import { Component, input, computed } from '@angular/core';
+import { Component, input, computed, inject } from '@angular/core';
 
 import { AnalysisSession, AudioAnalysisSession, TextAnalysisResult } from '../../../core/models/text-analysis.model';
 import { AudioAnalysisResponse } from '../../../core/models/audio-analysis.model';
+import { FormattingService } from '../../../core/services/formatting.service';
+import { AnalysisSectionHeaderComponent } from '../../../shared/components/analysis-section-header/analysis-section-header.component';
+
 
 @Component({
   selector: 'app-compare-stats',
   standalone: true,
-  imports: [],
+  imports: [AnalysisSectionHeaderComponent],
+
   templateUrl: './compare-stats.component.html',
   styleUrls: ['./compare-stats.component.css']
 })
 export class CompareStatsComponent {
+  protected format = inject(FormattingService);
   analysisA = input.required<AnalysisSession | AudioAnalysisSession | null>();
   analysisB = input.required<AnalysisSession | AudioAnalysisSession | null>();
 
@@ -143,7 +148,4 @@ export class CompareStatsComponent {
     return `${(diffHours / 24).toFixed(1)} days apart`;
   }
 
-  getEmotionColor(label: string): string {
-    return `var(--emotion-${label?.toLowerCase() || 'neutral'})`;
-  }
 }

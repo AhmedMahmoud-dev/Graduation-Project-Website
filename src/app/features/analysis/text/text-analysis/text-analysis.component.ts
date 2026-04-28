@@ -1,16 +1,11 @@
-import { Component, signal, inject, computed, effect, OnInit } from '@angular/core';
+import { Component, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
-import { ToastService } from '../../../../core/services/toast.service';
-import { TextAnalysisService } from '../../../../core/services/text-analysis.service';
-import { ChartThemeService } from '../../../../core/services/chart-theme.service';
-import { AnalysisStorageService } from '../../../../core/services/analysis-storage.service';
-import { EmotionColorService } from '../../../../core/services/emotion-color.service';
-import { TextAnalysisResult } from '../../../../core/models/text-analysis.model';
-import { AnalysisV2Service } from '../../../../core/services/analysis-v2.service';
-import { AuthService } from '../../../../core/services/auth.service';
+import { Observable } from 'rxjs';
 
+import { TextAnalysisService } from '../../../../core/services/text-analysis.service';
+import { TextAnalysisResult } from '../../../../core/models/text-analysis.model';
+import { ApiResponse } from '../../../../core/models/api-response.model';
 
 import { EmotionIconComponent } from '../../../../shared/components/emotion-icon/emotion-icon.component';
 import { FooterSectionComponent } from '../../../../shared/components/footer/footer.component';
@@ -25,9 +20,9 @@ import { LoadingTipsComponent } from '../../../../shared/components/analysis/loa
 import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
 import { PageHeaderComponent } from '../../../../shared/components/layout/page-header/page-header.component';
 import { AnalysisFeedbackComponent } from '../../../../shared/components/analysis-feedback/analysis-feedback.component';
-import { TimelineDataPoint, DistributionDataPoint } from '../../../../core/models/chart-data.model';
+import { AnalysisSectionHeaderComponent } from '../../../../shared/components/analysis-section-header/analysis-section-header.component';
 
-type PageState = 'input' | 'loading' | 'results' | 'fetching';
+import { BaseAnalysisComponent } from '../../../../shared/base/base-analysis.component';
 
 const SAMPLE_TEXTS = [
   // Pure sad
@@ -101,29 +96,23 @@ const SAMPLE_TEXTS = [
     LoadingTipsComponent,
     LoadingStateComponent,
     PageHeaderComponent,
-    AnalysisFeedbackComponent
+    AnalysisFeedbackComponent,
+    AnalysisSectionHeaderComponent
+
   ],
   templateUrl: './app-text-analysis.html',
   styleUrl: './app-text-analysis.css'
 })
-export class TextAnalysisComponent implements OnInit {
+export class TextAnalysisComponent extends BaseAnalysisComponent<TextAnalysisResult> {
   private analysisService = inject(TextAnalysisService);
-  private chartThemeService = inject(ChartThemeService);
-  private storageService = inject(AnalysisStorageService);
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  private toastService = inject(ToastService);
-  private analysisV2Service = inject(AnalysisV2Service);
-  private authService = inject(AuthService);
-  colorService = inject(EmotionColorService);
-  private shouldScrollToFeedback = false;
 
+  // ─── Base Contract ────────────────────────────────────────────────
+  protected readonly analysisType = 'text' as const;
+  protected readonly analysisRoute = '/analysis/text';
+  protected readonly expectedApiType = 'Text';
 
-  state = signal<PageState>('input');
+  // ─── Text-Specific State ──────────────────────────────────────────
   inputText = signal<string>('');
-  error = signal<string | null>(null);
-  result = signal<TextAnalysisResult | null>(null);
-  sessionId = signal<string>('');
 
   charCount = computed(() => this.inputText().length);
   tokenEstimate = computed(() => Math.round(this.inputText().length / 4));
@@ -144,9 +133,6 @@ export class TextAnalysisComponent implements OnInit {
     'Context from earlier sentences influences how later sentences are interpreted'
   ];
 
-  timelineData = signal<TimelineDataPoint[]>([]);
-  distributionData = signal<DistributionDataPoint[]>([]);
-
   modelChips = computed(() => {
     const r = this.result();
     if (!r) return [];
@@ -158,83 +144,88 @@ export class TextAnalysisComponent implements OnInit {
     ];
   });
 
-  constructor() {
-    // Capture navigation state for scrolling
-    const navigation = this.router.getCurrentNavigation();
-    if (navigation?.extras.state?.['scrollToFeedback']) {
-      this.shouldScrollToFeedback = true;
-    }
-
-    effect(() => {
-      const theme = this.chartThemeService.getChartTheme();
-      if (this.result()) {
-        this.buildChartOptions(theme);
-      }
-    });
-  }
-
-  ngOnInit() {
-    this.shuffleArray(this.shuffledTexts);
-
-    this.route.params.subscribe(params => {
-      const id = params['id'];
-      if (id) {
-        // Try local storage by UUID (client_id) first, then by numeric cloudId
-        let session = this.storageService.getSessionById(id)
-          || this.storageService.getSessions().find(s => s.cloudId === Number(id));
-
-        if (session) {
-          this.sessionId.set(session.id);
-          this.inputText.set(session.input);
-          this.result.set(session.result);
-          this.state.set('results');
-          this.buildChartOptions(this.chartThemeService.getChartTheme());
-
-          if (this.shouldScrollToFeedback) {
-            this.shouldScrollToFeedback = false; // consume it
-            setTimeout(() => this.scrollToFeedback(), 150);
-          }
-        } else {
-          // Fallback to API using the id (works with numeric IDs)
-          this.state.set('fetching');
-          this.analysisV2Service.getAnalysisDetails(id).subscribe({
-            next: (res) => {
-              if (res.is_success && res.data && res.data.type === 'Text') {
-                const fetchedSession = this.analysisV2Service.mapDetailsToSession(res.data) as any;
-
-                this.storageService.saveSession(fetchedSession);
-
-                this.sessionId.set(fetchedSession.id);
-                this.inputText.set(fetchedSession.input);
-                this.result.set(fetchedSession.result);
-                this.state.set('results');
-                this.buildChartOptions(this.chartThemeService.getChartTheme());
-
-                if (this.shouldScrollToFeedback) {
-                  this.shouldScrollToFeedback = false; // consume it
-                  setTimeout(() => this.scrollToFeedback(), 300);
-                }
-              } else {
-                this.toastService.show('Not Found', 'This analysis report could not be found', 'error', 'error');
-                this.router.navigate(['/analysis/text']);
-              }
-            },
-            error: () => {
-              this.toastService.show('Error', 'Failed to retrieve analysis report', 'error', 'error');
-              this.router.navigate(['/analysis/text']);
-            }
-          });
-        }
-      } else {
-        if (this.state() === 'results') {
-          this.resetToInput(false);
-        }
-      }
-    });
-  }
-
   shuffledTexts = [...SAMPLE_TEXTS];
   currentIndex = 0;
+
+  // ─── Base Hooks ───────────────────────────────────────────────────
+
+  protected override onInit(): void {
+    this.shuffleArray(this.shuffledTexts);
+  }
+
+  protected override onNoRouteId(): void {
+    if (this.state() === 'results') {
+      this.resetToInput(false);
+    }
+  }
+
+  // ─── Base Abstract Implementations ────────────────────────────────
+
+  protected findLocalSession(id: string): any | null {
+    return this.storageService.getSessionById(id)
+      || this.storageService.getSessions().find(s => s.cloudId === Number(id))
+      || null;
+  }
+
+  protected applySession(session: any): void {
+    this.sessionId.set(session.id);
+    this.inputText.set(session.input);
+    this.result.set(session.result);
+    this.state.set('results');
+    this.buildChartData(this.chartThemeService.getChartTheme());
+  }
+
+  protected saveLocalSession(session: any): void {
+    this.storageService.saveSession(session);
+  }
+
+  protected buildChartData(theme: any): void {
+    const res = this.result();
+    if (!res) return;
+
+    this.timelineData.set(res.sentences_analysis.map((s, i) => ({
+      label: `S${i + 1}`,
+      probabilities: s.probabilities as any,
+      tooltipTitle: `Sentence ${i + 1}`,
+      tooltipDetail: s.sentence
+    })));
+
+    this.distributionData.set(res.combined_results.map(r => ({
+      label: r.label,
+      value: r.confidence_percent
+    })));
+  }
+
+  protected buildSessionPayload(sid: string, result: TextAnalysisResult): any {
+    return {
+      id: sid,
+      type: 'text',
+      timestamp: new Date().toISOString(),
+      input: this.inputText(),
+      result: result
+    };
+  }
+
+  protected syncToCloud(sid: string, result: TextAnalysisResult): Observable<ApiResponse<number>> {
+    return this.analysisV2Service.saveTextAnalysis(sid, result);
+  }
+
+  // ─── Text-Specific Methods ────────────────────────────────────────
+
+  startAnalysis() {
+    this.executeAnalysisFlow(
+      this.analysisService.analyze(this.inputText())
+    );
+  }
+
+  resetToInput(navigate = true) {
+    this.state.set('input');
+    this.result.set(null);
+    // this.showEditHint.set(false);
+    if (navigate) {
+      this.router.navigate(['/analysis/text']);
+    }
+  }
 
   shuffleArray(array: string[]) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -254,69 +245,6 @@ export class TextAnalysisComponent implements OnInit {
 
   onTextChange() {
     if (this.error()) this.error.set(null);
-  }
-
-  startAnalysis() {
-    this.state.set('loading');
-    this.error.set(null);
-
-    this.analysisService.analyze(this.inputText())
-      .subscribe({
-        next: (res) => {
-          setTimeout(() => {
-            this.result.set(res);
-            const sid = crypto.randomUUID();
-            this.sessionId.set(sid);
-            this.storageService.saveSession({
-              id: sid,
-              type: 'text',
-              timestamp: new Date().toISOString(),
-              input: this.inputText(),
-              result: res
-            });
-
-            this.buildChartOptions(this.chartThemeService.getChartTheme());
-            this.state.set('results');
-            this.router.navigate(['/analysis/text', sid], { replaceUrl: true });
-
-            // Background fire-and-forget — only if logged in
-            if (this.authService.isAuthenticated()) {
-              this.analysisV2Service.saveTextAnalysis(sid, res)
-                .subscribe({
-                  next: (apiRes) => {
-                    if (apiRes.is_success && apiRes.data != null) {
-                      this.storageService.markAsSynced(sid, apiRes.data, 'text');
-                    } else {
-                      this.storageService.deleteSession(sid, 'text');
-                      this.toastService.show('Save Failed', 'Analysis could not be saved to cloud.', 'error', 'error');
-                    }
-                  },
-                  error: () => {
-                    this.storageService.deleteSession(sid, 'text');
-                    this.toastService.show('Save Failed', 'Analysis could not be saved to cloud.', 'error', 'error');
-                  }
-                });
-            }
-          }, 500);
-        },
-        error: (err) => {
-          console.error(err);
-          const msg = 'Something went wrong. Please try again later.';
-          this.error.set(msg);
-          this.toastService.show('Analysis Failed', msg, 'error');
-          this.state.set('input');
-        }
-      });
-  }
-
-
-  resetToInput(navigate = true) {
-    this.state.set('input');
-    this.result.set(null);
-    // this.showEditHint.set(false);
-    if (navigate) {
-      this.router.navigate(['/analysis/text']);
-    }
   }
 
   emotionalInsights = computed(() => {
@@ -357,29 +285,4 @@ export class TextAnalysisComponent implements OnInit {
       complexity: diversity > 3 ? 'Complex' : (diversity > 1 ? 'Balanced' : 'Direct')
     };
   });
-
-
-  private buildChartOptions(theme: any) {
-    const res = this.result();
-    if (!res) return;
-
-    this.timelineData.set(res.sentences_analysis.map((s, i) => ({
-      label: `S${i + 1}`,
-      probabilities: s.probabilities as any,
-      tooltipTitle: `Sentence ${i + 1}`,
-      tooltipDetail: s.sentence
-    })));
-
-    this.distributionData.set(res.combined_results.map(r => ({
-      label: r.label,
-      value: r.confidence_percent
-    })));
-  }
-
-  scrollToFeedback() {
-    const el = document.getElementById('feedback-section');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }
 }

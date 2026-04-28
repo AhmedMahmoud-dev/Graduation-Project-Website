@@ -10,116 +10,14 @@
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl">
 
     <!-- PANEL A -->
-    <div
-      class="border-2 border-dashed border-[color:var(--border-color)] bg-[color:var(--bg-card)] rounded-2xl p-6 md:p-8 flex flex-col items-center justify-center min-h-[220px] transition-all duration-300 relative group overflow-hidden"
-      [class.border-solid]="!!analysisA()" 
-      [class.hover:border-[color:var(--brand-primary)]]="!analysisA() && !loadingA()"
-      [class.cursor-pointer]="!analysisA() && !loadingA()"
-      (click)="!analysisA() && !loadingA() && openPicker('A')"
-      [style.borderColor]="analysisA() ? 'var(--border-color)' : ''">
-
-      @if (loadingA()) {
-      <div class="flex flex-col items-center gap-4">
-        <div
-          class="w-12 h-12 rounded-full border-[3px] border-[color:var(--brand-primary)] border-t-transparent animate-spin">
-        </div>
-        <span class="text-xs font-bold text-[color:var(--text-muted)] uppercase tracking-widest">Loading
-          analysis...</span>
-      </div>
-      } @else if (!analysisA()) {
-      <div class="flex flex-col items-center">
-        <div
-          class="w-16 h-16 rounded-full bg-[color:var(--bg-secondary)] mb-4 flex items-center justify-center text-[color:var(--text-muted)] transition-all">
-          <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
-          </svg>
-        </div>
-        <span
-          class="text-sm font-bold text-[color:var(--text-secondary)] uppercase tracking-wider group-hover:text-[color:var(--text-primary)] transition-colors">Select
-          Analysis A</span>
-      </div>
-      } @else {
-      <div
-        class="absolute inset-0 bg-gradient-to-b from-transparent to-[color:var(--bg-secondary)]/50 pointer-events-none">
-      </div>
-      <div class="flex flex-col items-center text-center z-10 w-full">
-        <span class="text-[10px] font-black uppercase text-[color:var(--text-muted)] tracking-widest mb-1">{{
-          analysisA()?.timestamp | date:'medium' }}</span>
-        <p
-          class="font-bold text-[color:var(--text-primary)] text-sm sm:text-base leading-snug mb-4 line-clamp-2 max-w-[80%]">
-          {{ getExcerpt(analysisA()) }}</p>
-
-        <div class="flex items-center gap-3">
-          <div class="px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest text-white"
-            [style.backgroundColor]="getEmotionColor(getDominantLabel(analysisA()))">
-            {{ getDominantLabel(analysisA()) }}
-          </div>
-          <span class="text-sm font-bold opacity-60" [style.color]="getEmotionColor(getDominantLabel(analysisA()))">{{
-            getConfidence(analysisA()) | number:'1.1-1' }}%</span>
-        </div>
-
-        <button (click)="openPicker('A'); $event.stopPropagation()"
-          class="mt-6 text-xs font-bold text-[color:var(--brand-primary)] uppercase tracking-widest hover:underline cursor-pointer">Change
-          Selection</button>
-      </div>
-      }
-    </div>
+    <app-compare-selection-panel [analysis]="analysisA()" [loading]="loadingA()" panelLabel="A"
+      (openPicker)="openPicker('A')">
+    </app-compare-selection-panel>
 
     <!-- PANEL B -->
-    <div
-      class="border-2 border-dashed border-[color:var(--border-color)] bg-[color:var(--bg-card)] rounded-2xl p-6 md:p-8 flex flex-col items-center justify-center min-h-[220px] transition-all duration-300 relative group overflow-hidden"
-      [class.border-solid]="!!analysisB()" 
-      [class.hover:border-[color:var(--brand-primary)]]="!analysisB() && !loadingB()"
-      [class.cursor-pointer]="!analysisB() && !loadingB()"
-      (click)="!analysisB() && !loadingB() && openPicker('B')"
-      [style.borderColor]="analysisB() ? 'var(--border-color)' : ''">
-
-      @if (loadingB()) {
-      <div class="flex flex-col items-center gap-4">
-        <div
-          class="w-12 h-12 rounded-full border-[3px] border-[color:var(--brand-primary)] border-t-transparent animate-spin">
-        </div>
-        <span class="text-xs font-bold text-[color:var(--text-muted)] uppercase tracking-widest">Loading
-          analysis...</span>
-      </div>
-      } @else if (!analysisB()) {
-      <div class="flex flex-col items-center">
-        <div
-          class="w-16 h-16 rounded-full bg-[color:var(--bg-secondary)] mb-4 flex items-center justify-center text-[color:var(--text-muted)] transition-all">
-          <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
-          </svg>
-        </div>
-        <span
-          class="text-sm font-bold text-[color:var(--text-secondary)] uppercase tracking-wider group-hover:text-[color:var(--text-primary)] transition-colors">Select
-          Analysis B</span>
-      </div>
-      } @else {
-      <div
-        class="absolute inset-0 bg-gradient-to-b from-transparent to-[color:var(--bg-secondary)]/50 pointer-events-none">
-      </div>
-      <div class="flex flex-col items-center text-center z-10 w-full">
-        <span class="text-[10px] font-black uppercase text-[color:var(--text-muted)] tracking-widest mb-1">{{
-          analysisB()?.timestamp | date:'medium' }}</span>
-        <p
-          class="font-bold text-[color:var(--text-primary)] text-sm sm:text-base leading-snug mb-4 line-clamp-2 max-w-[80%]">
-          {{ getExcerpt(analysisB()) }}</p>
-
-        <div class="flex items-center gap-3">
-          <div class="px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest text-white"
-            [style.backgroundColor]="getEmotionColor(getDominantLabel(analysisB()))">
-            {{ getDominantLabel(analysisB()) }}
-          </div>
-          <span class="text-sm font-bold opacity-60" [style.color]="getEmotionColor(getDominantLabel(analysisB()))">{{
-            getConfidence(analysisB()) | number:'1.1-1' }}%</span>
-        </div>
-
-        <button (click)="openPicker('B'); $event.stopPropagation()"
-          class="mt-6 text-xs font-bold text-[color:var(--brand-primary)] uppercase tracking-widest hover:underline cursor-pointer">Change
-          Selection</button>
-      </div>
-      }
-    </div>
+    <app-compare-selection-panel [analysis]="analysisB()" [loading]="loadingB()" panelLabel="B"
+      (openPicker)="openPicker('B')">
+    </app-compare-selection-panel>
 
   </div>
 </div>
@@ -191,7 +89,7 @@
             : 'bg-[color:var(--bg-surface)] border-[color:var(--border-color)] hover:border-[color:var(--brand-primary)] hover:shadow-md cursor-pointer group'">
         <!-- Icon -->
         <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white shrink-0 shadow-inner"
-          [style.backgroundColor]="getEmotionColor(item.dominant_emotion)">
+          [style.backgroundColor]="format.getEmotionColor(item.dominant_emotion)">
           <app-emotion-icon [emotion]="item.dominant_emotion" [size]="24" color="currentColor"></app-emotion-icon>
         </div>
         <!-- Mid Content -->
@@ -214,9 +112,9 @@
           class="shrink-0 flex items-center gap-4 border-t sm:border-t-0 sm:border-l border-[color:var(--border-color)] pt-3 sm:pt-0 sm:pl-4 w-full sm:w-auto mt-2 sm:mt-0">
           <div class="flex flex-col items-start sm:items-end">
             <span class="text-[10px] font-black uppercase tracking-widest opacity-50 mb-0.5"
-              [style.color]="getEmotionColor(item.dominant_emotion)">Detected</span>
+              [style.color]="format.getEmotionColor(item.dominant_emotion)">Detected</span>
             <span class="text-sm font-bold text-[color:var(--text-primary)]">
-              <span class="uppercase tracking-wide" [style.color]="getEmotionColor(item.dominant_emotion)">{{
+              <span class="uppercase tracking-wide" [style.color]="format.getEmotionColor(item.dominant_emotion)">{{
                 item.dominant_emotion }}</span>
               <span class="opacity-40 text-[color:var(--text-muted)] mx-1">•</span>
               {{ item.confidence_percent | number:'1.0-0' }}%

@@ -4,6 +4,7 @@ import { FeedbackService } from '../../../core/services/feedback.service';
 import { TestimonialsResponse, TestimonialItem, TestimonialsStats } from '../../../core/models/feedback.model';
 import { finalize } from 'rxjs';
 import { SystemFeedbackUIService } from '../../../core/services/system-feedback-ui.service';
+import { AppCacheService } from '../../../core/services/app-cache.service';
 
 @Component({
   selector: 'app-testimonials-section',
@@ -15,6 +16,7 @@ import { SystemFeedbackUIService } from '../../../core/services/system-feedback-
 export class TestimonialsSectionComponent implements OnInit {
   private feedbackService = inject(FeedbackService);
   private uiService = inject(SystemFeedbackUIService);
+  private cache = inject(AppCacheService);
 
 
   private readonly CACHE_KEY = 'emotra_public_testimonials';
@@ -26,11 +28,7 @@ export class TestimonialsSectionComponent implements OnInit {
 
   // Initial rehydration logic to prevent ANY flicker
   private getCachedData() {
-    try {
-      const cached = localStorage.getItem(this.CACHE_KEY);
-      if (cached) return JSON.parse(cached);
-    } catch { }
-    return null;
+    return this.cache.getItem<any>(this.CACHE_KEY);
   }
 
   // State initialized from cache instantly
@@ -94,12 +92,10 @@ export class TestimonialsSectionComponent implements OnInit {
             this.stats.set(response.data.stats);
 
             // Update cache
-            try {
-              localStorage.setItem(this.CACHE_KEY, JSON.stringify({
-                testimonials: response.data.items,
-                stats: response.data.stats
-              }));
-            } catch { }
+            this.cache.setItem(this.CACHE_KEY, {
+              testimonials: response.data.items,
+              stats: response.data.stats
+            });
           } else {
             this.useFallback();
           }

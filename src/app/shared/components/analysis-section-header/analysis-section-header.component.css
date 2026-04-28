@@ -1,0 +1,13 @@
+.section-header-border {
+  padding-left: 16px;
+  border-left: 4px solid var(--brand-primary);
+}
+
+/* Escape decimal point for custom spacing class */
+.pl-4\.5 {
+  padding-left: 1.125rem;
+}
+
+.font-heading {
+  font-family: var(--font-heading), sans-serif;
+}

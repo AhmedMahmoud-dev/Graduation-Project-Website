@@ -4,11 +4,14 @@ import { AnalysisSession, AudioAnalysisSession, TextAnalysisResult } from '../..
 import { ColorSettingsService } from '../../../core/services/color-settings.service';
 import { EmotionDistributionComponent } from '../../../shared/components/emotion-charts/emotion-distribution/emotion-distribution.component';
 import { DistributionDataPoint } from '../../../core/models/chart-data.model';
+import { AnalysisSectionHeaderComponent } from '../../../shared/components/analysis-section-header/analysis-section-header.component';
+
 
 @Component({
   selector: 'app-compare-distribution',
   standalone: true,
-  imports: [CommonModule, EmotionDistributionComponent],
+  imports: [CommonModule, EmotionDistributionComponent, AnalysisSectionHeaderComponent],
+
   templateUrl: './compare-distribution.component.html',
   styleUrls: ['./compare-distribution.component.css']
 })

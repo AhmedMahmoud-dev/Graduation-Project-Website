@@ -1,13 +1,10 @@
 <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-3xl p-6 md:p-8 shadow-sm">
-  <div class="mb-8">
-    <div class="flex items-center gap-3 mb-2">
-      <div class="w-1.5 h-6 bg-[color:var(--brand-primary)] rounded-full"></div>
-      <h2 class="text-xl md:text-2xl font-black text-[color:var(--text-primary)] tracking-tight">Sequence Analysis Diff
-      </h2>
-    </div>
-    <p class="text-sm text-[color:var(--text-muted)] font-medium pl-4.5">Emotion detected in each segment — Analysis A
-      vs Analysis B</p>
-  </div>
+  <app-analysis-section-header 
+    title="Sequence Analysis Diff" 
+    description="Emotion detected in each segment — Analysis A vs Analysis B"
+    variant="pill">
+  </app-analysis-section-header>
+
 
   <div class="flex flex-col gap-4">
     @for (row of diffRows(); track row.index) {
@@ -46,7 +43,7 @@
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 mb-2">
               <span class="px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest text-white"
-                [style.backgroundColor]="getEmotionColor(getDominant(analysisA()!.type, row.itemA).label)">
+                [style.backgroundColor]="format.getEmotionColor(getDominant(analysisA()!.type, row.itemA).label)">
                 {{ getDominant(analysisA()!.type, row.itemA).label }}
               </span>
               <span class="text-xs font-bold text-[color:var(--text-primary)]">{{ getDominant(analysisA()!.type,
@@ -89,7 +86,7 @@
           <div class="flex-1 min-w-0 lg:text-right">
             <div class="flex items-center gap-2 mb-2 lg:justify-end">
               <span class="px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest text-white"
-                [style.backgroundColor]="getEmotionColor(getDominant(analysisB()!.type, row.itemB).label)">
+                [style.backgroundColor]="format.getEmotionColor(getDominant(analysisB()!.type, row.itemB).label)">
                 {{ getDominant(analysisB()!.type, row.itemB).label }}
               </span>
               <span class="text-xs font-bold text-[color:var(--text-primary)]">{{ getDominant(analysisB()!.type,

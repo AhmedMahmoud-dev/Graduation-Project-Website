@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { AnalysisSession, AudioAnalysisSession, TextAnalysisResult } from '../../../core/models/text-analysis.model';
 import { ColorSettingsService } from '../../../core/services/color-settings.service';
 import { EmotionIconComponent } from '../../../shared/components/emotion-icon/emotion-icon.component';
+import { FormattingService } from '../../../core/services/formatting.service';
+import { AnalysisSectionHeaderComponent } from '../../../shared/components/analysis-section-header/analysis-section-header.component';
+
 
 interface DiffRow {
   index: number;
@@ -14,12 +17,14 @@ interface DiffRow {
 @Component({
   selector: 'app-compare-diff',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AnalysisSectionHeaderComponent],
+
   templateUrl: './compare-diff.component.html',
   styleUrls: ['./compare-diff.component.css']
 })
 export class CompareDiffComponent {
   private colorSettings = inject(ColorSettingsService);
+  protected format = inject(FormattingService);
 
   analysisA = input.required<AnalysisSession | AudioAnalysisSession | null>();
   analysisB = input.required<AnalysisSession | AudioAnalysisSession | null>();
@@ -96,7 +101,4 @@ export class CompareDiffComponent {
     }
   }
 
-  getEmotionColor(label: string): string {
-    return `var(--emotion-${label?.toLowerCase() || 'neutral'})`;
-  }
 }

@@ -1,4 +1,5 @@
-<div class="mt-12 pt-12 border-t border-[color:var(--color-border)] animate-in fade-in slide-in-from-bottom-4 duration-700">
+<div
+  class="mt-12 pt-12 border-t border-[color:var(--color-border)] animate-in fade-in slide-in-from-bottom-4 duration-700">
   <div class="max-w-4xl mx-auto">
     <div class="feedback-card">
       <!-- Header Section -->
@@ -17,7 +18,8 @@
       </div>
 
       @if (isLoading()) {
-      <app-loading-state message="Fetching feedback records..." subtitle="Accessing historical emotional intelligence data" [size]="'md'"></app-loading-state>
+      <app-loading-state message="Fetching feedback records..."
+        subtitle="Accessing historical emotional intelligence data" [size]="'md'"></app-loading-state>
       } @else {
       <!-- Content Area -->
       <div class="feedback-content">

@@ -7,11 +7,7 @@
   font-family: 'DM Sans', sans-serif;
 }
 
-/* Section header left accent */
-.section-header {
-  padding-left: 16px;
-  border-left: 4px solid var(--brand-primary);
-}
+
 
 /* ═══════════════════════════════════════════════════════════════
    ACTION BUTTONS

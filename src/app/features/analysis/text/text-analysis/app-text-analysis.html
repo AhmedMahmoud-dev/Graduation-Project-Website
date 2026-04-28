@@ -100,13 +100,12 @@
   <section class="px-4 sm:px-8 md:px-12 py-12"
     style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color)">
     <div class="max-w-7xl mx-auto w-full min-w-0">
-      <div class="section-header mb-8">
-        <p class="text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">Visualizations
-        </p>
-        <h2 class="text-2xl font-extrabold tracking-tight font-heading" style="color: var(--text-primary)">Emotion
-          Timeline</h2>
-        <p class="text-sm mt-1" style="color: var(--text-muted)">How emotions shifted sentence by sentence</p>
-      </div>
+      <app-analysis-section-header 
+        title="Emotion Timeline" 
+        subtitle="Visualizations" 
+        description="How emotions shifted sentence by sentence">
+      </app-analysis-section-header>
+
       <div class="rounded-2xl p-5 sm:p-8 w-full max-w-[calc(100vw-2.5rem)] sm:max-w-full"
         style="background: var(--bg-card); border: 1px solid var(--border-color)">
         <div class="mt-8">
@@ -133,12 +132,12 @@
   <section class="px-4 sm:px-8 md:px-12 py-12"
     style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color)">
     <div class="max-w-7xl mx-auto w-full min-w-0">
-      <div class="section-header mb-8">
-        <p class="text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">Distribution</p>
-        <h2 class="text-2xl font-extrabold tracking-tight font-heading" style="color: var(--text-primary)">Emotion
-          Distribution</h2>
-        <p class="text-sm mt-1" style="color: var(--text-muted)">Combined confidence scores across all emotions</p>
-      </div>
+      <app-analysis-section-header 
+        title="Emotion Distribution" 
+        subtitle="Distribution" 
+        description="Combined confidence scores across all emotions">
+      </app-analysis-section-header>
+
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="rounded-2xl p-6 md:p-8" style="background: var(--bg-card); border: 1px solid var(--border-color)">
           <div class="mt-8">
@@ -186,12 +185,12 @@
   <section class="px-4 sm:px-8 md:px-12 py-12"
     style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color)">
     <div class="max-w-7xl mx-auto w-full min-w-0">
-      <div class="section-header mb-8">
-        <p class="text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">Methodology</p>
-        <h2 class="text-2xl font-extrabold tracking-tight font-heading" style="color: var(--text-primary)">Analysis
-          Tracks</h2>
-        <p class="text-sm mt-1" style="color: var(--text-muted)">Comparing the two analysis tracks</p>
-      </div>
+      <app-analysis-section-header 
+        title="Analysis Tracks" 
+        subtitle="Methodology" 
+        description="Comparing the two analysis tracks">
+      </app-analysis-section-header>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Sentence Track (Combined) -->
         <div class="rounded-2xl p-5 sm:p-8" style="background: var(--bg-card); border: 1px solid var(--border-color)">
@@ -247,12 +246,12 @@
   <section class="px-4 sm:px-8 md:px-12 py-12"
     style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color)">
     <div class="max-w-7xl mx-auto w-full min-w-0">
-      <div class="section-header mb-8">
-        <p class="text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">Deep Dive</p>
-        <h2 class="text-2xl font-extrabold tracking-tight font-heading" style="color: var(--text-primary)">Sentence
-          Breakdown</h2>
-        <p class="text-sm mt-1" style="color: var(--text-muted)">Detailed emotion analysis for each sentence</p>
-      </div>
+      <app-analysis-section-header 
+        title="Sentence Breakdown" 
+        subtitle="Granularity" 
+        description="Detailed emotion analysis for each sentence">
+      </app-analysis-section-header>
+
       <div class="space-y-4 pr-2" [class.max-h-[800px]]="result()!.sentences_analysis.length > 8"
         [class.overflow-y-auto]="result()!.sentences_analysis.length > 8">
         @for (s of result()!.sentences_analysis; track s; let i = $index) {

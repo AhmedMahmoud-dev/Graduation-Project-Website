@@ -1,20 +1,25 @@
 import { Component, input, Output, EventEmitter, signal, computed, inject, effect, untracked, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AnalysisSession, AudioAnalysisSession, TextAnalysisResult } from '../../../core/models/text-analysis.model';
+import { AnalysisSession, AudioAnalysisSession } from '../../../core/models/text-analysis.model';
 import { AnalysisHistoryItem, AnalysisType } from '../../../core/models/analysis-v2.model';
 import { EmotionIconComponent } from '../../../shared/components/emotion-icon/emotion-icon.component';
+import { CompareSelectionPanelComponent } from './compare-selection-panel/compare-selection-panel.component';
 import { SegmentedNavComponent } from '../../../shared/components/segmented-nav/segmented-nav.component';
 import { AnalysisV2Service } from '../../../core/services/analysis-v2.service';
+import { AppCacheService } from '../../../core/services/app-cache.service';
+import { FormattingService } from '../../../core/services/formatting.service';
 
 @Component({
   selector: 'app-compare-selector',
   standalone: true,
-  imports: [CommonModule, EmotionIconComponent, SegmentedNavComponent],
+  imports: [CommonModule, EmotionIconComponent, SegmentedNavComponent, CompareSelectionPanelComponent],
   templateUrl: './compare-selector.component.html',
   styleUrls: ['./compare-selector.component.css']
 })
 export class CompareSelectorComponent implements OnDestroy {
   private analysisV2Service = inject(AnalysisV2Service);
+  private cache = inject(AppCacheService);
+  protected format = inject(FormattingService);
 
   navOptions = [
     { label: 'Text', value: 'text' },
@@ -61,21 +66,11 @@ export class CompareSelectorComponent implements OnDestroy {
 
   private loadHistoryFromCache(type: 'text' | 'audio') {
     const key = type === 'text' ? 'emotra_history_meta_text' : 'emotra_history_meta_audio';
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        this._internalHistory.set((parsed.data || []) as AnalysisHistoryItem[]);
-      } else {
-        this._internalHistory.set([]);
-      }
-      
-      // Background sync
-      this.fetchTypeHistory(type);
-    } catch (e) {
-      this._internalHistory.set([]);
-      this.fetchTypeHistory(type);
-    }
+    const parsed = this.cache.getItem<any>(key);
+    this._internalHistory.set((parsed?.data || []) as AnalysisHistoryItem[]);
+
+    // Background sync
+    this.fetchTypeHistory(type);
   }
 
   private fetchTypeHistory(type: 'text' | 'audio') {
@@ -86,7 +81,7 @@ export class CompareSelectorComponent implements OnDestroy {
     // This fulfills the "Always Up to Date" requirement without being annoying.
     const now = Date.now();
     const lastFetch = this._lastFetchTime[type] || 0;
-    if (now - lastFetch < 15000) return; 
+    if (now - lastFetch < 15000) return;
 
     this.isHistoryLoading.set(true);
     const capitalizedType = (type.charAt(0).toUpperCase() + type.slice(1)) as AnalysisType;
@@ -95,7 +90,7 @@ export class CompareSelectorComponent implements OnDestroy {
       next: (res) => {
         if (res.is_success && res.data) {
           const key = type === 'text' ? 'emotra_history_meta_text' : 'emotra_history_meta_audio';
-          localStorage.setItem(key, JSON.stringify({ data: res.data, total: res.total }));
+          this.cache.setItem(key, { data: res.data, total: res.total });
 
           this._lastFetchTime[type] = Date.now();
 
@@ -113,31 +108,7 @@ export class CompareSelectorComponent implements OnDestroy {
   // Available History — reads from localStorage meta cache
   availableHistory = computed(() => this._internalHistory());
 
-  // ─── Panel helpers (work with full session objects from inputs) ─────────────
-
-  getEmotionColor(label: string): string {
-    return `var(--emotion-${label?.toLowerCase() || 'neutral'})`;
-  }
-
-  getDominantLabel(session: any): string {
-    if (session.type === 'text') {
-      return (session.result as TextAnalysisResult).combined_final_emotion.label;
-    }
-    return session.result.final_multimodal_emotion.label;
-  }
-
-  getConfidence(session: any): number {
-    if (session.type === 'text') {
-      return (session.result as TextAnalysisResult).combined_final_emotion.confidence_percent;
-    }
-    return session.result.final_multimodal_emotion.confidence_percent;
-  }
-
-  getExcerpt(session: any): string {
-    let text = session.type === 'text' ? session.input : session.inputFileName;
-    if (text?.length > 80) return text.substring(0, 80) + '...';
-    return text || 'Unknown input';
-  }
+  // Panel helpers moved to CompareSelectionPanelComponent
 
   // ─── Modal list helpers (work with AnalysisHistoryItem meta) ───────────────
 

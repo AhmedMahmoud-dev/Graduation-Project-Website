@@ -1,12 +1,10 @@
 <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-3xl p-6 md:p-8 shadow-sm">
-  <div class="mb-8">
-    <div class="flex items-center gap-3 mb-2">
-      <div class="w-1.5 h-6 bg-[color:var(--brand-primary)] rounded-full"></div>
-      <h2 class="text-xl md:text-2xl font-black text-[color:var(--text-primary)] tracking-tight">Emotion Distribution
-      </h2>
-    </div>
-    <p class="text-sm text-[color:var(--text-muted)] font-medium pl-4.5">Final combined scores compared</p>
-  </div>
+  <app-analysis-section-header 
+    title="Emotion Distribution" 
+    description="Final combined scores compared"
+    variant="pill">
+  </app-analysis-section-header>
+
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
     <!-- Chart A -->

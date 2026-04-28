@@ -15,7 +15,12 @@ import { PageHeaderComponent } from '../../shared/components/layout/page-header/
 import { EmotionHistoryTimelineComponent } from './emotion-history-timeline/emotion-history-timeline.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../shared/components/loading-state/loading-state.component';
+import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
+import { FormattingService } from '../../core/services/formatting.service';
+import { AppCacheService } from '../../core/services/app-cache.service';
 import { AnalysisStats } from '../../core/models/analysis-v2.model';
+import { AnalysisSectionHeaderComponent } from '../../shared/components/analysis-section-header/analysis-section-header.component';
+
 
 export interface DashboardActivity {
   id: number;
@@ -59,7 +64,10 @@ export interface DashboardUiStats {
     PageHeaderComponent,
     EmotionHistoryTimelineComponent,
     EmptyStateComponent,
-    LoadingStateComponent
+    LoadingStateComponent,
+    AppIconComponent,
+    AnalysisSectionHeaderComponent
+
   ],
   templateUrl: './app-dashboard.html',
   styleUrls: ['./app-dashboard.css']
@@ -69,6 +77,8 @@ export class DashboardComponent implements OnInit {
   private chartThemeService = inject(ChartThemeService);
   private colorSettingsService = inject(ColorSettingsService);
   private toastService = inject(ToastService);
+  protected format = inject(FormattingService);
+  private cache = inject(AppCacheService);
 
   private destroyRef = inject(DestroyRef);
 
@@ -89,7 +99,7 @@ export class DashboardComponent implements OnInit {
       total: metrics.total_analyses,
       textCount: metrics.text_count || 0,
       audioCount: metrics.audio_count || 0,
-      avgConfidence: ((metrics.avg_confidence || 0) * 100).toFixed(1),
+      avgConfidence: this.format.formatConfidence(metrics.avg_confidence),
       mostCommonLabel: apiStats.most_frequent?.label || 'neutral',
       mostCommonIcon: apiStats.most_frequent?.label || 'neutral',
       categoryShare: {
@@ -107,7 +117,7 @@ export class DashboardComponent implements OnInit {
         date: a.timestamp,
         label: a.label || 'neutral',
         confidence: a.confidence || 0,
-        snippet: a.snippet && a.snippet.length > 55 ? a.snippet.substring(0, 55) + '...' : a.snippet || 'Processing data'
+        snippet: this.format.truncate(a.snippet, 55) || 'Processing data'
       }))
     };
 
@@ -135,16 +145,11 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit() {
     // 1. Stale-while-revalidate: read cache
-    try {
-      const cached = localStorage.getItem('emotra_stats');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        this.processApiStats(parsed);
-        this.isLoading.set(false); // Skip spinner
-      } else {
-        this.isLoading.set(true);
-      }
-    } catch (e) {
+    const cached = this.cache.getItem<AnalysisStats>('emotra_stats');
+    if (cached) {
+      this.processApiStats(cached);
+      this.isLoading.set(false); // Skip spinner
+    } else {
       this.isLoading.set(true);
     }
 
@@ -152,37 +157,30 @@ export class DashboardComponent implements OnInit {
     this.analysisV2Service.getStats()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-      next: (res) => {
-        try {
-          if (res.is_success && res.data) {
-            try {
-              localStorage.setItem('emotra_stats', JSON.stringify(res.data));
-            } catch (e) {
-              console.warn('Failed to cache stats', e);
+        next: (res) => {
+          try {
+            if (res.is_success && res.data) {
+              this.cache.setItem('emotra_stats', res.data);
+              this.processApiStats(res.data);
+            } else {
+              this.stats.set(null);
+              this.cache.removeItem('emotra_stats');
             }
-            this.processApiStats(res.data);
-          } else {
+          } catch (err) {
+            console.error('Error processing dashboard stats:', err);
             this.stats.set(null);
-            try { localStorage.removeItem('emotra_stats'); } catch (e) {}
+          } finally {
+            this.isLoading.set(false);
           }
-        } catch (err) {
-          console.error('Error processing dashboard stats:', err);
-          this.stats.set(null);
-        } finally {
+        },
+        error: (err) => {
+          console.error('Dashboard stats API error:', err);
           this.isLoading.set(false);
+          // Do not reset stats to null on error, keep cached data
+          // No error toast on page load
         }
-      },
-      error: (err) => {
-        console.error('Dashboard stats API error:', err);
-        this.isLoading.set(false);
-        // Do not reset stats to null on error, keep cached data
-        // No error toast on page load
-      }
-    });
+      });
   }
 
-  getEmotionColor(label: string): string {
-    const l = label?.toLowerCase() || 'neutral';
-    return `var(--emotion-${l})`;
-  }
+
 }

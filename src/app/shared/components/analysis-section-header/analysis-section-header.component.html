@@ -1,0 +1,49 @@
+<div [class]="marginBottom" [class.text-center]="center" [class.flex]="center" [class.flex-col]="center" [class.items-center]="center">
+  
+  @if (variant === 'border') {
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 w-full">
+      <div class="section-header-border" [class.mx-auto]="center" [class.text-center]="center">
+        @if (subtitle) {
+          <p class="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">{{ subtitle }}</p>
+        }
+        <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight font-heading" style="color: var(--text-primary)">{{ title }}</h2>
+        @if (description) {
+          <p class="text-xs sm:text-sm mt-1" style="color: var(--text-muted)">{{ description }}</p>
+        }
+      </div>
+      <div class="actions-container">
+        <ng-content select="[actions]"></ng-content>
+      </div>
+    </div>
+  } @else if (variant === 'pill') {
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 w-full">
+      <div class="flex flex-col" [class.items-center]="center">
+        <div class="flex items-center gap-3 mb-2" [class.justify-center]="center">
+          <div class="w-1.5 h-6 bg-[color:var(--brand-primary)] rounded-full"></div>
+          <h2 class="text-xl md:text-2xl font-black text-[color:var(--text-primary)] tracking-tight">{{ title }}</h2>
+        </div>
+        @if (description) {
+          <p class="text-sm text-[color:var(--text-muted)] font-medium" [class.pl-4.5]="!center">{{ description }}</p>
+        }
+      </div>
+      <div class="actions-container">
+        <ng-content select="[actions]"></ng-content>
+      </div>
+    </div>
+  } @else {
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 w-full">
+      <div class="flex flex-col" [class.items-center]="center">
+        @if (subtitle) {
+          <p class="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">{{ subtitle }}</p>
+        }
+        <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight font-heading" style="color: var(--text-primary)">{{ title }}</h2>
+        @if (description) {
+          <p class="text-xs sm:text-sm mt-1" style="color: var(--text-muted)">{{ description }}</p>
+        }
+      </div>
+      <div class="actions-container">
+        <ng-content select="[actions]"></ng-content>
+      </div>
+    </div>
+  }
+</div>

@@ -1,6 +1,7 @@
-import { Component, input, computed } from '@angular/core';
+import { Component, input, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AnalysisSession, AudioAnalysisSession, TextAnalysisResult } from '../../../core/models/text-analysis.model';
+import { FormattingService } from '../../../core/services/formatting.service';
 
 @Component({
   selector: 'app-compare-hero',
@@ -10,6 +11,7 @@ import { AnalysisSession, AudioAnalysisSession, TextAnalysisResult } from '../..
   styleUrls: ['./compare-hero.component.css']
 })
 export class CompareHeroComponent {
+  protected format = inject(FormattingService);
   analysisA = input.required<AnalysisSession | AudioAnalysisSession | null>();
   analysisB = input.required<AnalysisSession | AudioAnalysisSession | null>();
 
@@ -87,7 +89,4 @@ export class CompareHeroComponent {
     }
   }
 
-  getEmotionColor(label: string | undefined): string {
-    return `var(--emotion-${label?.toLowerCase() || 'neutral'})`;
-  }
 }

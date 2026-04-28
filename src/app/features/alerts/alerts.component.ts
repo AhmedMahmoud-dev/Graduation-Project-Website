@@ -8,6 +8,8 @@ import { AlertsService } from '../../core/services/alerts.service';
 import { AnalysisV2Service } from '../../core/services/analysis-v2.service';
 import { AnalysisStorageService } from '../../core/services/analysis-storage.service';
 import { ToastService } from '../../core/services/toast.service';
+import { FormattingService } from '../../core/services/formatting.service';
+import { AppCacheService } from '../../core/services/app-cache.service';
 import { AlertItem, AlertStats } from '../../core/models/alert.model';
 import { AnalysisSession, AudioAnalysisSession } from '../../core/models/text-analysis.model';
 import { PageHeaderComponent } from '../../shared/components/layout/page-header/page-header.component';
@@ -30,6 +32,8 @@ export class AlertsComponent implements OnInit {
   private storageService = inject(AnalysisStorageService);
   private toastService = inject(ToastService);
   private router = inject(Router);
+  protected format = inject(FormattingService);
+  private cache = inject(AppCacheService);
   private destroyRef = inject(DestroyRef);
 
   // UI State
@@ -90,20 +94,15 @@ export class AlertsComponent implements OnInit {
   }
 
   private loadFromCache() {
-    try {
-      const cachedMeta = localStorage.getItem('emotra_alerts_meta');
-      const cachedStats = localStorage.getItem('emotra_alerts_stats');
+    const cachedMeta = this.cache.getItem<AlertItem[]>('emotra_alerts_meta');
 
-      if (cachedMeta) {
-        this.alerts.set(JSON.parse(cachedMeta));
-        this.totalCount.set(this.alerts().length); // Assume count based on cache for now
-        this.isLoading.set(false);
-      }
-
-      // Shared stats are already loaded by AlertsService constructor
-    } catch (e) {
-      console.warn('Failed to load alerts from cache', e);
+    if (cachedMeta) {
+      this.alerts.set(cachedMeta);
+      this.totalCount.set(cachedMeta.length); // Assume count based on cache for now
+      this.isLoading.set(false);
     }
+
+    // Shared stats are already loaded by AlertsService constructor
   }
 
   private fetchData() {
@@ -127,7 +126,7 @@ export class AlertsComponent implements OnInit {
           if (res.is_success && res.data) {
             this.alerts.set(res.data.items);
             this.totalCount.set(res.data.total_count);
-            localStorage.setItem('emotra_alerts_meta', JSON.stringify(res.data.items));
+            this.cache.setItem('emotra_alerts_meta', res.data.items);
           }
           this.isLoading.set(false);
         },
@@ -148,7 +147,7 @@ export class AlertsComponent implements OnInit {
           if (res.is_success && res.data) {
             this.alerts.update(prev => [...prev, ...res.data!.items]);
             this.totalCount.set(res.data.total_count);
-            localStorage.setItem('emotra_alerts_meta', JSON.stringify(this.alerts()));
+            this.cache.setItem('emotra_alerts_meta', this.alerts());
           }
           this.isLoadingMore.set(false);
         },
@@ -173,7 +172,7 @@ export class AlertsComponent implements OnInit {
             }
 
             // Sync caches (meta is local to this component's view)
-            localStorage.setItem('emotra_alerts_meta', JSON.stringify(this.alerts()));
+            this.cache.setItem('emotra_alerts_meta', this.alerts());
 
             this.toastService.show('Alert Resolved', 'The alert has been marked as read.', 'success', 'check');
           } else {
@@ -212,7 +211,7 @@ export class AlertsComponent implements OnInit {
               this.alertsService.handleAlertDeleted(item);
 
               // Sync caches
-              localStorage.setItem('emotra_alerts_meta', JSON.stringify(this.alerts()));
+              this.cache.setItem('emotra_alerts_meta', this.alerts());
 
               this.toastService.show('Deleted', 'Alert removed successfully.', 'success', 'trash');
             }
@@ -273,26 +272,9 @@ export class AlertsComponent implements OnInit {
     }
   }
 
-  getSeverityColor(severity: string): string {
-    const s = severity?.toLowerCase();
-    switch (s) {
-      case 'critical': return 'var(--emotion-anger)';
-      case 'high': return 'var(--emotion-fear)';
-      case 'medium': return 'var(--emotion-joy)';
-      case 'low': return 'var(--emotion-neutral)';
-      default: return 'var(--emotion-neutral)';
-    }
-  }
+
 
   formatDate(dateStr: string): string {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return this.format.formatDate(dateStr);
   }
 }

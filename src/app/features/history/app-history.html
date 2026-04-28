@@ -68,11 +68,7 @@
       <div class="flex flex-row controls-flex-container items-center gap-3 sm:gap-6 flex-1 w-full max-w-4xl min-w-0">
         <!-- Search Bar -->
         <div class="relative flex-1 min-w-0">
-          <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 opacity-40" fill="none" stroke="currentColor"
-            viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+          <app-icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 opacity-40"></app-icon>
           <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
             [placeholder]="filterType() === 'feedback' ? 'Search review...' : 'Search by name or emotion...'"
             class="search-input">
@@ -106,7 +102,8 @@
       <!-- Loading State (Initial) -->
       @if (isLoading()) {
       <div class="py-20 flex justify-center">
-        <app-loading-state message="Fetching history..."></app-loading-state>
+        <app-loading-state message="Fetching history..."
+          subtitle="Retrieving your past emotional explorations"></app-loading-state>
       </div>
       }
 
@@ -141,7 +138,7 @@
               <div class="hidden md:flex items-center gap-3 mb-2 flex-wrap">
                 <ng-container *ngTemplateOutlet="typeBadge; context: { type: session.type }"></ng-container>
                 <span style="width:1px; height:12px; background: var(--border-color)"></span>
-                <span class="text-xs font-bold text-[color:var(--text-muted)]">{{ session.metadata.formattedDate
+                <span class="text-xs font-bold text-[color:var(--text-muted)]">{{ format.formatDate(session.timestamp)
                   }}</span>
                 <span style="width:1px; height:12px; background: var(--border-color)"></span>
                 <span class="category-badge" [attr.data-category]="session.metadata.dominantCategory">
@@ -151,7 +148,7 @@
               <!-- Mobile Date only -->
               <div
                 class="md:hidden text-[10px] font-bold text-[color:var(--text-muted)] uppercase tracking-wider mb-2 opacity-60">
-                {{ session.metadata.formattedDate }}
+                {{ format.formatDate(session.timestamp) }}
               </div>
               <h4 class="text-lg md:text-xl font-bold line-clamp-1 mb-1" style="color: var(--text-primary)">
                 {{ session.metadata.title }}
@@ -160,7 +157,7 @@
                 [style.color]="session.metadata.emotionColor">
                 {{ session.metadata.dominantLabel }}
                 <span class="mx-1.5 opacity-30 text-[color:var(--text-muted)]">•</span>
-                {{ session.metadata.confidence | number:'1.1-1' }}% confidence
+                {{ format.formatConfidence(session.metadata.confidence) }}% confidence
               </p>
             </div>
             <!-- Actions -->
@@ -172,10 +169,7 @@
               </a>
               <button (click)="deleteSession(session.clientId.toString())"
                 class="card-action-btn delete-btn h-[48px] md:h-auto" title="Delete Log">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
+                <app-icon name="trash" className="w-5 h-5"></app-icon>
               </button>
             </div>
           </div>
@@ -198,10 +192,9 @@
               }
             </span>
             @if (!isLoadingMore()) {
-            <svg class="w-4 h-4 text-[color:var(--brand-primary)] group-hover:translate-y-0.5 transition-transform"
-              fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
-            </svg>
+            <app-icon name="chevron-down"
+              className="w-4 h-4 text-[color:var(--brand-primary)] group-hover:translate-y-0.5 transition-transform"
+              [strokeWidth]="3"></app-icon>
             }
           </button>
         </div>
@@ -212,10 +205,7 @@
       <!-- Empty State -->
       @if (!isLoading() && filteredCount() === 0) {
       <app-empty-state minHeight="50vh">
-        <svg empty-icon fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
+        <app-icon name="clock" className="w-12 h-12" [strokeWidth]="1.5" empty-icon></app-icon>
         <ng-container empty-msg>No analysis logs matched</ng-container>
         <ng-container empty-hint>
           {{ isWholeHistoryEmpty() ? "You haven't completed any analyses yet. Head over to Text or Audio analysis
@@ -241,18 +231,7 @@
 <!-- DRY Templates -->
 <ng-template #typeBadge let-type="type">
   <span class="type-indicator">
-    @if (type === 'text') {
-    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path
-        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-    }
-    @if (type === 'audio') {
-    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path
-        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-    </svg>
-    }
+    <app-icon [name]="type === 'text' ? 'text' : 'audio'" className="w-3.5 h-3.5"></app-icon>
     {{ type }}
   </span>
 </ng-template>

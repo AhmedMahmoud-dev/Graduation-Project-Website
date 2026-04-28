@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AlertsService } from '../../../../core/services/alerts.service';
 import { AlertSettings } from '../../../../core/models/alert.models';
 import { ToastService } from '../../../../core/services/toast.service';
+import { AppCacheService } from '../../../../core/services/app-cache.service';
 import { DropdownMenuComponent } from '../../../../shared/components/dropdown-menu/dropdown-menu.component';
 import { finalize } from 'rxjs/operators';
 
@@ -17,6 +18,7 @@ import { finalize } from 'rxjs/operators';
 export class AlertPreferencesComponent {
   private alertsService = inject(AlertsService);
   private toastService = inject(ToastService);
+  private cache = inject(AppCacheService);
 
   @Output() settingsChanged = new EventEmitter<void>();
   isSaving = signal(false);
@@ -50,28 +52,22 @@ export class AlertPreferencesComponent {
 
   private loadCurrentSettings() {
     this.isLoading.set(true);
-    const cached = localStorage.getItem('emotra_alert_settings');
+    const parsed = this.cache.getItem<AlertSettings>('emotra_alert_settings');
     
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        this.settings.set(parsed);
-        this.initialSettings.set(JSON.stringify(parsed));
-        this.isLoading.set(false);
-        return;
-      } catch (e) {}
+    if (parsed) {
+      this.settings.set(parsed);
+      this.initialSettings.set(JSON.stringify(parsed));
+      this.isLoading.set(false);
+      return;
     }
 
     // Fallback to fetch from API
     this.alertsService.fetchSettings();
     setTimeout(() => {
-      const fallback = localStorage.getItem('emotra_alert_settings');
+      const fallback = this.cache.getItem<AlertSettings>('emotra_alert_settings');
       if (fallback) {
-        try {
-          const parsed = JSON.parse(fallback);
-          this.settings.set(parsed);
-          this.initialSettings.set(JSON.stringify(parsed));
-        } catch (e) {}
+        this.settings.set(fallback);
+        this.initialSettings.set(JSON.stringify(fallback));
       }
       this.isLoading.set(false);
     }, 500); // Simple delay because fetchSettings is void fire-and-forget
@@ -100,9 +96,8 @@ export class AlertPreferencesComponent {
       .subscribe({
         next: (res) => {
           if (res.is_success) {
-            const json = JSON.stringify(payload);
-            localStorage.setItem('emotra_alert_settings', json);
-            this.initialSettings.set(json);
+            this.cache.setItem('emotra_alert_settings', payload);
+            this.initialSettings.set(JSON.stringify(payload));
             this.settingsChanged.emit();
           }
         },

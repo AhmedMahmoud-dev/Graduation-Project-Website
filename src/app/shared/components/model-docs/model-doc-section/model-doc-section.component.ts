@@ -1,10 +1,13 @@
 import { Component, input } from '@angular/core';
+import { AnalysisSectionHeaderComponent } from '../../analysis-section-header/analysis-section-header.component';
+
 
 
 @Component({
   selector: 'app-model-doc-section',
   standalone: true,
-  imports: [],
+  imports: [AnalysisSectionHeaderComponent],
+
   templateUrl: './model-doc-section.component.html'
 })
 export class ModelDocSectionComponent {

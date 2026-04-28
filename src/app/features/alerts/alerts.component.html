@@ -76,13 +76,14 @@
       <!-- Loading State -->
       @if (isLoading()) {
       <div class="py-12">
-        <app-loading-state message="Fetching alert records..." subtitle="Synchronizing with the security monitoring engine" [size]="'lg'"></app-loading-state>
+        <app-loading-state message="Fetching alert records..."
+          subtitle="Synchronizing with the security monitoring engine" [size]="'lg'"></app-loading-state>
       </div>
       } @else if (filteredAlerts().length > 0) {
       @for (alert of filteredAlerts(); track alert.id) {
       <div
         class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-3xl p-6 transition-all relative overflow-hidden flex flex-col md:flex-row md:items-start gap-6"
-        [class.opacity-60]="alert.resolved" [style.--severity-color]="getSeverityColor(alert.severity)">
+        [class.opacity-60]="alert.resolved" [style.--severity-color]="format.getEmotionColor(alert.severity)">
 
         <!-- Left: Icon -->
         <div class="shrink-0">

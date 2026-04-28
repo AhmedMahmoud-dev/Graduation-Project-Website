@@ -4,7 +4,7 @@
   <!-- subtle gradient glow around the edges -->
   <div
     class="absolute inset-0 bg-gradient-to-r from-[color:var(--emotion-a)]/5 via-transparent to-[color:var(--emotion-b)]/5 pointer-events-none"
-    [style.--emotion-a]="getEmotionColor(emotionA()?.label)" [style.--emotion-b]="getEmotionColor(emotionB()?.label)">
+    [style.--emotion-a]="format.getEmotionColor(emotionA()?.label)" [style.--emotion-b]="format.getEmotionColor(emotionB()?.label)">
   </div>
 
   <!-- A Column -->
@@ -13,7 +13,7 @@
       Analysis</span>
 
     <div class="text-4xl sm:text-5xl font-black tracking-tight mb-2 uppercase drop-shadow-sm"
-      [style.color]="getEmotionColor(emotionA()?.label)">
+      [style.color]="format.getEmotionColor(emotionA()?.label)">
       {{ emotionA()?.label }}
     </div>
 
@@ -58,13 +58,13 @@
     } @else {
     <div class="flex items-center justify-center gap-3 w-full max-w-[200px] mb-4">
       <span class="text-xs font-black uppercase truncate flex-1 text-right"
-        [style.color]="getEmotionColor(emotionA()?.label)">{{ emotionA()?.label }}</span>
+        [style.color]="format.getEmotionColor(emotionA()?.label)">{{ emotionA()?.label }}</span>
       <svg class="w-5 h-5 text-[color:var(--text-muted)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
         stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
       </svg>
       <span class="text-xs font-black uppercase truncate flex-1 text-left"
-        [style.color]="getEmotionColor(emotionB()?.label)">{{ emotionB()?.label }}</span>
+        [style.color]="format.getEmotionColor(emotionB()?.label)">{{ emotionB()?.label }}</span>
     </div>
 
     <!-- Shift State Label -->
@@ -130,7 +130,7 @@
       Analysis</span>
 
     <div class="text-4xl sm:text-5xl font-black tracking-tight mb-2 uppercase drop-shadow-sm"
-      [style.color]="getEmotionColor(emotionB()?.label)">
+      [style.color]="format.getEmotionColor(emotionB()?.label)">
       {{ emotionB()?.label }}
     </div>
 

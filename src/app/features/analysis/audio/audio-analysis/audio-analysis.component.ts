@@ -1,18 +1,14 @@
-import { Component, signal, inject, computed, effect, OnInit, OnDestroy, ViewChild, ElementRef, untracked, HostListener, PLATFORM_ID } from '@angular/core';
+import { Component, signal, inject, computed, effect, OnDestroy, ViewChild, ElementRef, untracked, HostListener, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
 import { FormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
-import { finalize } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 import { ThemeService } from '../../../../core/services/theme.service';
 import { AudioAnalysisService } from '../../../../core/services/audio-analysis.service';
-import { ChartThemeService } from '../../../../core/services/chart-theme.service';
-import { AnalysisStorageService } from '../../../../core/services/analysis-storage.service';
-import { ToastService } from '../../../../core/services/toast.service';
-import { EmotionColorService } from '../../../../core/services/emotion-color.service';
 import { AudioAnalysisResponse, AudioSegment } from '../../../../core/models/audio-analysis.model';
+import { ApiResponse } from '../../../../core/models/api-response.model';
 import { AudioWaveformComponent } from '../../../../shared/components/audio-waveform/app-audio-waveform';
 import { EmotionIconComponent } from '../../../../shared/components/emotion-icon/emotion-icon.component';
 import { FooterSectionComponent } from '../../../../shared/components/footer/footer.component';
@@ -28,11 +24,11 @@ import { LoadingStateComponent } from '../../../../shared/components/loading-sta
 import { PageHeaderComponent } from '../../../../shared/components/layout/page-header/page-header.component';
 import { AnalysisFeedbackComponent } from '../../../../shared/components/analysis-feedback/analysis-feedback.component';
 import { SegmentedNavComponent, SegmentedNavOption } from '../../../../shared/components/segmented-nav/segmented-nav.component';
+import { AnalysisSectionHeaderComponent } from '../../../../shared/components/analysis-section-header/analysis-section-header.component';
 import { TimelineDataPoint, DistributionDataPoint } from '../../../../core/models/chart-data.model';
-import { AnalysisV2Service } from '../../../../core/services/analysis-v2.service';
-import { AuthService } from '../../../../core/services/auth.service';
 
-type PageState = 'input' | 'loading' | 'results' | 'fetching';
+import { BaseAnalysisComponent } from '../../../../shared/base/base-analysis.component';
+
 type InputTab = 'upload' | 'record';
 
 @Component({
@@ -55,33 +51,28 @@ type InputTab = 'upload' | 'record';
     PageHeaderComponent,
     AnalysisFeedbackComponent,
     SegmentedNavComponent,
+    AnalysisSectionHeaderComponent
+
   ],
   templateUrl: './audio-analysis.component.html',
   styleUrls: ['./audio-analysis.component.css']
 })
-export class AudioAnalysisComponent implements OnInit, OnDestroy {
+export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisResponse> implements OnDestroy {
   private audioService = inject(AudioAnalysisService);
-  private chartThemeService = inject(ChartThemeService);
-  private storageService = inject(AnalysisStorageService);
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
   private sanitizer = inject(DomSanitizer);
   private themeService = inject(ThemeService);
-  private toastService = inject(ToastService);
-  private analysisV2Service = inject(AnalysisV2Service);
-  private authService = inject(AuthService);
-  colorService = inject(EmotionColorService);
-  private shouldScrollToFeedback = false;
   private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  // ─── Base Contract ────────────────────────────────────────────────
+  protected readonly analysisType = 'audio' as const;
+  protected readonly analysisRoute = '/analysis/audio';
+  protected readonly expectedApiType = 'Audio';
 
   @ViewChild('previewCanvas') previewCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('audioElement') audioElement?: ElementRef<HTMLAudioElement>;
 
-  state = signal<PageState>('input');
   activeTab = signal<InputTab>('upload');
-  error = signal<string | null>(null);
-  result = signal<AudioAnalysisResponse | null>(null);
-  sessionId = signal<string>('');
+
   showEditHint = signal<boolean>(false);
   isMobile = signal<boolean>(false);
   isDragging = signal<boolean>(false);
@@ -205,9 +196,6 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
 
   // Results State
   showTextAnalysis = signal<boolean>(false);
-
-  timelineData = signal<TimelineDataPoint[]>([]);
-  distributionData = signal<DistributionDataPoint[]>([]);
   textDistributionData = signal<DistributionDataPoint[]>([]);
 
   modelChips = computed(() => {
@@ -223,18 +211,7 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
   });
 
   constructor() {
-    // Capture navigation state for scrolling
-    const navigation = this.router.getCurrentNavigation();
-    if (navigation?.extras.state?.['scrollToFeedback']) {
-      this.shouldScrollToFeedback = true;
-    }
-
-    effect(() => {
-      const theme = this.chartThemeService.getChartTheme();
-      if (this.result()) {
-        this.buildChartOptions(theme);
-      }
-    });
+    super();
 
     // On tab switch: pause playback, redraw waveform without re-decoding
     effect(() => {
@@ -271,58 +248,46 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
     this.drawWaveform(true);
   }
 
-  ngOnInit() {
+  // ─── Base Hooks ───────────────────────────────────────────────────
+
+  protected override onInit(): void {
     this.isMobile.set(window.innerWidth < 640);
     this.setupPermissionListener();
+  }
 
+  // ─── Base Abstract Implementations ────────────────────────────────
 
-    this.route.params.subscribe(params => {
-      const id = params['id'];
-      if (id) {
-        // Try local storage by UUID (client_id) first, then by numeric cloudId
-        let session = this.storageService.getAudioSessionById(id)
-          || this.storageService.getAudioSessions().find(s => s.cloudId === Number(id));
+  protected findLocalSession(id: string): any | null {
+    return this.storageService.getAudioSessionById(id)
+      || this.storageService.getAudioSessions().find(s => s.cloudId === Number(id))
+      || null;
+  }
 
-        if (session) {
-          this.sessionId.set(session.id);
-          this.result.set(session.result);
-          this.state.set('results');
+  protected applySession(session: any): void {
+    this.sessionId.set(session.id);
+    this.result.set(session.result);
+    this.state.set('results');
+  }
 
-          if (this.shouldScrollToFeedback) {
-            this.shouldScrollToFeedback = false; // consume it
-            setTimeout(() => this.scrollToFeedback(), 150);
-          }
-        } else {
-          // Fallback to API using the id (works with numeric IDs)
-          this.state.set('fetching');
-          this.analysisV2Service.getAnalysisDetails(id).subscribe({
-            next: (res) => {
-              if (res.is_success && res.data && res.data.type === 'Audio') {
-                const fetchedSession = this.analysisV2Service.mapDetailsToSession(res.data) as any;
+  protected saveLocalSession(session: any): void {
+    this.storageService.saveAudioSession(session);
+  }
 
-                this.storageService.saveAudioSession(fetchedSession);
+  protected buildSessionPayload(sid: string, result: AudioAnalysisResponse): any {
+    const file = this.selectedFile();
+    return {
+      id: sid,
+      type: 'audio',
+      timestamp: new Date().toISOString(),
+      inputFileName: file?.name || 'Audio File',
+      durationSeconds: result.audio_emotion.duration_seconds,
+      result: result
+    };
+  }
 
-                this.sessionId.set(fetchedSession.id);
-                this.result.set(fetchedSession.result);
-                this.state.set('results');
-
-                if (this.shouldScrollToFeedback) {
-                  this.shouldScrollToFeedback = false; // consume it
-                  setTimeout(() => this.scrollToFeedback(), 300);
-                }
-              } else {
-                this.toastService.show('Not Found', 'This analysis report could not be found', 'error', 'error');
-                this.router.navigate(['/analysis/audio']);
-              }
-            },
-            error: () => {
-              this.toastService.show('Error', 'Failed to retrieve analysis report', 'error', 'error');
-              this.router.navigate(['/analysis/audio']);
-            }
-          });
-        }
-      }
-    });
+  protected syncToCloud(sid: string, result: AudioAnalysisResponse): Observable<ApiResponse<number>> {
+    const file = this.selectedFile();
+    return this.analysisV2Service.saveAudioAnalysis(sid, result, file!);
   }
 
   ngOnDestroy() {
@@ -403,6 +368,12 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
     try {
       const arrayBuffer = await file.arrayBuffer();
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // On mobile, AudioContext often starts in 'suspended' state and needs explicit resume
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+
       const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
       audioCtx.close();
 
@@ -680,65 +651,16 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
   startAnalysis() {
     const file = this.selectedFile();
     if (!file) return;
+    this.executeAnalysisFlow(this.audioService.analyze(file));
+  }
 
-    this.state.set('loading');
-    this.error.set(null);
-
-    this.audioService.analyze(file)
-      .subscribe({
-        next: (res) => {
-          setTimeout(() => {
-            this.result.set(res);
-            const sid = crypto.randomUUID();
-            this.sessionId.set(sid);
-
-            this.storageService.saveAudioSession({
-              id: sid,
-              type: 'audio',
-              timestamp: new Date().toISOString(),
-              inputFileName: file.name,
-              durationSeconds: res.audio_emotion.duration_seconds,
-              result: res
-            });
-
-            this.buildChartOptions(this.chartThemeService.getChartTheme());
-            this.state.set('results');
-            this.router.navigate(['/analysis/audio', sid], { replaceUrl: true });
-
-            // DEBUG: Temporary logs for checking the save flow request
-            console.log('--- Audio Save Debug ---');
-            console.log('File:', file ? { name: file.name, size: file.size, type: file.type } : 'NULL');
-            console.log('SID:', sid);
-            console.log('Res Keys:', Object.keys(res));
-
-            // Background fire-and-forget — only if logged in
-            if (this.authService.isAuthenticated()) {
-              this.analysisV2Service.saveAudioAnalysis(sid, res, file)
-                .subscribe({
-                  next: (apiRes) => {
-                    if (apiRes.is_success && apiRes.data != null) {
-                      this.storageService.markAsSynced(sid, apiRes.data, 'audio');
-                    } else {
-                      this.storageService.deleteSession(sid, 'audio');
-                      this.toastService.show('Save Failed', 'Audio analysis could not be saved to cloud.', 'error', 'error');
-                    }
-                  },
-                  error: () => {
-                    this.storageService.deleteSession(sid, 'audio');
-                    this.toastService.show('Save Failed', 'Audio analysis could not be saved to cloud.', 'error', 'error');
-                  }
-                });
-            }
-          }, 500);
-        },
-        error: (err) => {
-          console.error(err);
-          const msg = 'Something went wrong. Please try again later.';
-          this.error.set(msg);
-          this.toastService.show('Analysis Failed', msg, 'error');
-          this.state.set('input');
-        }
-      });
+  protected override onAnalysisSuccess(sid: string, _result: AudioAnalysisResponse): void {
+    // DEBUG: Temporary logs for checking the save flow request
+    const file = this.selectedFile();
+    console.log('--- Audio Save Debug ---');
+    console.log('File:', file ? { name: file.name, size: file.size, type: file.type } : 'NULL');
+    console.log('SID:', sid);
+    console.log('Res Keys:', Object.keys(_result));
   }
 
 
@@ -758,7 +680,7 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
   }
 
 
-  private buildChartOptions(theme: any) {
+  protected buildChartData(theme: any): void {
     const res = this.result();
     if (!res) return;
 
@@ -794,10 +716,4 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
     return winner ? winner[0] : 'Neutral';
   }
 
-  scrollToFeedback() {
-    const el = document.getElementById('feedback-section');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }
 }

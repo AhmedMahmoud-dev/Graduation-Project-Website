@@ -1,10 +1,9 @@
 <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-3xl p-6 md:p-8 shadow-sm">
-  <div class="mb-6">
-    <div class="flex items-center gap-3 mb-2">
-      <div class="w-1.5 h-6 bg-[color:var(--brand-primary)] rounded-full"></div>
-      <h2 class="text-xl md:text-2xl font-black text-[color:var(--text-primary)] tracking-tight">Analysis Summary</h2>
-    </div>
-  </div>
+  <app-analysis-section-header 
+    title="Analysis Summary" 
+    variant="pill">
+  </app-analysis-section-header>
+
 
   <!-- Desktop Table format (hidden on small mobile, visible on md+) -->
   <div class="hidden md:block w-full overflow-x-auto">
@@ -35,7 +34,7 @@
           <td class="p-4 text-sm font-medium text-[color:var(--text-secondary)]">
             @if (row.isEmotion) {
             <span class="px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest text-white"
-              [style.backgroundColor]="getEmotionColor(row.valA)">
+              [style.backgroundColor]="format.getEmotionColor(row.valA)">
               {{ row.valA }}
             </span>
             } @else {
@@ -46,7 +45,7 @@
           <td class="p-4 text-sm font-medium text-[color:var(--text-secondary)]">
             @if (row.isEmotion) {
             <span class="px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest text-white"
-              [style.backgroundColor]="getEmotionColor(row.valB)">
+              [style.backgroundColor]="format.getEmotionColor(row.valB)">
               {{ row.valB }}
             </span>
             } @else {
@@ -89,7 +88,7 @@
           <span class="text-[9px] font-bold text-[color:var(--text-muted)] uppercase mb-1">A</span>
           @if (row.isEmotion) {
           <span class="px-2 w-fit py-0.5 rounded text-[8px] font-black uppercase tracking-widest text-white"
-            [style.backgroundColor]="getEmotionColor(row.valA)">
+            [style.backgroundColor]="format.getEmotionColor(row.valA)">
             {{ row.valA }}
           </span>
           } @else {
@@ -104,7 +103,7 @@
           <span class="text-[9px] font-bold text-[color:var(--text-muted)] uppercase mb-1">B</span>
           @if (row.isEmotion) {
           <span class="px-2 w-fit py-0.5 rounded text-[8px] font-black uppercase tracking-widest text-white"
-            [style.backgroundColor]="getEmotionColor(row.valB)">
+            [style.backgroundColor]="format.getEmotionColor(row.valB)">
             {{ row.valB }}
           </span>
           } @else {

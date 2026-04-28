@@ -2,11 +2,6 @@
   display: block;
 }
 
-.section-header {
-  padding-left: 16px;
-  border-left: 4px solid var(--brand-primary);
-}
-
 .info-chip {
   display: flex;
   flex-direction: column;

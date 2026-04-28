@@ -4,16 +4,22 @@ import { AnalysisSession, AudioAnalysisSession, TextAnalysisResult } from '../..
 import { EmotionTimelineComponent } from '../../../shared/components/emotion-charts/emotion-timeline/emotion-timeline.component';
 import { TimelineDataPoint } from '../../../core/models/chart-data.model';
 import { ColorSettingsService } from '../../../core/services/color-settings.service';
+import { FormattingService } from '../../../core/services/formatting.service';
+import { AnalysisSectionHeaderComponent } from '../../../shared/components/analysis-section-header/analysis-section-header.component';
+
 
 @Component({
   selector: 'app-compare-timeline',
   standalone: true,
-  imports: [CommonModule, EmotionTimelineComponent],
+  imports: [CommonModule, EmotionTimelineComponent, AnalysisSectionHeaderComponent],
+
   templateUrl: './compare-timeline.component.html',
   styleUrls: ['./compare-timeline.component.css']
 })
 export class CompareTimelineComponent {
-  private colorSettings = inject(ColorSettingsService);
+   private colorSettings = inject(ColorSettingsService);
+  protected format = inject(FormattingService);
+
   analysisA = input.required<AnalysisSession | AudioAnalysisSession | null>();
   analysisB = input.required<AnalysisSession | AudioAnalysisSession | null>();
 
@@ -62,7 +68,5 @@ export class CompareTimelineComponent {
     return session.result.final_multimodal_emotion.label.toLowerCase();
   }
 
-  getEmotionColor(emotion: string): string {
-    return this.colorSettings.emotionColors()[emotion.toLowerCase()] || this.colorSettings.emotionColors()['neutral'];
-  }
+
 }

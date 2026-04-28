@@ -1,4 +1,6 @@
 import { Component, input } from '@angular/core';
+import { AnalysisSectionHeaderComponent } from '../../analysis-section-header/analysis-section-header.component';
+
 
 
 export interface ModelInfoChip {
@@ -10,7 +12,8 @@ export interface ModelInfoChip {
 @Component({
   selector: 'app-model-info-grid',
   standalone: true,
-  imports: [],
+  imports: [AnalysisSectionHeaderComponent],
+
   templateUrl: './model-info-grid.component.html',
   styleUrl: './model-info-grid.component.css'
 })

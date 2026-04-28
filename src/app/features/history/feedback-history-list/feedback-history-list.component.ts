@@ -8,6 +8,9 @@ import { UnifiedFeedbackItem } from '../../../core/models/feedback.model';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 import { SystemFeedbackUIService } from '../../../core/services/system-feedback-ui.service';
+import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.component';
+import { FormattingService } from '../../../core/services/formatting.service';
+import { AppCacheService } from '../../../core/services/app-cache.service';
 import { finalize } from 'rxjs';
 
 export interface FeedbackListItem {
@@ -27,7 +30,7 @@ export interface FeedbackListItem {
 @Component({
   selector: 'app-feedback-history-list',
   standalone: true,
-  imports: [CommonModule, EmptyStateComponent, LoadingStateComponent],
+  imports: [CommonModule, EmptyStateComponent, LoadingStateComponent, AppIconComponent],
   templateUrl: './feedback-history-list.component.html',
   styleUrl: './feedback-history-list.component.css'
 })
@@ -37,16 +40,14 @@ export class FeedbackHistoryListComponent implements OnInit {
   private toastService = inject(ToastService);
   private uiService = inject(SystemFeedbackUIService);
   private router = inject(Router);
+  protected format = inject(FormattingService);
+  private cache = inject(AppCacheService);
 
   private readonly CACHE_KEY = 'emotra_feedback_history';
 
   // Initial rehydration logic to prevent ANY flicker
   private getCachedData() {
-    try {
-      const cached = localStorage.getItem(this.CACHE_KEY);
-      if (cached) return JSON.parse(cached);
-    } catch { }
-    return null;
+    return this.cache.getItem<any>(this.CACHE_KEY);
   }
 
   // State initialized from cache instantly
@@ -80,11 +81,7 @@ export class FeedbackHistoryListComponent implements OnInit {
     }
 
     // Sort
-    list.sort((a, b) => {
-      const timeA = new Date(a.createdAt).getTime();
-      const timeB = new Date(b.createdAt).getTime();
-      return this.sortOrder() === 'newest' ? timeB - timeA : timeA - timeB;
-    });
+    list = this.format.sortByDate(list, this.sortOrder() as 'newest' | 'oldest', 'createdAt');
 
     return list;
   });
@@ -126,13 +123,11 @@ export class FeedbackHistoryListComponent implements OnInit {
             this.totalCount.set(response.total || mappedItems.length);
             this.allItems.set(mappedItems);
 
-            // Update localStorage
-            try {
-              localStorage.setItem(this.CACHE_KEY, JSON.stringify({
-                data: mappedItems,
-                total: response.total
-              }));
-            } catch (e) { }
+            // Update cache
+            this.cache.setItem(this.CACHE_KEY, {
+              data: mappedItems,
+              total: response.total
+            });
 
             // Update individual caches for context consistency
             items.filter(f => f.feedback_type === 'analysis' && f.analysis_id).forEach(f => {
@@ -204,12 +199,10 @@ export class FeedbackHistoryListComponent implements OnInit {
               this.totalCount.update(t => Math.max(0, t - 1));
 
               // Sync cache immediately for "instant" feel
-              try {
-                localStorage.setItem(this.CACHE_KEY, JSON.stringify({
-                  data: newItems,
-                  total: this.totalCount()
-                }));
-              } catch (e) { }
+              this.cache.setItem(this.CACHE_KEY, {
+                data: newItems,
+                total: this.totalCount()
+              });
             }
           },
           error: () => this.toastService.show('Error', 'Failed to delete feedback.', 'error', 'error')
@@ -252,7 +245,7 @@ export class FeedbackHistoryListComponent implements OnInit {
             || (session as any)?.file_name
             || (historyItem as any)?.summary_text
             || '';
-          title = rawTitle.length > 60 ? rawTitle.substring(0, 60) + '…' : rawTitle;
+          title = this.format.truncate(rawTitle, 60);
         }
       }
 
@@ -264,32 +257,21 @@ export class FeedbackHistoryListComponent implements OnInit {
         comment: f.comment,
         isPublic: f.is_public,
         createdAt: f.created_at,
-        formattedDate: this.formatDate(f.created_at),
+        formattedDate: this.format.formatDate(f.created_at),
         analysisType,
         title
       };
     });
   }
 
-  private formatDate(dateStr: string): string {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString(undefined, {
-      year: 'numeric', month: 'short', day: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    });
-  }
+
 
   private rehydrateFromCache() {
-    try {
-      const cached = localStorage.getItem(this.CACHE_KEY);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed.data) {
-          this.allItems.set(parsed.data);
-          this.totalCount.set(parsed.total || parsed.data.length);
-          this.isLoading.set(false);
-        }
-      }
-    } catch (e) { }
+    const parsed = this.cache.getItem<any>(this.CACHE_KEY);
+    if (parsed?.data) {
+      this.allItems.set(parsed.data);
+      this.totalCount.set(parsed.total || parsed.data.length);
+      this.isLoading.set(false);
+    }
   }
 }

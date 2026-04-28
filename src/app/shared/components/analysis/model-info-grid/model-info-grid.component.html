@@ -1,9 +1,11 @@
 @if (showTitle()) {
-  <div class="section-header mb-8">
-    <p class="text-xs font-bold uppercase tracking-[0.2em] mb-2" style="color: var(--text-muted)">{{ subTitle() }}</p>
-    <h2 class="text-2xl font-extrabold tracking-tight font-heading" style="color: var(--text-primary)">
-    {{ title() }}</h2>
-  </div>
+  <app-analysis-section-header 
+    [title]="title()" 
+    [subtitle]="subTitle()" 
+    variant="border"
+    marginBottom="mb-8">
+  </app-analysis-section-header>
+
 }
 
 <div class="flex flex-wrap gap-3">
