@@ -47,8 +47,8 @@
   <div class="feedback-card">
     <div class="p-5 md:p-8 flex flex-col md:flex-row md:items-center gap-5 md:gap-8">
 
-      <!-- Type Icon -->
-      <div class="shrink-0 flex items-center justify-between md:justify-center">
+      <!-- Type Icon & Badges Container -->
+      <div class="shrink-0 flex flex-col md:flex-row items-start md:items-center justify-between md:justify-center gap-4">
         <div class="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center">
 
           @if (item.feedbackType === 'system') {
@@ -64,17 +64,22 @@
         </div>
 
         <!-- Mobile: badges -->
-        <div class="md:hidden flex items-center justify-end gap-2">
+        <div class="md:hidden flex flex-wrap items-center justify-start gap-1.5 flex-1">
           <span class="type-badge" [attr.data-type]="item.feedbackType">
             {{ item.feedbackType === 'system' ? 'Platform' : (item.analysisType || 'text') }}
           </span>
           <span class="type-badge"
-            style="background: color-mix(in srgb, var(--brand-primary) 15%, transparent); color: var(--brand-primary); text-transform: uppercase;">
+            style="background: color-mix(in srgb, var(--brand-primary) 15%, transparent); color: var(--brand-primary);">
             {{ item.feedbackType }}
           </span>
           @if (item.isPublic !== null) {
           <span class="visibility-badge" [attr.data-public]="item.isPublic">
             {{ item.isPublic ? 'Public' : 'Private' }}
+          </span>
+          }
+          @if (item.isPublic && item.moderationStatus) {
+          <span class="moderation-badge" [attr.data-status]="item.moderationStatus">
+            {{ item.moderationStatus }}
           </span>
           }
         </div>
@@ -124,6 +129,13 @@
           <span class="meta-divider !hidden md:!block"></span>
           <span class="visibility-badge !hidden md:!inline-flex" [attr.data-public]="item.isPublic">
             {{ item.isPublic ? 'Public' : 'Private' }}
+          </span>
+          }
+
+          @if (item.isPublic && item.moderationStatus) {
+          <span class="meta-divider !hidden md:!block"></span>
+          <span class="moderation-badge !hidden md:!inline-flex" [attr.data-status]="item.moderationStatus">
+            {{ item.moderationStatus }}
           </span>
           }
         </div>

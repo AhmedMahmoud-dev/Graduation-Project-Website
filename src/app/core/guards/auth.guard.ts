@@ -7,6 +7,15 @@ export const authGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
 
   if (authService.isAuthenticated()) {
+    const user = authService.currentUser();
+    const isAdmin = user?.roles?.includes('ADMIN');
+
+    // If Admin tries to access non-admin pages, redirect to admin dashboard
+    // Exception: /settings is allowed (restricted to Appearance tab inside the component)
+    if (isAdmin && !state.url.startsWith('/admin') && !state.url.startsWith('/auth') && !state.url.startsWith('/settings')) {
+      return router.parseUrl('/admin/dashboard');
+    }
+
     return true;
   }
 
@@ -21,7 +30,9 @@ export const guestGuard: CanActivateFn = (route, state) => {
     return true;
   }
 
-  return router.parseUrl('/dashboard');
+  const user = authService.currentUser();
+  const isAdmin = user?.roles?.includes('ADMIN');
+  return router.parseUrl(isAdmin ? '/admin/dashboard' : '/dashboard');
 };
 
 export const resetPasswordGuard: CanActivateFn = (route, state) => {
@@ -33,4 +44,19 @@ export const resetPasswordGuard: CanActivateFn = (route, state) => {
   }
 
   return router.parseUrl('/auth/forgot-password');
+};
+
+export const noAdminGuard: CanActivateFn = (route, state) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.isAuthenticated()) {
+    const user = authService.currentUser();
+    const isAdmin = user?.roles?.includes('ADMIN');
+    if (isAdmin) {
+      return router.parseUrl('/admin/dashboard');
+    }
+  }
+
+  return true;
 };

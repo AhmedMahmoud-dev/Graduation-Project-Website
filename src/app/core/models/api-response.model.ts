@@ -24,6 +24,3 @@ export interface AuthUser {
   roles: string[];
   expires_at: string;
 }
-
-
-

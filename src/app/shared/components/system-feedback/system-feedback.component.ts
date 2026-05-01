@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { FeedbackService } from '../../../core/services/feedback.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { SystemFeedbackUIService } from '../../../core/services/system-feedback-ui.service';
-import { SystemFeedbackResponse } from '../../../core/models/feedback.model';
+import { SystemFeedbackResponse, ModerationStatus } from '../../../core/models/feedback.model';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import { Router, NavigationEnd } from '@angular/router';
 import { finalize, filter } from 'rxjs';
@@ -47,7 +47,11 @@ export class SystemFeedbackComponent implements OnInit {
     if (isLandingPage) return false;
 
     // 2. Only show for authenticated users
-    if (!this.authService.currentUser()) return false;
+    const user = this.authService.currentUser();
+    if (!user) return false;
+
+    // 2.1 Hide for Admins
+    if (user.roles?.includes('ADMIN')) return false;
 
     // 3. Hide if the user has already submitted feedback
     if (this.hasSubmittedBefore()) return false;
@@ -59,6 +63,7 @@ export class SystemFeedbackComponent implements OnInit {
   rating = signal(0);
   comment = signal('');
   isPublic = signal(true);
+  moderationStatus = signal<ModerationStatus | null>(null);
   existingId = signal<number | null>(null);
 
   // Validation
@@ -122,6 +127,8 @@ export class SystemFeedbackComponent implements OnInit {
       this.rating.set(cached.rating);
       this.comment.set(cached.comment || '');
       this.isPublic.set(cached.is_public ?? true);
+      // Ensure we have a valid status signal value if they previously submitted
+      this.moderationStatus.set(cached.moderation_status || 'Pending');
       this.initialState.set({
         rating: cached.rating,
         comment: cached.comment || '',
@@ -142,8 +149,10 @@ export class SystemFeedbackComponent implements OnInit {
               this.hasSubmittedBefore.set(true);
               this.existingId.set(systemRef.id);
               this.rating.set(systemRef.rating);
-              this.comment.set(systemRef.comment || '');
+               this.comment.set(systemRef.comment || '');
               this.isPublic.set(systemRef.is_public ?? true);
+              // If server returns status, use it. If null (private item), use 'Pending' as fallback
+              this.moderationStatus.set(systemRef.moderation_status || 'Pending');
               this.initialState.set({
                 rating: systemRef.rating,
                 comment: systemRef.comment || '',
@@ -187,6 +196,10 @@ export class SystemFeedbackComponent implements OnInit {
                 this.rating.set(systemRef.rating);
                 this.comment.set(systemRef.comment || '');
                 this.isPublic.set(systemRef.is_public ?? true);
+                
+                // Update status from server, fallback to current or 'Pending'
+                this.moderationStatus.set(systemRef.moderation_status || this.moderationStatus() || 'Pending');
+                
                 this.existingId.set(systemRef.id);
                 this.hasSubmittedBefore.set(true);
                 this.initialState.set({
@@ -250,6 +263,9 @@ export class SystemFeedbackComponent implements OnInit {
               comment: response.data.comment || '',
               isPublic: response.data.is_public ?? true
             });
+            // If server returns status, use it. Otherwise, if it was already known, keep it (unless edited).
+            // Default to Pending for new/updated submissions if server is silent.
+            this.moderationStatus.set(response.data.moderation_status || 'Pending');
             this.feedbackService.cacheSystemFeedback(response.data);
             this.closeModal();
           }

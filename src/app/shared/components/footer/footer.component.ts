@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { ThemeService, ThemeMode } from '../../../core/services/theme.service';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -22,22 +22,37 @@ export class FooterSectionComponent implements OnInit {
   currentTheme = this.themeService.currentTheme;
   currentUser = this.authService.currentUser;
   hasFeedback = signal(false);
+  isAdmin = computed(() => this.currentUser()?.roles?.includes('ADMIN'));
 
   ngOnInit() {
     this.checkFeedbackStatus();
   }
 
   checkFeedbackStatus() {
-    if (this.authService.isAuthenticated()) {
-      this.feedbackService.getMyFeedbackHistory(1, 10).subscribe({
-        next: (response: any) => {
-          if (response.is_success && response.data) {
-            const hasSystem = response.data.some((f: any) => f.feedback_type === 'system');
-            this.hasFeedback.set(hasSystem);
+    // Don't check for system feedback if not authenticated or if Admin
+    if (!this.authService.isAuthenticated() || this.isAdmin()) return;
+
+    // 1. Check Cache First for instant UI update
+    const cached = this.feedbackService.getCachedSystemFeedback();
+    if (cached) {
+      this.hasFeedback.set(true);
+    }
+
+    // 2. Background sync with API
+    this.feedbackService.getMyFeedbackHistory(1, 10).subscribe({
+      next: (response: any) => {
+        if (response.is_success && response.data) {
+          const systemRef = response.data.find((f: any) => f.feedback_type === 'system');
+          this.hasFeedback.set(!!systemRef);
+
+          if (systemRef) {
+            this.feedbackService.cacheSystemFeedback(systemRef);
+          } else {
+            this.feedbackService.removeCachedSystemFeedback();
           }
         }
-      });
-    }
+      }
+    });
   }
 
   openFeedback() {
@@ -54,7 +69,7 @@ export class FooterSectionComponent implements OnInit {
 
   scrollTo(sectionId: string, event: Event) {
     event.preventDefault();
-    
+
     const fragment = sectionId.replace('#', '');
     const currentPath = this.router.url.split('#')[0].split('?')[0];
 

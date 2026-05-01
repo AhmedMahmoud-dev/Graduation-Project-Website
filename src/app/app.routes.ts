@@ -14,16 +14,19 @@ import { AnalysisComponent } from './features/analysis/analysis.component';
 import { HistoryComponent } from './features/history/history.component';
 import { AlertsComponent } from './features/alerts/alerts.component';
 import { SettingsComponent } from './features/settings/settings.component';
-import { authGuard, guestGuard, resetPasswordGuard } from './core/guards/auth.guard';
+import { authGuard, guestGuard, resetPasswordGuard, noAdminGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
+import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
 
 export const routes: Routes = [
   // Public Route (Marketing)
-  { path: '', component: LandingComponent, pathMatch: 'full' },
+  { path: '', component: LandingComponent, pathMatch: 'full', canActivate: [noAdminGuard] },
 
   // Model Documentation (Public but with App Sidebar Layout)
   {
     path: 'models',
     component: AppLayoutComponent,
+    canActivate: [noAdminGuard],
     children: [
       { path: 'text', component: TextModelComponent },
       { path: 'audio', component: AudioModelComponent },
@@ -80,6 +83,36 @@ export const routes: Routes = [
       },
       { path: 'alerts', component: AlertsComponent },
       { path: 'settings', component: SettingsComponent }
+    ]
+  },
+
+  // Admin Routes (use main AppLayout for sidebar/navbar)
+  {
+    path: 'admin',
+    component: AppLayoutComponent,
+    canActivate: [adminGuard],
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { 
+        path: 'dashboard', 
+        loadComponent: () => import('./features/admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent) 
+      },
+      {
+        path: 'users',
+        loadComponent: () => import('./features/admin/admin-users/admin-users.component').then(m => m.AdminUsersComponent)
+      },
+      {
+        path: 'testimonials',
+        loadComponent: () => import('./features/admin/admin-testimonials/admin-testimonials.component').then(m => m.AdminTestimonialsComponent)
+      },
+      {
+        path: 'bugs',
+        loadComponent: () => import('./features/admin/admin-bugs/admin-bugs.component').then(m => m.AdminBugsComponent)
+      },
+      {
+        path: 'health',
+        loadComponent: () => import('./features/admin/admin-health/admin-health.component').then(m => m.AdminHealthComponent)
+      }
     ]
   },
 

@@ -1,0 +1,112 @@
+<div class="admin-health">
+
+  <!-- Loading -->
+  @if (isLoading()) {
+    <app-loading-state
+      message="Checking Services..."
+      subtitle="Pinging AI microservices"
+      size="md"
+      [fullPage]="true">
+    </app-loading-state>
+  }
+
+  <!-- Error -->
+  @if (!isLoading() && error()) {
+    <app-empty-state [isFullPage]="true">
+      <svg empty-icon xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+      <span empty-msg>Health Check Failed</span>
+      <span empty-hint>{{ error() }}</span>
+      <button empty-actions (click)="fetchHealth()" class="action-btn action-btn--primary">
+        Try Again
+      </button>
+    </app-empty-state>
+  }
+
+  <!-- Content -->
+  @if (!isLoading() && !error()) {
+
+    <!-- Header -->
+    <section class="admin-header-section">
+      <app-page-header
+        title="Infrastructure Health"
+        subtitle="ADMIN PANEL"
+        description="Monitor real-time status and latency of platform services.">
+        <div actions class="flex items-center gap-3">
+          <button (click)="fetchHealth()" class="refresh-btn" [class.refresh-btn--spinning]="isRefreshing()">
+            <svg class="refresh-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <span class="refresh-btn__label">{{ isRefreshing() ? 'Refreshing...' : 'Refresh' }}</span>
+          </button>
+        </div>
+      </app-page-header>
+    </section>
+
+    <!-- Content -->
+    <section class="admin-content-section">
+      <!-- Empty -->
+      @if (services().length === 0) {
+        <app-empty-state>
+          <svg empty-icon xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+          <span empty-msg>No Services Configured</span>
+          <span empty-hint>No AI microservices are being monitored yet.</span>
+        </app-empty-state>
+      }
+
+      <!-- Health Cards Grid -->
+      @if (services().length > 0) {
+        <div class="health-grid">
+          @for (svc of services(); track svc.service_name) {
+            <div class="health-card" [class.health-card--online]="isOnline(svc.status)" [class.health-card--offline]="!isOnline(svc.status)">
+
+              <!-- Status Indicator -->
+              <div class="health-card__indicator">
+                <span class="status-dot" [class.status-dot--online]="isOnline(svc.status)" [class.status-dot--offline]="!isOnline(svc.status)"></span>
+              </div>
+
+              <!-- Service Info -->
+              <div class="health-card__body">
+                <div class="health-card__top">
+                  <h3 class="health-card__name">{{ svc.service_name }}</h3>
+                  <span class="health-card__status-label"
+                    [class.health-card__status-label--online]="isOnline(svc.status)"
+                    [class.health-card__status-label--offline]="!isOnline(svc.status)">
+                    {{ isOnline(svc.status) ? 'Online' : 'Offline' }}
+                  </span>
+                </div>
+
+                <div class="health-card__metrics">
+                  <!-- Response Time -->
+                  <div class="health-metric">
+                    <svg class="health-metric__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="health-metric__value" [class]="getResponseClass(svc.response_time_ms)">
+                      {{ svc.response_time_ms }}ms
+                    </span>
+                    <span class="health-metric__label">response</span>
+                  </div>
+
+                  <!-- Last Checked -->
+                  <div class="health-metric">
+                    <svg class="health-metric__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <span class="health-metric__value">{{ format.formatDate(svc.last_checked_at) }}</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+  }
+
+</div>

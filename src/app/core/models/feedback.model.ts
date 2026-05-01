@@ -1,6 +1,7 @@
 import { ApiResponse } from './api-response.model';
 
 export type FeedbackType = 'analysis' | 'system';
+export type ModerationStatus = 'Pending' | 'Approved' | 'Rejected';
 
 /**
  * Request to submit feedback for a specific analysis results.
@@ -39,6 +40,7 @@ export interface SystemFeedbackResponse {
   rating: number;
   comment: string;
   is_public: boolean;
+  moderation_status: ModerationStatus | null;
   created_at: string;
 }
 
@@ -88,6 +90,7 @@ export interface UnifiedFeedbackItem {
   rating: number;
   comment: string | null;
   is_public: boolean | null; // Only present if type is 'system'
+  moderation_status: ModerationStatus | null; // NEW: Moderation status for system feedback
   created_at: string;
 }
 

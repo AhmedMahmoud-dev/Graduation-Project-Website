@@ -1,4 +1,4 @@
-import { Injectable, signal, inject, PLATFORM_ID } from '@angular/core';
+import { Injectable, signal, inject, PLATFORM_ID, computed } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap, map } from 'rxjs/operators';
@@ -28,6 +28,9 @@ export class AuthService {
 
   // Current user signal for reactive UI
   currentUser = signal<AuthUser | null>(this.getCurrentUser());
+
+  // Centeralized role check
+  isAdmin = computed(() => this.currentUser()?.roles?.includes('ADMIN') || false);
 
   // Tracks if the user has successfully requested a reset code
   resetEmailInitiated = signal<string | null>(null);

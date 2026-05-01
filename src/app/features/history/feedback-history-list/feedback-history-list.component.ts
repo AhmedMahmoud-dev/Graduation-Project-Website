@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { FeedbackService } from '../../../core/services/feedback.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { AnalysisStorageService } from '../../../core/services/analysis-storage.service';
-import { UnifiedFeedbackItem } from '../../../core/models/feedback.model';
+import { UnifiedFeedbackItem, ModerationStatus } from '../../../core/models/feedback.model';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 import { SystemFeedbackUIService } from '../../../core/services/system-feedback-ui.service';
@@ -20,6 +20,7 @@ export interface FeedbackListItem {
   rating: number;
   comment: string | null;
   isPublic: boolean | null;
+  moderationStatus: ModerationStatus | null;
   createdAt: string;
   formattedDate: string;
   // Resolved from local sessions or history
@@ -256,6 +257,7 @@ export class FeedbackHistoryListComponent implements OnInit {
         rating: f.rating,
         comment: f.comment,
         isPublic: f.is_public,
+        moderationStatus: f.moderation_status,
         createdAt: f.created_at,
         formattedDate: this.format.formatDate(f.created_at),
         analysisType,

@@ -1,0 +1,400 @@
+<div class="admin-bugs">
+
+  <!-- Loading -->
+  @if (isLoading()) {
+  <app-loading-state message="Loading Bug Reports..." subtitle="Fetching reported issues" size="md" [fullPage]="true">
+  </app-loading-state>
+  }
+
+  <!-- Error -->
+  @if (!isLoading() && error()) {
+  <app-empty-state [isFullPage]="true">
+    <svg empty-icon xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+      <path
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
+    <span empty-msg>Failed to Load Bug Reports</span>
+    <span empty-hint>{{ error() }}</span>
+    <button empty-actions (click)="fetchBugs()" class="action-btn action-btn--primary">
+      Try Again
+    </button>
+  </app-empty-state>
+  }
+
+  <!-- Content -->
+  @if (!isLoading() && !error()) {
+
+  <!-- Header Section -->
+  <section class="admin-header-section">
+    <app-page-header title="Bug Reports" subtitle="ADMIN PANEL"
+      [description]="totalBugs() + ' platform issues reported'">
+      <div actions class="flex items-center gap-3">
+        <button (click)="fetchBugs()" class="refresh-btn">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span class="refresh-btn__label">Refresh</span>
+        </button>
+      </div>
+    </app-page-header>
+  </section>
+
+  <!-- Content Section -->
+  <section class="admin-content-section">
+
+    <!-- Empty State -->
+    @if (bugs().length === 0) {
+    <app-empty-state>
+      <svg empty-icon xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span empty-msg>No Bug Reports</span>
+      <span empty-hint>There are no reported issues at this time.</span>
+    </app-empty-state>
+    }
+
+    <!-- Data Table (Desktop) -->
+    @if (bugs().length > 0) {
+    <div class="table-wrapper hide-mobile">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th (click)="sortState.toggleSort('title')"
+              class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
+              <div class="flex items-center gap-1">
+                Title
+                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'title'"
+                  [class.group-hover:opacity-50]="sortState.sortColumn() !== 'title'"
+                  [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'title'">
+                  {{ sortState.sortColumn() === 'title' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                </span>
+              </div>
+            </th>
+            <th (click)="sortState.toggleSort('category')"
+              class="hide-mobile cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
+              <div class="flex items-center gap-1">
+                Category
+                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'category'"
+                  [class.group-hover:opacity-50]="sortState.sortColumn() !== 'category'"
+                  [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'category'">
+                  {{ sortState.sortColumn() === 'category' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                </span>
+              </div>
+            </th>
+            <th (click)="sortState.toggleSort('priority')"
+              class="hide-mobile cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
+              <div class="flex items-center gap-1">
+                Priority
+                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'priority'"
+                  [class.group-hover:opacity-50]="sortState.sortColumn() !== 'priority'"
+                  [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'priority'">
+                  {{ sortState.sortColumn() === 'priority' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                </span>
+              </div>
+            </th>
+            <th (click)="sortState.toggleSort('status')"
+              class="hide-tablet cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
+              <div class="flex items-center gap-1">
+                Status
+                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'status'"
+                  [class.group-hover:opacity-50]="sortState.sortColumn() !== 'status'"
+                  [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'status'">
+                  {{ sortState.sortColumn() === 'status' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                </span>
+              </div>
+            </th>
+            <th (click)="sortState.toggleSort('created_at')"
+              class="hide-tablet cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
+              <div class="flex items-center gap-1">
+                Date
+                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'created_at'"
+                  [class.group-hover:opacity-50]="sortState.sortColumn() !== 'created_at'"
+                  [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'created_at'">
+                  {{ sortState.sortColumn() === 'created_at' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                </span>
+              </div>
+            </th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (bug of sortedBugs(); track bug.id) {
+          <!-- Main Row -->
+          <tr>
+            <td>
+              <div class="bug-title-cell">
+                <span class="bug-title">{{ bug.title }}</span>
+                <span class="bug-submitter hide-mobile">by {{ bug.submitted_by }}</span>
+              </div>
+            </td>
+            <td class="hide-mobile">
+              <span class="category-badge">{{ bug.category }}</span>
+            </td>
+            <td class="hide-mobile">
+              <span class="priority-badge" [class.priority-badge--high]="bug.priority.toLowerCase() === 'high'"
+                [class.priority-badge--medium]="bug.priority.toLowerCase() === 'medium'"
+                [class.priority-badge--low]="bug.priority.toLowerCase() === 'low'">
+                {{ bug.priority }}
+              </span>
+            </td>
+            <td class="hide-tablet">
+              <span class="status-badge" [class.status-badge--open]="bug.status === 'Open'"
+                [class.status-badge--progress]="bug.status === 'In Progress'"
+                [class.status-badge--closed]="bug.status === 'Closed'">
+                {{ bug.status }}
+              </span>
+            </td>
+            <td class="hide-tablet">
+              <span class="text-secondary">{{ format.formatDate(bug.created_at) }}</span>
+            </td>
+            <td>
+              <button class="expand-btn" [class.expand-btn--active]="expandedId() === bug.id"
+                (click)="toggleExpand(bug.id)">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </td>
+          </tr>
+
+          <!-- Expanded Detail Row -->
+          @if (expandedId() === bug.id) {
+          <tr class="detail-row">
+            <td colspan="6">
+              <div class="detail-panel">
+                <div class="detail-grid">
+                  <!-- Description -->
+                  <div class="detail-section">
+                    <h4 class="detail-label">Description</h4>
+                    <p class="detail-text">{{ bug.description || 'No description provided.' }}</p>
+                  </div>
+
+                  <!-- Metadata & Diagnostics -->
+                  <div class="detail-grid-column">
+                    <div class="detail-section">
+                      <h4 class="detail-label">Reporter Details</h4>
+                      <div class="detail-meta-grid">
+                        <div class="detail-meta-item">
+                          <span class="detail-meta-key">Submitted By</span>
+                          <span class="detail-meta-value">{{ bug.submitted_by }}</span>
+                        </div>
+                        <div class="detail-meta-item">
+                          <span class="detail-meta-key">Email</span>
+                          <span class="detail-meta-value">{{ bug.user_email }}</span>
+                        </div>
+                        <div class="detail-meta-item hide-desktop">
+                          <span class="detail-meta-key">Category</span>
+                          <span class="detail-meta-value">{{ bug.category }}</span>
+                        </div>
+                        <div class="detail-meta-item">
+                          <span class="detail-meta-key">Reported</span>
+                          <span class="detail-meta-value">{{ format.formatDate(bug.created_at) }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    @if (bug.parsedMetadata) {
+                    <div class="detail-section">
+                      <h4 class="detail-label">Environment Diagnostics</h4>
+                      <div class="detail-meta-grid">
+                        <div class="detail-meta-item">
+                          <span class="detail-meta-key">Browser</span>
+                          <span class="detail-meta-value">{{ bug.parsedMetadata.browser }}</span>
+                        </div>
+                        <div class="detail-meta-item">
+                          <span class="detail-meta-key">Viewport</span>
+                          <span class="detail-meta-value">{{ bug.parsedMetadata.viewport }}</span>
+                        </div>
+                        <div class="detail-meta-item detail-meta-item--full">
+                          <span class="detail-meta-key">Target URL</span>
+                          <span class="detail-meta-value">{{ bug.parsedMetadata.url }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Status Update Actions -->
+                <div class="detail-actions">
+                  <span class="detail-actions__label">Update Status:</span>
+                  <div class="detail-actions__buttons">
+                    @for (status of statuses; track status) {
+                    <button class="status-select-btn" [class.status-select-btn--active]="bug.status === status"
+                      [class.status-select-btn--open]="status === 'Open'"
+                      [class.status-select-btn--progress]="status === 'In Progress'"
+                      [class.status-select-btn--closed]="status === 'Closed'" (click)="updateStatus(bug, status)"
+                      [disabled]="updatingId() === bug.id">
+                      {{ status }}
+                    </button>
+                    }
+                  </div>
+                  
+                  <div class="detail-actions__divider"></div>
+                  
+                  <button class="delete-bug-btn" (click)="deleteBug(bug)" [disabled]="deletingId() === bug.id">
+                    @if (deletingId() === bug.id) {
+                      <span class="spinner-small"></span>
+                      Deleting...
+                    } @else {
+                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete Report
+                    }
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+          }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Sort -->
+    <div class="mobile-sort hide-desktop" style="margin-top: 2rem;">
+      <label>Sort by:</label>
+      <div class="select-wrapper" style="z-index: 50;">
+        <app-dropdown-menu [options]="sortOptions" [selectedValue]="selectedSortValue()"
+          (selectedValueChange)="onMobileSortChange($event)">
+        </app-dropdown-menu>
+      </div>
+    </div>
+
+    <!-- Mobile Cards -->
+    <div class="mobile-cards hide-desktop">
+      @for (bug of sortedBugs(); track bug.id) {
+      <div class="mobile-card">
+        <div class="mobile-card__header">
+          <div class="mobile-card__title-group">
+            <span class="bug-title">{{ bug.title }}</span>
+            <span class="bug-submitter">by {{ bug.submitted_by }}</span>
+          </div>
+          <span class="priority-badge" [class.priority-badge--high]="bug.priority.toLowerCase() === 'high'"
+            [class.priority-badge--medium]="bug.priority.toLowerCase() === 'medium'"
+            [class.priority-badge--low]="bug.priority.toLowerCase() === 'low'">
+            {{ bug.priority }}
+          </span>
+        </div>
+
+        <div class="mobile-card__body">
+          <div class="mobile-card__stat">
+            <span class="text-secondary">Category</span>
+            <span class="text-primary font-bold">{{ bug.category }}</span>
+          </div>
+          <div class="mobile-card__stat">
+            <span class="text-secondary">Status</span>
+            <span class="status-badge" [class.status-badge--open]="bug.status === 'Open'"
+              [class.status-badge--progress]="bug.status === 'In Progress'"
+              [class.status-badge--closed]="bug.status === 'Closed'">
+              {{ bug.status }}
+            </span>
+          </div>
+          <div class="mobile-card__stat">
+            <span class="text-secondary">Date</span>
+            <span class="text-primary font-bold">{{ format.formatDate(bug.created_at) }}</span>
+          </div>
+        </div>
+
+        <!-- Expand Button (Mobile) -->
+        <button class="mobile-expand-btn" [class.mobile-expand-btn--active]="expandedId() === bug.id"
+          (click)="toggleExpand(bug.id)">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+          {{ expandedId() === bug.id ? 'Hide Details' : 'View Details' }}
+        </button>
+
+        @if (expandedId() === bug.id) {
+        <div class="mobile-detail">
+          <div class="detail-section">
+            <h4 class="detail-label">Description</h4>
+            <p class="detail-text">{{ bug.description || 'No description provided.' }}</p>
+          </div>
+
+          <div class="detail-section">
+            <h4 class="detail-label">Contact</h4>
+            <p class="detail-text">{{ bug.user_email }}</p>
+          </div>
+
+          @if (bug.parsedMetadata) {
+          <div class="detail-section">
+            <h4 class="detail-label">Environment</h4>
+            <div class="detail-meta-grid">
+              <div class="detail-meta-item">
+                <span class="detail-meta-key">Browser</span>
+                <span class="detail-meta-value">{{ bug.parsedMetadata.browser }}</span>
+              </div>
+              <div class="detail-meta-item">
+                <span class="detail-meta-key">Viewport</span>
+                <span class="detail-meta-value">{{ bug.parsedMetadata.viewport }}</span>
+              </div>
+              <div class="detail-meta-item detail-meta-item--full">
+                <span class="detail-meta-key">Target URL</span>
+                <span class="detail-meta-value">{{ bug.parsedMetadata.url }}</span>
+              </div>
+            </div>
+          </div>
+          }
+
+          <div class="detail-actions detail-actions--mobile">
+            <span class="detail-actions__label">Update Status:</span>
+            <div class="detail-actions__buttons">
+              @for (status of statuses; track status) {
+              <button class="status-select-btn" [class.status-select-btn--active]="bug.status === status"
+                [class.status-select-btn--open]="status === 'Open'"
+                [class.status-select-btn--progress]="status === 'In Progress'"
+                [class.status-select-btn--closed]="status === 'Closed'" (click)="updateStatus(bug, status)"
+                [disabled]="updatingId() === bug.id">
+                {{ status }}
+              </button>
+              }
+            </div>
+            
+            <button class="delete-bug-btn delete-bug-btn--mobile" (click)="deleteBug(bug)" [disabled]="deletingId() === bug.id">
+              @if (deletingId() === bug.id) {
+                <span class="spinner-small"></span>
+                Deleting...
+              } @else {
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete Bug Report
+              }
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+    <div class="pagination">
+      <button (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 1" class="pagination__btn">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+      @for (page of getPageNumbers(); track page) {
+      <button (click)="goToPage(page)" class="pagination__btn" [class.pagination__btn--active]="page === currentPage()">
+        {{ page }}
+      </button>
+      }
+      <button (click)="goToPage(currentPage() + 1)" [disabled]="currentPage() === totalPages()" class="pagination__btn">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    </div>
+    }
+    }
+  </section>
+
+  }
+
+</div>

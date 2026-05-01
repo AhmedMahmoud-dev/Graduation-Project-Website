@@ -1,4 +1,5 @@
-import { Component, inject, signal, Input, Output, EventEmitter } from '@angular/core';
+import { Component, inject, signal, Input, Output, EventEmitter, computed } from '@angular/core';
+import { BugReportModalComponent } from '../../../shared/components/bug-report-modal/bug-report-modal.component';
 
 import { Router, NavigationEnd, RouterLink } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -9,10 +10,11 @@ import { SettingsApiService } from '../../../core/services/settings-api.service'
 
 import { TooltipComponent } from '../../../shared/components/tooltip/tooltip.component';
 
+
 @Component({
   selector: 'app-app-navbar',
   standalone: true,
-  imports: [RouterLink, TooltipComponent],
+  imports: [RouterLink, TooltipComponent, BugReportModalComponent],
   templateUrl: './app-navbar.component.html'
 })
 export class AppNavbarComponent {
@@ -28,7 +30,9 @@ export class AppNavbarComponent {
   currentTheme = this.themeService.currentTheme;
   currentUser = this.authService.currentUser;
   userMenuOpen = signal<boolean>(false);
+  bugReportOpen = signal<boolean>(false);
   unreadCount = this.alertsService.unreadCount;
+  isAdmin = computed(() => this.currentUser()?.roles?.includes('ADMIN'));
 
   get isLandingPage(): boolean {
     return this.router.url === '/' || this.router.url.startsWith('/#');
@@ -68,6 +72,15 @@ export class AppNavbarComponent {
     const parts = user.full_name.split(' ');
     if (parts.length >= 2) return parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
     return parts[0][0].toUpperCase();
+  }
+
+  openBugReport() {
+    this.closeUserMenu();
+    this.bugReportOpen.set(true);
+  }
+
+  closeBugReport() {
+    this.bugReportOpen.set(false);
   }
 
   logout() {

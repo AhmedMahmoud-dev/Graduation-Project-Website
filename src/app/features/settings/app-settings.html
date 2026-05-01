@@ -5,7 +5,7 @@
         
         <div nav class="mb-6 w-full lg:w-max">
           <app-segmented-nav 
-            [options]="navOptions" 
+            [options]="navOptions()" 
             [selectedValue]="activeMainTab()" 
             (selectedValueChange)="setActiveTab($event)">
           </app-segmented-nav>
@@ -38,5 +38,7 @@
         </div>
       </section>
 
-      <app-footer-section></app-footer-section>
+      @if (!isAdmin()) {
+        <app-footer-section></app-footer-section>
+      }
 </div>

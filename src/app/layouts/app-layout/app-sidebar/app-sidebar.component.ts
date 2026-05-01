@@ -1,6 +1,8 @@
-import { Component, signal, HostListener, inject, effect, PLATFORM_ID, Input, computed } from '@angular/core';
+import { Component, signal, HostListener, inject, effect, PLATFORM_ID, Input, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { DomSanitizer } from '@angular/platform-browser';
 import { AuthService } from '../../../core/services/auth.service';
 import { AlertsService } from '../../../core/services/alerts.service';
@@ -47,10 +49,24 @@ export class AppSidebarComponent {
   emailCopied = signal<boolean>(false);
   currentUser = this.authService.currentUser;
   private alertsService = inject(AlertsService);
+  private destroyRef = inject(DestroyRef);
   unreadCount = this.alertsService.unreadCount;
   hasUnreadAlerts = computed(() => this.unreadCount() > 0);
+  isAdmin = computed(() => this.currentUser()?.roles?.includes('ADMIN'));
+
+  // Admin state: tracks if current route is under /admin
+  isAdminPage = signal<boolean>(false);
 
   constructor() {
+    // Track admin routes
+    this.isAdminPage.set(this.router.url.startsWith('/admin'));
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(event => {
+      this.isAdminPage.set(event.urlAfterRedirects.startsWith('/admin'));
+    });
+
     effect(() => {
       if (this.isBrowser) {
         let width = '0px';
@@ -77,6 +93,14 @@ export class AppSidebarComponent {
     { label: 'Compare', path: '/compare', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M13 6h3a2 2 0 0 1 2 2v7"></path><path d="M11 18H8a2 2 0 0 1-2-2V9"></path></svg>') },
     { label: 'Alerts', path: '/alerts', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>') },
     { label: 'Back to Landing', path: '/', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>') },
+  ];
+
+  adminNavItems = [
+    { label: 'Overview', path: '/admin/dashboard', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>') },
+    { label: 'Users', path: '/admin/users', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg>') },
+    { label: 'Testimonials', path: '/admin/testimonials', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path></svg>') },
+    { label: 'Bug Reports', path: '/admin/bugs', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>') },
+    { label: 'System Health', path: '/admin/health', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>') },
   ];
 
   landingNavItems = [
@@ -201,8 +225,10 @@ export class AppSidebarComponent {
 
   goToHome() {
     this.handleNavClick();
-    if (this.currentUser()) {
-      this.router.navigate(['/dashboard']);
+    const user = this.currentUser();
+    if (user) {
+      const isAdmin = user.roles?.includes('ADMIN');
+      this.router.navigate([isAdmin ? '/admin/dashboard' : '/dashboard']);
     } else {
       this.router.navigate(['/']);
     }

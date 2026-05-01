@@ -36,8 +36,11 @@ export class LoginComponent {
       const { email, password } = this.loginForm.getRawValue();
       this.authService.login(email, password).subscribe({
         next: (res) => {
+          console.log('Login Success:', res.data);
           this.toastService.show(res.message || 'Welcome Back', 'Redirecting to your dashboard...', 'success', 'check');
-          this.router.navigate(['/dashboard']);
+
+          const isAdmin = res.data?.roles?.includes('ADMIN');
+          this.router.navigate([isAdmin ? '/admin/dashboard' : '/dashboard']);
         },
         error: (err) => {
           this.isLoading = false;

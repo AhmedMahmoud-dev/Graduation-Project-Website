@@ -36,8 +36,8 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      // 3. Handle 401: Clear state and redirect
-      if (error.status === 401) {
+      // 3. Handle 401 and 403: Clear state and redirect
+      if (error.status === 401 || error.status === 403) {
         authService.logout();
       }
 

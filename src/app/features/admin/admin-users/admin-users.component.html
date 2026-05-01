@@ -1,0 +1,232 @@
+<div class="admin-users">
+
+  <!-- Loading -->
+  @if (isLoading()) {
+    <app-loading-state
+      message="Loading Users..."
+      subtitle="Fetching registered accounts"
+      size="md"
+      [fullPage]="true">
+    </app-loading-state>
+  }
+
+  <!-- Error -->
+  @if (!isLoading() && error()) {
+    <app-empty-state [isFullPage]="true">
+      <svg empty-icon xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+      <span empty-msg>Failed to Load Users</span>
+      <span empty-hint>{{ error() }}</span>
+      <button empty-actions (click)="fetchUsers()" class="action-btn action-btn--primary">
+        Try Again
+      </button>
+    </app-empty-state>
+  }
+
+  <!-- Content -->
+  @if (!isLoading() && !error()) {
+
+    <!-- Header -->
+    <section class="admin-header-section">
+      <app-page-header
+        title="User Management"
+        subtitle="ADMIN PANEL"
+        [description]="totalUsers() + ' registered users'">
+        <div actions class="flex items-center gap-3">
+          <button (click)="fetchUsers()" class="refresh-btn">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <span class="refresh-btn__label">Refresh</span>
+          </button>
+        </div>
+      </app-page-header>
+    </section>
+
+    <!-- Page Content -->
+    <section class="admin-content-section">
+      <!-- Empty List -->
+      @if (users().length === 0) {
+        <app-empty-state>
+          <svg empty-icon xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span empty-msg>No Users Found</span>
+          <span empty-hint>There are no registered users yet.</span>
+        </app-empty-state>
+      }
+
+      <!-- Table (Desktop) -->
+      @if (users().length > 0) {
+        <div class="table-wrapper hide-mobile">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th (click)="sortState.toggleSort('first_name')" class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
+                  <div class="flex items-center gap-1">
+                    User
+                    <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'first_name'" [class.group-hover:opacity-50]="sortState.sortColumn() !== 'first_name'" [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'first_name'">
+                      {{ sortState.sortColumn() === 'first_name' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                    </span>
+                  </div>
+                </th>
+                <th (click)="sortState.toggleSort('email')" class="hide-mobile cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
+                  <div class="flex items-center gap-1">
+                    Email
+                    <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'email'" [class.group-hover:opacity-50]="sortState.sortColumn() !== 'email'" [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'email'">
+                      {{ sortState.sortColumn() === 'email' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                    </span>
+                  </div>
+                </th>
+                <th (click)="sortState.toggleSort('total_analyses')" class="hide-mobile cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
+                  <div class="flex items-center gap-1">
+                    Analyses
+                    <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'total_analyses'" [class.group-hover:opacity-50]="sortState.sortColumn() !== 'total_analyses'" [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'total_analyses'">
+                      {{ sortState.sortColumn() === 'total_analyses' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                    </span>
+                  </div>
+                </th>
+                <th (click)="sortState.toggleSort('created_at')" class="hide-tablet cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
+                  <div class="flex items-center gap-1">
+                    Joined
+                    <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'created_at'" [class.group-hover:opacity-50]="sortState.sortColumn() !== 'created_at'" [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'created_at'">
+                      {{ sortState.sortColumn() === 'created_at' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                    </span>
+                  </div>
+                </th>
+                <th (click)="sortState.toggleSort('is_active')" class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
+                  <div class="flex items-center gap-1">
+                    Status
+                    <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'is_active'" [class.group-hover:opacity-50]="sortState.sortColumn() !== 'is_active'" [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'is_active'">
+                      {{ sortState.sortColumn() === 'is_active' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                    </span>
+                  </div>
+                </th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (user of sortedUsers(); track user.id) {
+                <tr>
+                  <td>
+                    <div class="user-cell">
+                      <div class="user-avatar">{{ user.first_name[0] }}{{ user.last_name[0] }}</div>
+                      <div class="user-info">
+                        <span class="user-name">{{ user.first_name }} {{ user.last_name }}</span>
+                        <span class="user-email-mobile">{{ user.email }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="hide-mobile">
+                    <span class="text-secondary user-email-table">{{ user.email }}</span>
+                  </td>
+                  <td class="hide-mobile">
+                    <span class="text-primary font-bold">{{ user.total_analyses }}</span>
+                  </td>
+                  <td class="hide-tablet">
+                    <span class="text-secondary">{{ format.formatDate(user.created_at) }}</span>
+                  </td>
+                  <td>
+                    <span class="status-badge" [class.status-badge--active]="user.is_active" [class.status-badge--banned]="!user.is_active">
+                      {{ user.is_active ? 'Active' : 'Banned' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <button (click)="toggleUserStatus(user)" class="toggle-btn" [class.toggle-btn--ban]="user.is_active" [class.toggle-btn--activate]="!user.is_active" [disabled]="isUpdating() && updatingUserId() === user.id">
+                        {{ user.is_active ? 'Ban' : 'Activate' }}
+                      </button>
+                      <button (click)="deleteUser(user)" class="delete-btn" [disabled]="isUpdating() && updatingUserId() === user.id" title="Nuclear Delete">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mobile Sort (shown only on small screens) -->
+        <div class="mobile-sort hide-desktop" style="margin-top: 2rem;">
+          <label>Sort by:</label>
+          <div class="select-wrapper" style="z-index: 50;">
+            <app-dropdown-menu
+              [options]="sortOptions"
+              [selectedValue]="selectedSortValue()"
+              (selectedValueChange)="onMobileSortChange($event)">
+            </app-dropdown-menu>
+          </div>
+        </div>
+
+        <!-- Mobile Cards (shown only on small screens) -->
+        <div class="mobile-cards hide-desktop">
+          @for (user of sortedUsers(); track user.id) {
+            <div class="mobile-card">
+              <div class="mobile-card__header">
+                <div class="user-cell">
+                  <div class="user-avatar">{{ user.first_name[0] }}{{ user.last_name[0] }}</div>
+                  <div class="user-info">
+                    <span class="user-name">{{ user.first_name }} {{ user.last_name }}</span>
+                    <span class="user-email-mobile" style="display: block;">{{ user.email }}</span>
+                  </div>
+                </div>
+                <span class="status-badge" [class.status-badge--active]="user.is_active" [class.status-badge--banned]="!user.is_active">
+                  {{ user.is_active ? 'Active' : 'Banned' }}
+                </span>
+              </div>
+              <div class="mobile-card__body">
+                <div class="mobile-card__stat">
+                  <span class="text-secondary">Analyses</span>
+                  <span class="text-primary font-bold">{{ user.total_analyses }}</span>
+                </div>
+                <div class="mobile-card__stat">
+                  <span class="text-secondary">Joined</span>
+                  <span class="text-primary font-bold">{{ format.formatDate(user.created_at) }}</span>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button (click)="toggleUserStatus(user)" class="toggle-btn toggle-btn--full" [class.toggle-btn--ban]="user.is_active" [class.toggle-btn--activate]="!user.is_active" [disabled]="isUpdating() && updatingUserId() === user.id">
+                  {{ user.is_active ? 'Ban' : 'Activate' }}
+                </button>
+                <button (click)="deleteUser(user)" class="delete-btn" style="margin-top: 0.75rem;" [disabled]="isUpdating() && updatingUserId() === user.id">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Pagination -->
+        @if (totalPages() > 1) {
+          <div class="pagination">
+            <button (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 1" class="pagination__btn">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            @for (page of getPageNumbers(); track page) {
+              <button (click)="goToPage(page)" class="pagination__btn" [class.pagination__btn--active]="page === currentPage()">
+                {{ page }}
+              </button>
+            }
+            <button (click)="goToPage(currentPage() + 1)" [disabled]="currentPage() === totalPages()" class="pagination__btn">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+        }
+      }
+    </section>
+
+  }
+
+
+
+</div>

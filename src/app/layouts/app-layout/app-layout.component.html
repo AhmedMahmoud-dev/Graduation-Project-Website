@@ -21,4 +21,6 @@
 </div>
 
 <!-- System Feedback Component (Handles its own button and modal) -->
+@if (!isAdmin()) {
 <app-system-feedback></app-system-feedback>
+}

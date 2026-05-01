@@ -8,14 +8,20 @@ export interface Toast {
   icon: 'check' | 'refresh' | 'info' | 'error' | 'warning' | 'trash' | 'bell' | string;
   type?: 'success' | 'info' | 'warning' | 'error';
   isConfirmation?: boolean;
-  onConfirm?: () => void;
+  onConfirm?: (value?: string) => void;
   onCancel?: () => void;
   confirmLabel?: string;
   cancelLabel?: string;
   requireInput?: boolean;
   expectedValue?: string;
+  inputType?: 'text' | 'password';
+  confirmInput?: string;
   isAlert?: boolean;
   severity?: string;
+}
+
+export interface ConfirmToastOptions extends Partial<Toast> {
+  onConfirm: (inputValue?: string) => void;
 }
 
 @Injectable({
@@ -51,7 +57,7 @@ export class ToastService {
     }, duration);
   }
 
-  confirm(title: string, subtitle: string, onConfirm: () => void, options?: Partial<Toast>) {
+  confirm(title: string, subtitle: string, onConfirm: (value?: string) => void, options?: Partial<Toast>) {
     // Prevent opening multiple confirmations. User must resolve the current one first.
     if (this.toastsSignal().some(t => t.isConfirmation)) return;
 
@@ -68,7 +74,8 @@ export class ToastService {
       cancelLabel: options?.cancelLabel || 'Cancel',
       type: options?.type || 'warning',
       requireInput: options?.requireInput,
-      expectedValue: options?.expectedValue
+      expectedValue: options?.expectedValue,
+      inputType: options?.inputType || 'text'
     };
 
     this.addToast(newToast);

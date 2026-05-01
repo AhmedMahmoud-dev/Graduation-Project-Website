@@ -37,7 +37,7 @@
         <li><a (click)="navigateTo('/auth/register')"
             class="hover:text-[color:var(--brand-primary)] transition-colors cursor-pointer capitalize inline-block w-full sm:w-auto">Register</a>
         </li>
-        } @else if (hasFeedback()) {
+        } @else if (hasFeedback() && !isAdmin()) {
         <li><a (click)="openFeedback()"
             class="text-[color:var(--text-muted)] hover:text-[color:var(--brand-primary)] transition-colors cursor-pointer w-full sm:w-auto flex items-center gap-1.5">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

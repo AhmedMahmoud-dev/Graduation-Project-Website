@@ -1,7 +1,8 @@
-import { Component, viewChild, inject, signal } from '@angular/core';
+import { Component, viewChild, inject, signal, computed } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { AppSidebarComponent } from './app-sidebar/app-sidebar.component';
 import { AppNavbarComponent } from './app-navbar/app-navbar.component';
+import { AuthService } from '../../core/services/auth.service';
 import { filter } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { SystemFeedbackComponent } from '../../shared/components/system-feedback/system-feedback.component';
@@ -14,6 +15,9 @@ import { SystemFeedbackComponent } from '../../shared/components/system-feedback
 })
 export class AppLayoutComponent {
   private router = inject(Router);
+  private authService = inject(AuthService);
+
+  isAdmin = this.authService.isAdmin;
 
   showSidebar = signal(true);
   _isDocPage = signal(false);
@@ -47,7 +51,7 @@ export class AppLayoutComponent {
     this.showSidebar.set(true);
     this._isDocPage.set(isDoc);
 
-    const fullWidthRoutes = ['/dashboard', '/analysis', '/history', '/alerts', '/settings', '/compare'];
+    const fullWidthRoutes = ['/dashboard', '/analysis', '/history', '/alerts', '/settings', '/compare', '/admin'];
     const isFullWidth = fullWidthRoutes.some(route => url.includes(route));
     this._isFullWidthPage.set(isFullWidth || isDoc);
   }

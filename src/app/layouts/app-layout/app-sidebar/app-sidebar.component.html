@@ -44,8 +44,36 @@
   <nav class="flex-1 py-6 px-3 flex flex-col gap-2 no-scrollbar transition-all duration-300"
     [class.overflow-y-auto]="isExpanded() || isMobile()" [class.overflow-x-hidden]="isExpanded() || isMobile()"
     [class.overflow-visible]="!isExpanded() && !isMobile()">
+    <!-- ADMIN NAV ITEMS -->
+    @if (!isLandingPage && isAdmin() && currentUser()) {
+    <!-- Admin Section Label -->
+    <div class="flex items-center gap-2 px-3 mb-1 transition-opacity duration-300"
+      [class.opacity-0]="!isExpanded() && !isMobile()" [class.h-0]="!isExpanded() && !isMobile()"
+      [class.overflow-hidden]="!isExpanded() && !isMobile()">
+      <span class="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[color:var(--brand-primary)]">Admin
+        Panel</span>
+      <div class="flex-1 h-px bg-[color:var(--brand-primary)] opacity-20"></div>
+    </div>
+
+    @for (item of adminNavItems; track item.label) {
+    <a [routerLink]="item.path" routerLinkActive="active-link"
+      [routerLinkActiveOptions]="{exact: item.path === '/dashboard'}"
+      class="flex items-center rounded-xl text-[color:var(--color-text-muted)] hover:bg-[color:var(--bg-surface)] hover:text-[color:var(--color-text)] transition-all group relative cursor-pointer h-12"
+      (click)="$event.stopPropagation(); handleNavClick()">
+      <div class="w-12 h-12 shrink-0 flex items-center justify-center transition-transform group-active:scale-90"
+        [innerHTML]="item.icon"></div>
+      <span class="transition-opacity duration-300 whitespace-nowrap font-semibold text-sm flex-1"
+        [ngClass]="(!isExpanded() && !isMobile()) ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto ml-1'">
+        {{ item.label }}
+      </span>
+
+      <app-tooltip [text]="item.label" position="right" [visible]="!isExpanded() && !isMobile()"></app-tooltip>
+    </a>
+    }
+    }
+
     <!-- APP NAV ITEMS -->
-    @if (!isLandingPage) {
+    @if (!isLandingPage && !isAdminPage() && !isAdmin()) {
     @if (currentUser()) {
     @for (item of appNavItems; track item.label) {
     <a [routerLink]="item.path" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: item.path === '/'}"
@@ -87,7 +115,7 @@
     }
 
     <!-- LANDING/GUEST NAV ITEMS -->
-    @if (isLandingPage || (!currentUser() && (routerURL.includes('auth')))) {
+    @if (!isAdmin() && (isLandingPage || (!currentUser() && (routerURL.includes('auth'))))) {
     <!-- Dashboard Link for logged in users on landing -->
     @if (currentUser()) {
     <a routerLink="/dashboard" routerLinkActive="active-link"

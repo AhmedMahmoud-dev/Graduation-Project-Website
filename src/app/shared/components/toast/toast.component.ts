@@ -63,7 +63,7 @@ export class ToastComponent {
   }
 
   handleConfirm(toast: any) {
-    if (toast.requireInput) {
+    if (toast.requireInput && toast.expectedValue) {
       const val = this.confirmInputs()[toast.id] || '';
       if (val.trim() !== toast.expectedValue) return;
     }
@@ -74,8 +74,9 @@ export class ToastComponent {
     if (toast.onConfirm) {
       // Small delay to let the confirmation toast start exiting 
       // before the next notification (potentially) slides in
+      const inputValue = this.confirmInputs()[toast.id];
       setTimeout(() => {
-        toast.onConfirm();
+        toast.onConfirm(inputValue);
       }, 150);
     }
   }
@@ -83,7 +84,14 @@ export class ToastComponent {
   isConfirmDisabled(toast: any): boolean {
     if (!toast.requireInput) return false;
     const val = this.confirmInputs()[toast.id] || '';
-    return val.trim() !== toast.expectedValue;
+    
+    // If expectedValue is provided, require exact match
+    if (toast.expectedValue) {
+      return val.trim() !== toast.expectedValue;
+    }
+    
+    // Otherwise just require non-empty
+    return val.trim().length === 0;
   }
 
   onInputChange(id: string, value: string) {
