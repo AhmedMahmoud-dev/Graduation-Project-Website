@@ -9,6 +9,7 @@ import { FormFieldErrorComponent } from '../../../shared/components/form/form-fi
 import { TooltipComponent } from '../../../shared/components/tooltip/tooltip.component';
 import { FormattingService } from '../../../core/services/formatting.service';
 import { CommonModule } from '@angular/common';
+import { BanDetails } from '../../../core/models/api-response.model';
 
 @Component({
   selector: 'app-login',
@@ -24,7 +25,7 @@ export class LoginComponent implements OnInit {
   private toastService = inject(ToastService);
   protected format = inject(FormattingService);
 
-  banDetails = signal<any>(null);
+  banDetails = signal<BanDetails | null>(null);
 
   ngOnInit() {
     const details = this.authService.getBanDetails();
@@ -54,7 +55,6 @@ export class LoginComponent implements OnInit {
       const { email, password } = this.loginForm.getRawValue();
       this.authService.login(email, password).subscribe({
         next: (res) => {
-          console.log('Login Success:', res.data);
           this.toastService.show(res.message || 'Welcome Back', 'Redirecting to your dashboard...', 'success', 'check');
 
           const isAdmin = res.data?.roles?.includes('ADMIN');
@@ -63,6 +63,16 @@ export class LoginComponent implements OnInit {
         error: (err) => {
           this.isLoading = false;
           this.loginForm.enable();
+
+          // Handle Ban Response (403)
+          if (err.status === 403 && err.error?.data?.ban_reason) {
+            const details: BanDetails = err.error.data;
+            this.authService.storeBanDetails(details);
+            this.banDetails.set(details);
+            this.authService.clearBanDetails(); // Clear after setting local signal
+            return;
+          }
+
           this.toastService.show('Login Failed', err.message || 'Please check your credentials and try again.', 'error', 'error');
         }
       });

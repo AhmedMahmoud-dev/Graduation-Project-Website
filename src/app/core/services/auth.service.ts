@@ -1,11 +1,11 @@
 import { Injectable, signal, inject, PLATFORM_ID, computed } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { Observable, throwError, of } from 'rxjs';
 import { catchError, tap, map } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { environment } from '../../../environments/environment';
-import { ApiResponse, AuthUser } from '../models/api-response.model';
+import { ApiResponse, AuthUser, BanDetails } from '../models/api-response.model';
 import { AnalysisHistoryResponse } from '../models/analysis-v2.model';
 import { ErrorHandlerService } from './error-handler.service';
 import { ColorSettingsService } from './color-settings.service';
@@ -88,7 +88,7 @@ export class AuthService {
             this.storeBanDetails({
               ban_reason: user.ban_reason,
               ban_expires_at: user.ban_expires_at,
-              is_permanent: user.is_permanent
+              is_permanent: !!user.is_permanent
             });
             // Treat as failed login - do NOT save auth or continue
             return;
@@ -186,7 +186,7 @@ export class AuthService {
   /**
    * Saves ban details to sessionStorage as JSON
    */
-  storeBanDetails(details: any): void {
+  storeBanDetails(details: BanDetails): void {
     if (!this.isBrowser) return;
     sessionStorage.setItem('emotra_ban_details', JSON.stringify(details));
   }
@@ -194,12 +194,12 @@ export class AuthService {
   /**
    * Reads and parses ban details from sessionStorage
    */
-  getBanDetails(): any {
+  getBanDetails(): BanDetails | null {
     if (!this.isBrowser) return null;
     const details = sessionStorage.getItem('emotra_ban_details');
     if (!details) return null;
     try {
-      return JSON.parse(details);
+      return JSON.parse(details) as BanDetails;
     } catch (e) {
       return null;
     }
@@ -264,6 +264,26 @@ export class AuthService {
     }
 
     this.currentUser.set(null);
+  }
+
+  /**
+   * Checks session validity with the server on startup.
+   * If banned, the interceptor will catch the 403 and trigger logout/notice.
+   */
+  verifySessionWithServer(): Observable<any> {
+    if (!this.isBrowser || !this.isAuthenticated()) {
+      return of(null);
+    }
+
+    const url = `${environment.apiUrl}/api/auth/verify`;
+    return this.http.get(url).pipe(
+      catchError(() => {
+        // Interceptor handles 401/403 (logout & ban notice)
+        // We return of(null) here to allow the APP_INITIALIZER to complete
+        // and let the app handle the navigation triggered by the interceptor
+        return of(null);
+      })
+    );
   }
 
   /**
@@ -409,10 +429,16 @@ export class AuthService {
     if (error.status === 400 && error.error?.errors) {
       return throwError(() => ({
         message: error.error.message || handledMessage,
-        validationErrors: error.error.errors // Record<string, string[]>
+        validationErrors: error.error.errors,
+        status: error.status
       }));
     }
 
-    return throwError(() => ({ message: handledMessage }));
+    // Return the full error info for ban handling in components
+    return throwError(() => ({
+      message: handledMessage,
+      status: error.status,
+      error: error.error // Include raw body for data.ban_reason
+    }));
   }
 }

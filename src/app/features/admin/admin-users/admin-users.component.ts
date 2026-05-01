@@ -81,15 +81,19 @@ export class AdminUsersComponent implements OnInit {
     { label: "3 Days", value: 72 },
     { label: "7 Days", value: 168 },
     { label: "30 Days", value: 720 },
-    { label: "Permanent", value: null }
+    { label: "Permanent", value: -1 }
   ];
 
   onBanReasonChange(value: any) {
-    this.banForm.patchValue({ reason: value });
+    this.banForm.get('reason')?.setValue(value);
+    this.banForm.get('reason')?.markAsTouched();
+    this.banForm.get('reason')?.updateValueAndValidity();
   }
 
   onBanDurationChange(value: any) {
-    this.banForm.patchValue({ duration: value });
+    this.banForm.get('duration')?.setValue(value);
+    this.banForm.get('duration')?.markAsTouched();
+    this.banForm.get('duration')?.updateValueAndValidity();
   }
 
   openBanModal(user: AdminUser) {
@@ -120,9 +124,12 @@ export class AdminUsersComponent implements OnInit {
       return;
     }
 
+    // Map -1 back to null for the API (Permanent ban), or parse number
+    const finalDuration = Number(duration) === -1 ? null : (duration ? Number(duration) : null);
+
     this.isUpdating.set(true);
     this.updatingUserId.set(user.id);
-    this.adminService.updateUserStatus(user.id, false, finalReason, duration !== undefined && duration !== null ? Number(duration) : null).subscribe({
+    this.adminService.updateUserStatus(user.id, false, finalReason, finalDuration).subscribe({
       next: (res) => {
         if (res.is_success) {
           const updatedList = this.users().map(u =>

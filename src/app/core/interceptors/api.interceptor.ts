@@ -38,13 +38,9 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => {
       // 3. Handle 401 and 403: Clear state and redirect
       if (error.status === 401 || error.status === 403) {
-        // If 403 and body contains ban details, store them for the login page notice
-        if (error.status === 403 && error.error?.ban_reason) {
-          authService.storeBanDetails({
-            ban_reason: error.error.ban_reason,
-            ban_expires_at: error.error.ban_expires_at,
-            is_permanent: error.error.is_permanent
-          });
+        // If 403 and body contains ban details in 'data' field, store them
+        if (error.status === 403 && error.error?.data?.ban_reason) {
+          authService.storeBanDetails(error.error.data);
         }
         authService.logout(true);
       }

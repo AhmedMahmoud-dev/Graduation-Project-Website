@@ -1,10 +1,11 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, provideAppInitializer, inject } from '@angular/core';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideEchartsCore } from 'ngx-echarts';
 
 import { routes } from './app.routes';
 import { apiInterceptor } from './core/interceptors/api.interceptor';
+import { AuthService } from './core/services/auth.service';
 
 import { provideAnimations } from '@angular/platform-browser/animations';
 
@@ -17,6 +18,10 @@ export const appConfig: ApplicationConfig = {
     })),
     provideHttpClient(withFetch(), withInterceptors([apiInterceptor])),
     provideEchartsCore({ echarts: () => import('echarts') }),
-    provideAnimations()
+    provideAnimations(),
+    provideAppInitializer(() => {
+      const authService = inject(AuthService);
+      return authService.verifySessionWithServer();
+    })
   ]
 };
