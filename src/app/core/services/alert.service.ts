@@ -14,10 +14,11 @@ export class AlertService {
   /**
    * Retrieves a paginated list of alerts.
    */
-  getAlerts(page: number, pageSize: number, severity?: string, resolved?: boolean): Observable<ApiResponse<AlertsPagedResult>> {
+  getAlerts(page: number, pageSize: number, severity?: string, resolved?: boolean, type?: string): Observable<ApiResponse<AlertsPagedResult>> {
     let url = `${environment.apiUrl}/api/alerts?page=${page}&pageSize=${pageSize}`;
     if (severity) url += `&severity=${severity}`;
     if (resolved !== undefined) url += `&resolved=${resolved}`;
+    if (type) url += `&type=${type}`;
     
     return this.http.get<ApiResponse<AlertsPagedResult>>(url);
   }

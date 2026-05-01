@@ -1,9 +1,10 @@
 export interface AlertItem {
   id: number;
   user_id: string;
-  analysis_v2_id: number | null;
+  analysis_id: number | null;
   client_id: string | null;
   message: string;
+  type: string; // possible values: "emotion_spike", "support_reply"
   severity: string; // low, medium, high, critical
   triggered_at: string;
   resolved: boolean;

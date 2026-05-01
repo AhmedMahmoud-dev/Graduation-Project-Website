@@ -35,6 +35,11 @@
           @if (activeMainTab() === 'notifications') {
             <app-notification-settings></app-notification-settings>
           }
+
+          <!-- Support Tab Content -->
+          @if (activeMainTab() === 'support') {
+            <app-contact-support></app-contact-support>
+          }
         </div>
       </section>
 

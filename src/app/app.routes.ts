@@ -112,6 +112,10 @@ export const routes: Routes = [
       {
         path: 'health',
         loadComponent: () => import('./features/admin/admin-health/admin-health.component').then(m => m.AdminHealthComponent)
+      },
+      {
+        path: 'support',
+        loadComponent: () => import('./features/admin/admin-support/admin-support.component').then(m => m.AdminSupportComponent)
       }
     ]
   },

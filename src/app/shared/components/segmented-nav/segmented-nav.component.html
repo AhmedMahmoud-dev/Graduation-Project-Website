@@ -13,6 +13,9 @@
       [class.hover:bg-[color:var(--bg-surface)]]="!option.disabled && selectedValue !== option.value"
       [class.hover:text-[color:var(--text-primary)]]="!option.disabled && selectedValue !== option.value"
       [class.hover:border-[color:var(--border-color)]]="!option.disabled && selectedValue !== option.value">
+      @if (option.icon) {
+        <span class="shrink-0 flex items-center justify-center" [innerHTML]="option.icon"></span>
+      }
       {{ option.label }}
     </button>
     }

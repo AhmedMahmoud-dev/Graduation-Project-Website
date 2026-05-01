@@ -29,7 +29,7 @@ Retrieves a paginated list of alerts for the current user.
       {
         "id": 1,
         "user_id": "user-uuid",
-        "analysis_v2_id": 123,
+        "analysis_id": 123,
         "client_id": "client-uuid",
         "message": "High negative emotion level (85%) detected across 2 consecutive analyses.",
         "severity": "high",
@@ -92,7 +92,7 @@ Retrieves detailed information for a specific alert.
   "data": {
     "id": 1,
     "user_id": "user-uuid",
-    "analysis_v2_id": 123,
+    "analysis_id": 123,
     "client_id": "client-uuid",
     "message": "High negative emotion level (85%) detected across 2 consecutive analyses.",
     "severity": "high",

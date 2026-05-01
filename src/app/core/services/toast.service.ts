@@ -18,6 +18,7 @@ export interface Toast {
   confirmInput?: string;
   isAlert?: boolean;
   severity?: string;
+  alertType?: string;
 }
 
 export interface ConfirmToastOptions extends Partial<Toast> {
@@ -32,7 +33,7 @@ export class ToastService {
   private toastsSignal = signal<Toast[]>([]);
   toasts = this.toastsSignal.asReadonly();
 
-  show(title: string, subtitle: string, type: Toast['type'] = 'info', icon: Toast['icon'] = 'info', options?: { duration?: number, isAlert?: boolean, severity?: string }) {
+  show(title: string, subtitle: string, type: Toast['type'] = 'info', icon: Toast['icon'] = 'info', options?: { duration?: number, isAlert?: boolean, severity?: string, alertType?: string }) {
     // Respect global enabled setting
     if (!this.settingsService.settings().enabled) return;
 
@@ -44,7 +45,8 @@ export class ToastService {
       icon,
       type,
       isAlert: options?.isAlert,
-      severity: options?.severity
+      severity: options?.severity,
+      alertType: options?.alertType
     };
 
     this.addToast(newToast);
@@ -84,14 +86,14 @@ export class ToastService {
   private addToast(newToast: Toast) {
     this.toastsSignal.update(toasts => {
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-      
+
       // Use dynamic limit from settings
       const userLimit = this.settingsService.settings().maxNotifications;
       const limit = isMobile ? Math.min(2, userLimit) : userLimit;
-      
+
       // NEW notifications on TOP
       let updated = [newToast, ...toasts];
-      
+
       if (updated.length > limit) {
         // Find oldest ephemeral toast to remove (now at the END of the array mostly, but better to search)
         // Since we prepend, the "oldest" ones are at the end.
@@ -102,7 +104,7 @@ export class ToastService {
             break;
           }
         }
-        
+
         if (ephemeralIndex !== -1) {
           updated.splice(ephemeralIndex, 1);
         } else {
@@ -110,7 +112,7 @@ export class ToastService {
           updated = updated.slice(0, limit);
         }
       }
-      
+
       return updated;
     });
   }

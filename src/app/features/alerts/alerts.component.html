@@ -83,13 +83,20 @@
       @for (alert of filteredAlerts(); track alert.id) {
       <div
         class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-3xl p-6 transition-all relative overflow-hidden flex flex-col md:flex-row md:items-start gap-6"
-        [class.opacity-60]="alert.resolved" [style.--severity-color]="format.getEmotionColor(alert.severity)">
+        [class.opacity-60]="alert.resolved"
+        [style.--severity-color]="alert.type === 'support_reply' ? 'var(--color-primary)' : format.getEmotionColor(alert.severity)">
 
         <!-- Left: Icon -->
         <div class="shrink-0">
           <div class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner-sm"
             [style.background]="'color-mix(in srgb, var(--severity-color), transparent 85%)'">
-            @if (alert.severity === 'critical' || alert.severity === 'high') {
+            @if (alert.type === 'support_reply') {
+            <svg class="w-7 h-7" [style.color]="'var(--severity-color)'" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            } @else if (alert.severity === 'critical' || alert.severity === 'high') {
             <svg class="w-7 h-7" [style.color]="'var(--severity-color)'" fill="none" stroke="currentColor"
               viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
@@ -127,7 +134,14 @@
                 {{ formatDate(alert.triggered_at) }}
               </div>
             </div>
-            <!-- Severity Badge -->
+            <!-- Severity Badge / Support Badge -->
+            @if (alert.type === 'support_reply') {
+            <div
+              class="hidden sm:block shrink-0 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border"
+              style="border-color: color-mix(in srgb, var(--color-primary) 40%, transparent); background: color-mix(in srgb, var(--color-primary) 10%, transparent); color: var(--color-primary);">
+              Support
+            </div>
+            } @else {
             <div
               class="hidden sm:block shrink-0 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border"
               [style.border-color]="'color-mix(in srgb, var(--severity-color), transparent 60%)'"
@@ -135,13 +149,15 @@
               [style.color]="'var(--severity-color)'">
               {{ alert.severity }}
             </div>
+            }
           </div>
 
-          <!-- Recommended Action -->
+          <!-- Recommended Action / Support Reply label -->
           <div class="p-4 rounded-2xl bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] mb-5">
             <div
               class="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-muted)] opacity-40 mb-1">
-              Recommended Action</div>
+              {{ alert.type === 'support_reply' ? 'Support Reply' : 'Recommended Action' }}
+            </div>
             <p class="text-sm font-medium text-[color:var(--text-primary)]">{{ alert.recommended_action }}</p>
           </div>
 
@@ -165,6 +181,7 @@
               Mark as Read
             </button>
             }
+            @if (alert.type !== 'support_reply') {
             <button (click)="viewSession(alert)"
               class="btn-secondary h-11 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -175,6 +192,7 @@
               </svg>
               View Session
             </button>
+            }
             <div class="flex-1"></div>
             <button (click)="deleteAlert(alert.id)"
               class="w-11 h-11 rounded-xl flex items-center justify-center text-[color:var(--color-danger)] opacity-40 hover:opacity-100 hover:bg-red-500/10 transition-all">

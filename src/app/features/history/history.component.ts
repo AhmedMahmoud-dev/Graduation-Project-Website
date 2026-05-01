@@ -409,7 +409,7 @@ export class HistoryComponent implements OnInit {
     const alertsList = this.cache.getItem<any[]>('emotra_alerts_meta');
     if (alertsList) {
       const originalLen = alertsList.length;
-      const filtered = alertsList.filter((a: any) => a.analysis_v2_id !== cloudId && a.client_id !== clientId);
+      const filtered = alertsList.filter((a: any) => a.analysis_id !== cloudId && a.client_id !== clientId);
       if (filtered.length !== originalLen) {
         this.cache.setItem('emotra_alerts_meta', filtered);
       }

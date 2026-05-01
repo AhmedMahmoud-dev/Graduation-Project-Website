@@ -30,7 +30,8 @@ export class AlertsService {
 
   private hubConnection: HubConnection | null = null;
   private pollingIntervalId: any = null;
-  public onReceiveAlert: ((alert: any) => void) | null = null;
+  private alertSubject = new Subject<any>();
+  public alert$ = this.alertSubject.asObservable();
   public forceLogout$ = new Subject<any>();
 
   constructor() {
@@ -75,6 +76,16 @@ export class AlertsService {
     });
 
     this.hubConnection.on('Notification', (alert) => {
+      this.handleIncomingAlert(alert);
+    });
+
+    this.hubConnection.on('ReceiveSupportReply', (alert) => {
+      if (alert && typeof alert === 'object') alert.type = 'support_reply';
+      this.handleIncomingAlert(alert);
+    });
+
+    this.hubConnection.on('SupportReply', (alert) => {
+      if (alert && typeof alert === 'object') alert.type = 'support_reply';
       this.handleIncomingAlert(alert);
     });
 
@@ -164,6 +175,9 @@ export class AlertsService {
     // 3. Extract severity
     const severity = data.severity || data.Severity || 'info';
 
+    // 4. Capture type for mapping (defaults to emotion_spike)
+    data.type = data.type || data.Type || 'emotion_spike';
+
     this.stats.update(s => {
       const newStats = {
         ...s,
@@ -185,13 +199,12 @@ export class AlertsService {
       {
         duration: this.settingsService.settings().alertPersistence,
         isAlert: true,
-        severity: severity
+        severity: severity,
+        alertType: data.type
       }
     );
 
-    if (this.onReceiveAlert) {
-      this.onReceiveAlert(data);
-    }
+    this.alertSubject.next(data);
   }
 
   decrementUnread() {

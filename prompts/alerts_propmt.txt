@@ -55,7 +55,7 @@ Interfaces to create based on the API documentation (all field names match API s
 AlertItem:
 - id: number
 - user_id: string
-- analysis_v2_id: number | null
+- analysis_id: number | null
 - client_id: string | null
 - message: string
 - severity: string (values: low, medium, high, critical)
@@ -138,7 +138,7 @@ Each alert card contains:
 - Resolved alerts have reduced opacity (0.6)
 - Action buttons row:
   - "Mark as Read" button — only shown if resolved = false
-  - "View Session" button — always shown — navigates using client_id and analysis_v2_id via the same Open Report logic used in history page (check emotra_text_sessions or emotra_audio_sessions by client_id first, fallback to GET /api/analysis/{id}, then navigate to result)
+  - "View Session" button — always shown — navigates using client_id and analysis_id via the same Open Report logic used in history page (check emotra_text_sessions or emotra_audio_sessions by client_id first, fallback to GET /api/analysis/{id}, then navigate to result)
   - "Delete" button — always shown — delete icon, subtle destructive color using CSS variables
 
 **Empty state:**
@@ -172,10 +172,10 @@ Delete:
 - On failure: show error toast, item stays in list
 
 View Session:
-- Get client_id and analysis_v2_id from the alert item
+- Get client_id and analysis_id from the alert item
 - If client_id exists: check emotra_text_sessions then emotra_audio_sessions for matching client_id
 - If found in localStorage: navigate to result immediately
-- If not found: call GET /api/analysis/{analysis_v2_id}, save result to correct sessions array (with duplicate check by client_id), then navigate
+- If not found: call GET /api/analysis/{analysis_id}, save result to correct sessions array (with duplicate check by client_id), then navigate
 - If API fails: show error toast
 
 ### Pagination

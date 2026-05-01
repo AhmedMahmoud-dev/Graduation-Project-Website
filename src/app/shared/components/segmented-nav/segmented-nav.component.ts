@@ -4,6 +4,7 @@ import { Component, Input, Output, EventEmitter, ViewChildren, QueryList, Elemen
 export interface SegmentedNavOption {
   label: string;
   value: string;
+  icon?: string;
   disabled?: boolean;
 }
 

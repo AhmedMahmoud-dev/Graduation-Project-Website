@@ -91,6 +91,18 @@ export class AlertsComponent implements OnInit {
   ngOnInit() {
     this.loadFromCache();
     this.fetchData();
+
+    // Set up real-time listener
+    this.alertsService.alert$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((alert) => {
+        // Add the new alert to the top of the list instantly
+        this.alerts.update(prev => [alert, ...prev]);
+        this.totalCount.update(c => c + 1);
+        
+        // Update cache
+        this.cache.setItem('emotra_alerts_meta', this.alerts());
+      });
   }
 
   private loadFromCache() {
@@ -224,22 +236,22 @@ export class AlertsComponent implements OnInit {
   }
 
   viewSession(alert: AlertItem) {
-    if (!alert.analysis_v2_id) {
+    if (!alert.analysis_id) {
       this.toastService.show('Info', 'No session data associated with this alert.', 'info', 'info');
       return;
     }
 
-    const { client_id, analysis_v2_id } = alert;
+    const { client_id, analysis_id } = alert;
 
     // 1. Try Cache First via Storage Service
     if (client_id) {
-      const textSession = this.storageService.getSessions().find((s: AnalysisSession) => s.id === client_id || s.cloudId === analysis_v2_id);
+      const textSession = this.storageService.getSessions().find((s: AnalysisSession) => s.id === client_id || s.cloudId === analysis_id);
       if (textSession) {
         this.router.navigate(['/analysis', 'text', client_id]);
         return;
       }
 
-      const audioSession = this.storageService.getAudioSessions().find((s: AudioAnalysisSession) => s.id === client_id || s.cloudId === analysis_v2_id);
+      const audioSession = this.storageService.getAudioSessions().find((s: AudioAnalysisSession) => s.id === client_id || s.cloudId === analysis_id);
       if (audioSession) {
         this.router.navigate(['/analysis', 'audio', client_id]);
         return;
