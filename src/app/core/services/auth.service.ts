@@ -275,7 +275,7 @@ export class AuthService {
       return of(null);
     }
 
-    const url = `${environment.apiUrl}/api/auth/verify`;
+    const url = `${environment.apiUrl}/api/alerts/stats`;
     return this.http.get(url).pipe(
       catchError(() => {
         // Interceptor handles 401/403 (logout & ban notice)
