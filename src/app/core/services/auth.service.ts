@@ -83,9 +83,10 @@ export class AuthService {
 
           this.saveAuth(user);
 
-          // Professional Logic: Gate normal website APIs
+          // Always sync appearance settings for both roles
+          this.colorSettingsService.syncWithBackend();
+
           if (!isAdmin) {
-            this.colorSettingsService.syncWithBackend();
             this.prefetchHistoryMeta();
             this.alertsService.fetchStats();
             this.alertsService.fetchSettings();
