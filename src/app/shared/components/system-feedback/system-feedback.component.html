@@ -28,9 +28,9 @@
             Help us evolve the platform
           </p>
         </div>
-        @if (isPublic() && moderationStatus()) {
-        <span class="moderation-badge shrink-0" [attr.data-status]="moderationStatus()">
-          {{ moderationStatus() }}
+        @if (displayStatus()) {
+        <span class="moderation-badge shrink-0" [attr.data-status]="displayStatus()">
+          {{ displayStatus() }}
         </span>
         }
       </div>
@@ -82,8 +82,8 @@
       <!-- Comment -->
       <div class="space-y-3">
         <label class="text-[10px] font-black uppercase tracking-widest opacity-40">Your Thoughts</label>
-        <textarea [(ngModel)]="comment" (input)="showCommentError.set(false)"
-          placeholder="Tell us what you think about Emotra..."
+        <textarea #commentArea [(ngModel)]="comment" (input)="showCommentError.set(false)"
+          placeholder="Share your experience with Emotra... What do you love? What could we improve?"
           class="w-full min-h-[120px] p-4 rounded-2xl bg-[color:var(--color-bg)] border border-[color:var(--color-border)] text-sm font-semibold text-[color:var(--color-text)] outline-none focus:border-[color:var(--color-primary)] transition-colors resize-none overflow-y-auto no-scrollbar"
           (focus)="$any($event.target).style.boxShadow='0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent)'"
           (blur)="$any($event.target).style.boxShadow='none'"></textarea>

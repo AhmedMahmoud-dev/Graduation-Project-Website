@@ -1,4 +1,5 @@
-import { Component, inject, signal, computed, input, OnInit, effect, untracked } from '@angular/core';
+import { Component, inject, signal, computed, input, OnInit, effect, untracked, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FeedbackService } from '../../../core/services/feedback.service';
@@ -43,6 +44,7 @@ export class FeedbackHistoryListComponent implements OnInit {
   private router = inject(Router);
   protected format = inject(FormattingService);
   private cache = inject(AppCacheService);
+  private destroyRef = inject(DestroyRef);
 
   private readonly CACHE_KEY = 'emotra_feedback_history';
 
@@ -90,7 +92,7 @@ export class FeedbackHistoryListComponent implements OnInit {
   filteredCount = computed(() => this.visibleItems().length);
 
   constructor() {
-    // Refresh list in background when feedback modal is closed 
+    // 1. Refresh list in background when feedback modal is closed 
     effect(() => {
       const isOpen = this.uiService.isOpen();
       untracked(() => {
@@ -99,6 +101,29 @@ export class FeedbackHistoryListComponent implements OnInit {
         }
       });
     });
+
+    // 2. Listen for INSTANT updates from the modal to provide "zero-latency" UI
+    this.uiService.feedbackUpdated$
+      .pipe(takeUntilDestroyed())
+      .subscribe(updated => {
+        this.allItems.update(items => {
+          const index = items.findIndex(i => i.feedbackType === 'system');
+          if (index !== -1) {
+            const newItems = [...items];
+            newItems[index] = {
+              ...newItems[index],
+              rating: updated.rating,
+              comment: updated.comment || '',
+              isPublic: updated.is_public ?? true,
+              moderationStatus: updated.moderation_status || 'Pending',
+              createdAt: updated.created_at,
+              formattedDate: this.format.formatDate(updated.created_at)
+            };
+            return newItems;
+          }
+          return items;
+        });
+      });
   }
 
   ngOnInit() {

@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, effect } from '@angular/core';
+import { Component, inject, signal, OnInit, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FeedbackService } from '../../../core/services/feedback.service';
@@ -9,7 +9,7 @@ import { ApiResponse } from '../../../core/models/api-response.model';
 import { Router, NavigationEnd } from '@angular/router';
 import { finalize, filter } from 'rxjs';
 import { TooltipComponent } from '../tooltip/tooltip.component';
-import { computed } from '@angular/core';
+import { computed, ElementRef, ViewChild } from '@angular/core';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -25,6 +25,8 @@ export class SystemFeedbackComponent implements OnInit {
   private uiService = inject(SystemFeedbackUIService);
   private router = inject(Router);
   private authService = inject(AuthService);
+
+  @ViewChild('commentArea') commentArea!: ElementRef<HTMLTextAreaElement>;
 
   // Use the UI service signal for visibility
   isOpen = this.uiService.isOpen;
@@ -66,6 +68,31 @@ export class SystemFeedbackComponent implements OnInit {
   moderationStatus = signal<ModerationStatus | null>(null);
   existingId = signal<number | null>(null);
 
+  /** 
+   * Checks if the actual content (rating or comment) has changed, 
+   * ignoring metadata like 'isPublic' toggle.
+   */
+  hasContentChanges = computed(() => {
+    const init = this.initialState();
+    if (!init) return this.rating() > 0 || this.comment().trim().length > 0;
+    return this.rating() !== init.rating || this.comment().trim() !== init.comment.trim();
+  });
+
+  /** 
+   * Professional Logic: The status badge is now REACTIVE and STABLE.
+   * 1. It strictly reflects the SAVED status from the server by default.
+   * 2. IF the user modifies the RATING or COMMENT, it flips to 'Pending' INSTANTLY (preview).
+   * 3. It ignores 'isPublic' toggles to prevent flickering.
+   */
+  displayStatus = computed(() => {
+    const currentStatus = this.moderationStatus();
+    
+    // Visual feedback: if they edit content, show it will be pending
+    if (this.hasContentChanges() && this.hasSubmittedBefore()) return 'Pending';
+    
+    return currentStatus;
+  });
+
   // Validation
   showRatingError = signal(false);
   showCommentError = signal(false);
@@ -104,14 +131,30 @@ export class SystemFeedbackComponent implements OnInit {
       this.currentUrl.set(event.urlAfterRedirects || this.router.url);
     });
 
-    // 2. Background scroll locking
+    // 2. Background scroll locking & Auto-focus
     effect(() => {
       if (this.isOpen()) {
         document.body.classList.add('no-scroll');
+        // Small timeout to ensure the modal is in the DOM before focusing
+        setTimeout(() => this.commentArea?.nativeElement?.focus(), 100);
       } else {
         document.body.classList.remove('no-scroll');
       }
     });
+  }
+
+  @HostListener('window:keydown.control.enter')
+  onCtrlEnter() {
+    if (this.isOpen() && this.hasChanges() && !this.isSubmitting()) {
+      this.submit();
+    }
+  }
+
+  @HostListener('window:keydown.escape')
+  onEscape() {
+    if (this.isOpen()) {
+      this.closeModal();
+    }
   }
 
   ngOnInit() {
@@ -127,7 +170,8 @@ export class SystemFeedbackComponent implements OnInit {
       this.rating.set(cached.rating);
       this.comment.set(cached.comment || '');
       this.isPublic.set(cached.is_public ?? true);
-      // Ensure we have a valid status signal value if they previously submitted
+      
+      // Professional Logic: Set status regardless of publicity to prevent badge flickering
       this.moderationStatus.set(cached.moderation_status || 'Pending');
       this.initialState.set({
         rating: cached.rating,
@@ -149,9 +193,10 @@ export class SystemFeedbackComponent implements OnInit {
               this.hasSubmittedBefore.set(true);
               this.existingId.set(systemRef.id);
               this.rating.set(systemRef.rating);
-               this.comment.set(systemRef.comment || '');
+              this.comment.set(systemRef.comment || '');
               this.isPublic.set(systemRef.is_public ?? true);
-              // If server returns status, use it. If null (private item), use 'Pending' as fallback
+              
+              // Professional Logic: Set status regardless of publicity to prevent badge flickering
               this.moderationStatus.set(systemRef.moderation_status || 'Pending');
               this.initialState.set({
                 rating: systemRef.rating,
@@ -197,8 +242,8 @@ export class SystemFeedbackComponent implements OnInit {
                 this.comment.set(systemRef.comment || '');
                 this.isPublic.set(systemRef.is_public ?? true);
                 
-                // Update status from server, fallback to current or 'Pending'
-                this.moderationStatus.set(systemRef.moderation_status || this.moderationStatus() || 'Pending');
+                // Professional Logic: Set status regardless of publicity to prevent badge flickering
+                this.moderationStatus.set(systemRef.moderation_status || 'Pending');
                 
                 this.existingId.set(systemRef.id);
                 this.hasSubmittedBefore.set(true);
@@ -218,9 +263,28 @@ export class SystemFeedbackComponent implements OnInit {
   }
 
   closeModal() {
+    if (this.hasChanges()) {
+      this.toastService.confirm(
+        'Discard Changes?',
+        'You have unsaved changes. Are you sure you want to exit?',
+        () => this.forceClose(),
+        {
+          confirmLabel: 'Discard',
+          cancelLabel: 'Keep Editing',
+          type: 'warning',
+          icon: 'warning'
+        }
+      );
+    } else {
+      this.forceClose();
+    }
+  }
+
+  private forceClose() {
     this.uiService.close();
     this.showRatingError.set(false);
     this.showCommentError.set(false);
+    this.hasFetchedHistory = false; // Reset to allow fresh fetch next time
   }
 
   submit() {
@@ -263,10 +327,14 @@ export class SystemFeedbackComponent implements OnInit {
               comment: response.data.comment || '',
               isPublic: response.data.is_public ?? true
             });
-            // If server returns status, use it. Otherwise, if it was already known, keep it (unless edited).
-            // Default to Pending for new/updated submissions if server is silent.
+            
+            // Professional Logic: Update status from server response immediately
             this.moderationStatus.set(response.data.moderation_status || 'Pending');
             this.feedbackService.cacheSystemFeedback(response.data);
+            
+            // Notify other components (like History list) for INSTANT UI update
+            this.uiService.notifyUpdate(response.data);
+            
             this.closeModal();
           }
         },

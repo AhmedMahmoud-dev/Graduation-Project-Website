@@ -11,6 +11,7 @@ import { ErrorHandlerService } from './error-handler.service';
 import { ColorSettingsService } from './color-settings.service';
 import { AlertsService } from './alerts.service';
 import { AlertService } from './alert.service';
+import { AdminService } from './admin.service';
 
 @Injectable({
   providedIn: 'root'
@@ -23,6 +24,7 @@ export class AuthService {
   private colorSettingsService = inject(ColorSettingsService);
   private alertsService = inject(AlertsService);
   private alertService = inject(AlertService);
+  private adminService = inject(AdminService);
 
   private isBrowser = isPlatformBrowser(this.platformId);
 
@@ -42,20 +44,24 @@ export class AuthService {
         this.logout();
       });
 
-      if (!this.isAuthenticated()) {
-        // If storage has data but it's invalid/expired, clean it up
-        localStorage.removeItem(environment.tokenKey);
-        localStorage.removeItem(environment.userKey);
-        this.currentUser.set(null);
+      const user = this.getCurrentUser();
+      if (!user || !this.isAuthenticated()) {
+        this.clearAllAuth();
       } else {
-        this.currentUser.set(this.getCurrentUser());
+        this.currentUser.set(user);
 
-        // Setup alerts for returning users
-        const user = this.getCurrentUser();
-        if (user && user.token) {
-          this.alertsService.fetchStats();
-          this.alertsService.fetchSettings();
-          this.alertsService.initSignalR(user.token);
+        // Professional Logic: Only trigger normal website APIs if NOT an admin
+        if (!this.isAdmin()) {
+          if (user.token) {
+            this.alertsService.fetchStats();
+            this.alertsService.fetchSettings();
+            this.alertsService.initSignalR(user.token);
+          }
+        } else {
+          // Admins only need SignalR (if needed) but NO user-specific alert APIs
+          if (user.token) {
+            this.alertsService.initSignalR(user.token);
+          }
         }
       }
     }
@@ -72,21 +78,32 @@ export class AuthService {
     return this.http.post<ApiResponse<AuthUser>>(url, payload).pipe(
       tap(res => {
         if (res.is_success && res.data) {
-          this.saveAuth(res.data);
-          this.colorSettingsService.syncWithBackend();
-          this.prefetchHistoryMeta();
+          const user = res.data;
+          const isAdmin = user.roles?.includes('ADMIN');
 
-          this.alertsService.fetchStats();
-          this.alertsService.fetchSettings();
-          this.alertsService.initSignalR(res.data.token);
+          this.saveAuth(user);
 
-          // Alerts Page Background Prefetch
-          this.alertService.getAlerts(1, 50).subscribe(r => {
-            if (r.is_success && r.data) localStorage.setItem('emotra_alerts_meta', JSON.stringify(r.data.items));
-          });
-          this.alertService.getStats().subscribe(r => {
-            if (r.is_success && r.data) localStorage.setItem('emotra_alerts_stats', JSON.stringify(r.data));
-          });
+          // Professional Logic: Gate normal website APIs
+          if (!isAdmin) {
+            this.colorSettingsService.syncWithBackend();
+            this.prefetchHistoryMeta();
+            this.alertsService.fetchStats();
+            this.alertsService.fetchSettings();
+
+            // Alerts Page Background Prefetch
+            this.alertService.getAlerts(1, 50).subscribe(r => {
+              if (r.is_success && r.data) localStorage.setItem('emotra_alerts_meta', JSON.stringify(r.data.items));
+            });
+            this.alertService.getStats().subscribe(r => {
+              if (r.is_success && r.data) localStorage.setItem('emotra_alerts_stats', JSON.stringify(r.data));
+            });
+          } else {
+            // Admin Logic: Prefetch all management data for instant dashboard loading
+            this.prefetchAdminData();
+          }
+
+          // Both need SignalR
+          this.alertsService.initSignalR(user.token);
         }
       }),
       catchError(err => this.handleHttpError(err))
@@ -141,39 +158,63 @@ export class AuthService {
    */
   logout(): void {
     if (this.isBrowser) {
-      // Remove core auth tokens
-      localStorage.removeItem(environment.tokenKey);
-      localStorage.removeItem(environment.userKey);
-      localStorage.removeItem('emotra_alert_settings');
-      localStorage.removeItem('emotra_alerts_meta');
-      localStorage.removeItem('emotra_alerts_stats');
-      localStorage.removeItem('emotra_notification_settings');
-
+      this.clearAllAuth();
       this.alertsService.stopSignalR();
-
-      // Wipe ALL Emotra-related cache keys, except device preferences and public content
-      const retainKeys = ['emotra_sidebar_expanded', 'emotra_theme', 'emotra_public_testimonials'];
-
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('emotra_') && !retainKeys.includes(key)) {
-          localStorage.removeItem(key);
-          i--; // Adjust index after removal
-        }
-      }
-
-      // 3. Clear Session Storage (all emotra_ keys)
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const key = sessionStorage.key(i);
-        if (key && key.startsWith('emotra_')) {
-          sessionStorage.removeItem(key);
-          i--;
-        }
-      }
-
-      this.currentUser.set(null);
-      this.router.navigate(['/']);
+      this.router.navigate(['/auth/login']);
     }
+  }
+
+  /**
+   * Clears all auth-related and cache storage keys for both admin and user
+   */
+  private clearAllAuth(): void {
+    if (!this.isBrowser) return;
+
+    // Core keys that MUST be removed
+    const coreKeys = [
+      environment.tokenKey,
+      environment.userKey,
+      'emotra_admin_token',
+      'emotra_admin_user',
+      'emotra_alert_settings',
+      'emotra_alerts_meta',
+      'emotra_alerts_stats',
+      'emotra_admin_stats',
+      'emotra_admin_users',
+      'emotra_admin_testimonials',
+      'emotra_admin_bugs',
+      'emotra_admin_health',
+      'emotra_notification_settings'
+    ];
+
+    coreKeys.forEach(k => localStorage.removeItem(k));
+
+    // Dynamic cleanup: Wipe ALL Emotra-related cache keys
+    // Keep only device/platform preferences
+    const retainKeys = [
+      'emotra_sidebar_expanded',
+      'emotra_theme',
+      'emotra_public_testimonials'
+    ];
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('emotra_') && !retainKeys.includes(key)) {
+        localStorage.removeItem(key);
+        i--; // Adjust index after removal
+      }
+    }
+
+    // Clear Session Storage
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key && key.startsWith('emotra_')) {
+        sessionStorage.removeItem(key);
+        i--;
+      }
+    }
+
+    this.currentUser.set(null);
   }
 
   /**
@@ -183,16 +224,12 @@ export class AuthService {
     if (!this.isBrowser) return false;
 
     const user = this.currentUser();
-
     if (!user || !user.token || !user.expires_at) return false;
 
     try {
       const expiry = new Date(user.expires_at);
       if (expiry <= new Date()) {
-        // Token expired naturally while browsing
-        localStorage.removeItem(environment.tokenKey);
-        localStorage.removeItem(environment.userKey);
-        this.currentUser.set(null);
+        this.clearAllAuth();
         return false;
       }
       return true;
@@ -205,28 +242,36 @@ export class AuthService {
    * Get current user from storage
    */
   getCurrentUser(): AuthUser | null {
-    if (this.isBrowser) {
-      const userData = localStorage.getItem(environment.userKey);
-      if (userData) {
-        try {
-          return JSON.parse(userData);
-        } catch (e) {
-          return null;
-        }
+    if (!this.isBrowser) return null;
+
+    // Try Admin key first, then normal User key
+    const adminData = localStorage.getItem('emotra_admin_user');
+    const userData = localStorage.getItem(environment.userKey);
+    const raw = adminData || userData;
+
+    if (raw) {
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        return null;
       }
     }
     return null;
   }
 
   /**
-   * Save auth data to storage
+   * Save auth data to storage with role-based prefixing
    */
   private saveAuth(user: AuthUser): void {
-    if (this.isBrowser) {
-      localStorage.setItem(environment.tokenKey, user.token);
-      localStorage.setItem(environment.userKey, JSON.stringify(user));
-      this.currentUser.set(user);
-    }
+    if (!this.isBrowser) return;
+
+    const isAdmin = user.roles?.includes('ADMIN');
+    const tokenKey = isAdmin ? 'emotra_admin_token' : environment.tokenKey;
+    const userKey = isAdmin ? 'emotra_admin_user' : environment.userKey;
+
+    localStorage.setItem(tokenKey, user.token);
+    localStorage.setItem(userKey, JSON.stringify(user));
+    this.currentUser.set(user);
   }
 
   /**
@@ -252,6 +297,50 @@ export class AuthService {
         }
       },
       error: () => { }
+    });
+  }
+
+  /**
+   * Prefetches all administrative data to ensure zero-latency dashboard navigation
+   */
+  private prefetchAdminData(): void {
+    if (!this.isBrowser) return;
+
+    // 1. Stats (Dashboard)
+    this.adminService.getStats().subscribe(r => {
+      if (r.is_success && r.data) localStorage.setItem('emotra_admin_stats', JSON.stringify(r.data));
+    });
+
+    // 2. Users (Management - First page)
+    this.adminService.getUsers(1, 10).subscribe(r => {
+      if (r.is_success && r.data) {
+        localStorage.setItem('emotra_admin_users', JSON.stringify({
+          users: r.data,
+          total: r.total,
+          page: 1
+        }));
+      }
+    });
+
+    // 3. Testimonials (Moderation)
+    this.adminService.getPendingTestimonials(1, 50).subscribe(r => {
+      if (r.is_success && r.data) localStorage.setItem('emotra_admin_testimonials', JSON.stringify(r.data));
+    });
+
+    // 4. Bugs (System Reports)
+    this.adminService.getBugReports(1, 10).subscribe(r => {
+      if (r.is_success && r.data) {
+        localStorage.setItem('emotra_admin_bugs', JSON.stringify({
+          bugs: r.data.map(b => ({ ...b, parsedMetadata: null })),
+          total: r.total,
+          page: 1
+        }));
+      }
+    });
+
+    // 5. Health (Infrastructure Monitor)
+    this.adminService.getHealth().subscribe(r => {
+      if (r.is_success && r.data) localStorage.setItem('emotra_admin_health', JSON.stringify(r.data));
     });
   }
 

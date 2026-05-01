@@ -37,11 +37,6 @@
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 1rem;
-  transition: border-color 150ms ease;
-}
-
-.health-card:hover {
-  border-color: var(--brand-primary);
 }
 
 .health-card--online {
