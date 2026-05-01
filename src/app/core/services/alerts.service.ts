@@ -1,5 +1,6 @@
 import { Injectable, signal, inject, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Subject } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ToastService } from './toast.service';
 import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
@@ -30,6 +31,7 @@ export class AlertsService {
   private hubConnection: HubConnection | null = null;
   private pollingIntervalId: any = null;
   public onReceiveAlert: ((alert: any) => void) | null = null;
+  public forceLogout$ = new Subject<void>();
 
   constructor() {
     this.initializeFromLocalStorage();
@@ -74,6 +76,21 @@ export class AlertsService {
 
     this.hubConnection.on('Notification', (alert) => {
       this.handleIncomingAlert(alert);
+    });
+
+    this.hubConnection.on('ReceiveForceLogout', (message?: string) => {
+      this.toastService.show(
+        'Session Terminated',
+        message || 'Your account has been restricted or banned. You have been logged out.',
+        'error',
+        'error',
+        { 
+          duration: this.settingsService.settings().alertPersistence, 
+          isAlert: true, 
+          severity: 'critical' 
+        }
+      );
+      this.forceLogout$.next();
     });
 
     this.hubConnection.start()

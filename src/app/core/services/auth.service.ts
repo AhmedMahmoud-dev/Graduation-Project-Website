@@ -37,6 +37,11 @@ export class AuthService {
 
   constructor() {
     if (this.isBrowser) {
+      // Subscribe to remote force logout events from SignalR
+      this.alertsService.forceLogout$.subscribe(() => {
+        this.logout();
+      });
+
       if (!this.isAuthenticated()) {
         // If storage has data but it's invalid/expired, clean it up
         localStorage.removeItem(environment.tokenKey);
