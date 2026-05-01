@@ -31,7 +31,7 @@ export class AlertsService {
   private hubConnection: HubConnection | null = null;
   private pollingIntervalId: any = null;
   public onReceiveAlert: ((alert: any) => void) | null = null;
-  public forceLogout$ = new Subject<void>();
+  public forceLogout$ = new Subject<any>();
 
   constructor() {
     this.initializeFromLocalStorage();
@@ -78,10 +78,14 @@ export class AlertsService {
       this.handleIncomingAlert(alert);
     });
 
-    this.hubConnection.on('ReceiveForceLogout', (message?: string) => {
+    this.hubConnection.on('ReceiveForceLogout', (payload?: any) => {
+      // payload could be a string (message) or an object { ban_reason, ban_expires_at, is_permanent }
+      const banDetails = typeof payload === 'object' ? payload : null;
+      const message = typeof payload === 'string' ? payload : null;
+
       this.toastService.show(
         'Session Terminated',
-        message || 'Your account has been restricted or banned. You have been logged out.',
+        message || (banDetails?.ban_reason ? `Banned: ${banDetails.ban_reason}` : 'Your account has been restricted or banned.'),
         'error',
         'error',
         { 
@@ -90,7 +94,7 @@ export class AlertsService {
           severity: 'critical' 
         }
       );
-      this.forceLogout$.next();
+      this.forceLogout$.next(banDetails);
     });
 
     this.hubConnection.start()

@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
 import { AdminUser } from '../../../core/models/admin.model';
 import { AppCacheService } from '../../../core/services/app-cache.service';
@@ -23,7 +24,7 @@ const CACHE_KEY = 'emotra_admin_users';
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, LoadingStateComponent, EmptyStateComponent, PageHeaderComponent, DropdownMenuComponent],
+  imports: [CommonModule, LoadingStateComponent, EmptyStateComponent, PageHeaderComponent, DropdownMenuComponent, ReactiveFormsModule],
   templateUrl: './admin-users.component.html',
   styleUrl: './admin-users.component.css'
 })
@@ -32,6 +33,7 @@ export class AdminUsersComponent implements OnInit {
   private toastService = inject(ToastService);
   private cache = inject(AppCacheService);
   private authService = inject(AuthService);
+  private fb = inject(FormBuilder);
   protected format = inject(FormattingService);
 
   currentUser = this.authService.currentUser;
@@ -55,17 +57,109 @@ export class AdminUsersComponent implements OnInit {
   isUpdating = signal<boolean>(false);
   updatingUserId = signal<string | null>(null);
 
-  ngOnInit(): void {
-    // 1. Check cache
-    const cached = this.cache.getItem<CachedUsersData>(CACHE_KEY);
+  // Ban Modal
+  isBanModalOpen = signal<boolean>(false);
+  selectedUserForBan = signal<AdminUser | null>(null);
+  banForm = this.fb.group({
+    reason: ['', Validators.required],
+    otherReason: [''],
+    duration: ['', Validators.required]
+  });
 
+  banReasons: DropdownOption[] = [
+    { label: 'Abusive behavior', value: 'Abusive behavior' },
+    { label: 'Spam or misuse', value: 'Spam or misuse' },
+    { label: 'Violation of terms', value: 'Violation of terms' },
+    { label: 'Suspicious activity', value: 'Suspicious activity' },
+    { label: 'Other', value: 'Other' }
+  ];
+
+  banDurations: DropdownOption[] = [
+    { label: "1 Hour", value: 1 },
+    { label: "6 Hours", value: 6 },
+    { label: "24 Hours", value: 24 },
+    { label: "3 Days", value: 72 },
+    { label: "7 Days", value: 168 },
+    { label: "30 Days", value: 720 },
+    { label: "Permanent", value: null }
+  ];
+
+  onBanReasonChange(value: any) {
+    this.banForm.patchValue({ reason: value });
+  }
+
+  onBanDurationChange(value: any) {
+    this.banForm.patchValue({ duration: value });
+  }
+
+  openBanModal(user: AdminUser) {
+    this.selectedUserForBan.set(user);
+    this.banForm.reset({ reason: '', otherReason: '', duration: '' });
+    this.isBanModalOpen.set(true);
+  }
+
+  closeBanModal() {
+    this.isBanModalOpen.set(false);
+    this.selectedUserForBan.set(null);
+  }
+
+  confirmBan() {
+    if (this.banForm.invalid) {
+      this.banForm.markAllAsTouched();
+      return;
+    }
+
+    const user = this.selectedUserForBan();
+    if (!user) return;
+
+    const { reason, otherReason, duration } = this.banForm.getRawValue();
+    const finalReason = reason === 'Other' ? otherReason : reason;
+
+    if (reason === 'Other' && !otherReason) {
+      this.toastService.show('Validation Error', 'Please specify the reason.', 'error');
+      return;
+    }
+
+    this.isUpdating.set(true);
+    this.updatingUserId.set(user.id);
+    this.adminService.updateUserStatus(user.id, false, finalReason, duration !== undefined && duration !== null ? Number(duration) : null).subscribe({
+      next: (res) => {
+        if (res.is_success) {
+          const updatedList = this.users().map(u =>
+            u.id === user.id ? { ...u, is_active: false } : u
+          );
+          this.users.set(updatedList);
+          
+          this.cache.setItem<CachedUsersData>(CACHE_KEY, {
+            users: updatedList,
+            total: this.totalUsers(),
+            page: this.currentPage()
+          });
+
+          this.closeBanModal();
+          this.toastService.show('User Banned', `${user.first_name} has been suspended.`, 'warning');
+        } else {
+          this.toastService.show('Error', res.message || 'Failed to ban user.', 'error');
+        }
+        this.isUpdating.set(false);
+        this.updatingUserId.set(null);
+      },
+      error: () => {
+        this.toastService.show('Error', 'Server error. Please try again.', 'error');
+        this.isUpdating.set(false);
+        this.updatingUserId.set(null);
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    const cached = this.cache.getItem<CachedUsersData>(CACHE_KEY);
     if (cached) {
       this.users.set(cached.users);
       this.totalUsers.set(cached.total);
       this.currentPage.set(cached.page);
       this.isLoading.set(false);
     } else {
-      // Only fetch if cache is empty
       this.fetchUsers();
     }
   }
@@ -81,7 +175,6 @@ export class AdminUsersComponent implements OnInit {
         if (res.is_success && res.data) {
           this.users.set(res.data);
           this.totalUsers.set(res.total);
-          // Cache current page data
           this.cache.setItem<CachedUsersData>(CACHE_KEY, {
             users: res.data,
             total: res.total,
@@ -109,7 +202,6 @@ export class AdminUsersComponent implements OnInit {
     this.fetchUsers();
   }
 
-  // Mobile Sort Options
   sortOptions: DropdownOption[] = [
     { label: 'Default (None)', value: '' },
     { label: 'Name (A-Z)', value: 'first_name:asc' },
@@ -139,54 +231,49 @@ export class AdminUsersComponent implements OnInit {
   toggleUserStatus(user: AdminUser): void {
     if (this.isUpdating()) return;
 
-    const newStatus = !user.is_active;
-    const actionName = newStatus ? 'Activate' : 'Ban';
+    if (user.is_active) {
+      // If active, we want to BAN -> open modal
+      this.openBanModal(user);
+    } else {
+      // If already banned, we want to ACTIVATE -> simple toggle
+      this.toastService.confirm(
+        'Activate User?',
+        `Are you sure you want to reactivate ${user.first_name}'s account?`,
+        () => {
+          this.isUpdating.set(true);
+          this.updatingUserId.set(user.id);
 
-    this.toastService.confirm(
-      `${actionName} User?`,
-      `Are you sure you want to ${actionName.toLowerCase()} ${user.first_name}?`,
-      () => {
-        this.isUpdating.set(true);
-        this.updatingUserId.set(user.id);
+          this.adminService.updateUserStatus(user.id, true).subscribe({
+            next: (res) => {
+              if (res.is_success) {
+                const updatedList = this.users().map(u =>
+                  u.id === user.id ? { ...u, is_active: true } : u
+                );
+                this.users.set(updatedList);
 
-        this.adminService.updateUserStatus(user.id, newStatus).subscribe({
-          next: (res) => {
-            if (res.is_success) {
-              const updatedList = this.users().map(u =>
-                u.id === user.id ? { ...u, is_active: newStatus } : u
-              );
-              this.users.set(updatedList);
+                this.cache.setItem<CachedUsersData>(CACHE_KEY, {
+                  users: updatedList,
+                  total: this.totalUsers(),
+                  page: this.currentPage()
+                });
 
-              this.cache.setItem<CachedUsersData>(CACHE_KEY, {
-                users: updatedList,
-                total: this.totalUsers(),
-                page: this.currentPage()
-              });
-
-              this.toastService.show(
-                'Status Updated',
-                `${user.first_name} has been ${newStatus ? 'activated' : 'banned'}.`,
-                newStatus ? 'success' : 'warning'
-              );
-            } else {
-              this.toastService.show('Error', res.message || 'Failed to update status.', 'error');
+                this.toastService.show('Status Updated', `${user.first_name} has been activated.`, 'success');
+              } else {
+                this.toastService.show('Error', res.message || 'Failed to update status.', 'error');
+              }
+              this.isUpdating.set(false);
+              this.updatingUserId.set(null);
+            },
+            error: () => {
+              this.toastService.show('Error', 'Server error. Please try again.', 'error');
+              this.isUpdating.set(false);
+              this.updatingUserId.set(null);
             }
-            this.isUpdating.set(false);
-            this.updatingUserId.set(null);
-          },
-          error: () => {
-            this.toastService.show('Error', 'Server error. Please try again.', 'error');
-            this.isUpdating.set(false);
-            this.updatingUserId.set(null);
-          }
-        });
-      },
-      {
-        confirmLabel: actionName,
-        type: newStatus ? 'success' : 'error',
-        icon: newStatus ? 'check' : 'warning'
-      }
-    );
+          });
+        },
+        { confirmLabel: 'Activate', type: 'success', icon: 'check' }
+      );
+    }
   }
 
   deleteUser(user: AdminUser): void {

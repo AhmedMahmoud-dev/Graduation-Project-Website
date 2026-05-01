@@ -40,8 +40,11 @@ export class AuthService {
   constructor() {
     if (this.isBrowser) {
       // Subscribe to remote force logout events from SignalR
-      this.alertsService.forceLogout$.subscribe(() => {
-        this.logout();
+      this.alertsService.forceLogout$.subscribe((banDetails) => {
+        if (banDetails && banDetails.ban_reason) {
+          this.storeBanDetails(banDetails);
+        }
+        this.logout(true);
       });
 
       const user = this.getCurrentUser();
@@ -79,6 +82,18 @@ export class AuthService {
       tap(res => {
         if (res.is_success && res.data) {
           const user = res.data;
+
+          // Check if user is banned
+          if (user.ban_reason) {
+            this.storeBanDetails({
+              ban_reason: user.ban_reason,
+              ban_expires_at: user.ban_expires_at,
+              is_permanent: user.is_permanent
+            });
+            // Treat as failed login - do NOT save auth or continue
+            return;
+          }
+
           const isAdmin = user.roles?.includes('ADMIN');
 
           this.saveAuth(user);
@@ -157,12 +172,45 @@ export class AuthService {
   /**
    * Logout and clear state
    */
-  logout(): void {
+  logout(isForced: boolean = false): void {
     if (this.isBrowser) {
       this.clearAllAuth();
       this.alertsService.stopSignalR();
+      if (!isForced) {
+        this.clearBanDetails(); // Clear existing ban notices only on intentional logout
+      }
       this.router.navigate(['/auth/login']);
     }
+  }
+
+  /**
+   * Saves ban details to sessionStorage as JSON
+   */
+  storeBanDetails(details: any): void {
+    if (!this.isBrowser) return;
+    sessionStorage.setItem('emotra_ban_details', JSON.stringify(details));
+  }
+
+  /**
+   * Reads and parses ban details from sessionStorage
+   */
+  getBanDetails(): any {
+    if (!this.isBrowser) return null;
+    const details = sessionStorage.getItem('emotra_ban_details');
+    if (!details) return null;
+    try {
+      return JSON.parse(details);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * Removes ban details from sessionStorage
+   */
+  clearBanDetails(): void {
+    if (!this.isBrowser) return;
+    sessionStorage.removeItem('emotra_ban_details');
   }
 
   /**

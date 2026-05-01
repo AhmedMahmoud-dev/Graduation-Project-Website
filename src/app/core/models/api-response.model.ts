@@ -23,4 +23,13 @@ export interface AuthUser {
   full_name: string;
   roles: string[];
   expires_at: string;
+  ban_reason: string | null;
+  ban_expires_at: string | null;
+  is_permanent: boolean | null;
+}
+
+export interface BanDetails {
+  ban_reason: string;
+  ban_expires_at: string | null;
+  is_permanent: boolean;
 }

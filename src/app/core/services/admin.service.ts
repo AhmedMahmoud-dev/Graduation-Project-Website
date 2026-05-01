@@ -38,12 +38,13 @@ export class AdminService {
     return this.http.get<PaginatedAdminResponse<AdminUser[]>>(`${this.apiUrl}/users`, { params });
   }
 
-  /**
-   * 2.2 Update User Status (Ban/Unban)
-   * Instantly activates or deactivates a user's account.
-   */
-  updateUserStatus(userId: string, isActive: boolean): Observable<ApiResponse<null>> {
-    return this.http.patch<ApiResponse<null>>(`${this.apiUrl}/users/${userId}/status`, isActive);
+  updateUserStatus(userId: string, isActive: boolean, banReason: string | null = null, banDurationHours: number | null = null): Observable<ApiResponse<null>> {
+    const payload = { 
+      is_active: isActive, 
+      ban_reason: banReason, 
+      ban_duration_hours: banDurationHours 
+    };
+    return this.http.patch<ApiResponse<null>>(`${this.apiUrl}/users/${userId}/status`, payload);
   }
 
   /**

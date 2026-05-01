@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -7,19 +7,37 @@ import { ToastService } from '../../../core/services/toast.service';
 import { PasswordInputComponent } from '../../../shared/components/form/password-input/password-input.component';
 import { FormFieldErrorComponent } from '../../../shared/components/form/form-field-error/form-field-error.component';
 import { TooltipComponent } from '../../../shared/components/tooltip/tooltip.component';
+import { FormattingService } from '../../../core/services/formatting.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterModule, PasswordInputComponent, FormFieldErrorComponent, TooltipComponent],
+  imports: [ReactiveFormsModule, RouterModule, PasswordInputComponent, FormFieldErrorComponent, TooltipComponent, CommonModule],
   templateUrl: './app-login.html',
   styleUrl: './app-login.css'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
   private toastService = inject(ToastService);
+  protected format = inject(FormattingService);
+
+  banDetails = signal<any>(null);
+
+  ngOnInit() {
+    const details = this.authService.getBanDetails();
+    if (details) {
+      this.banDetails.set(details);
+      // Clear from storage so it doesn't show up again if they refresh
+      this.authService.clearBanDetails();
+    }
+  }
+
+  dismissBanNotice() {
+    this.banDetails.set(null);
+  }
 
   loginForm = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
