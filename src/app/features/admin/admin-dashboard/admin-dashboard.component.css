@@ -80,23 +80,23 @@
 }
 
 .metric-card__icon--blue {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
+  background-color: color-mix(in srgb, var(--brand-primary), transparent 90%);
+  color: var(--brand-primary);
 }
 
 .metric-card__icon--green {
-  background-color: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
+  background-color: color-mix(in srgb, var(--color-success), transparent 90%);
+  color: var(--color-success);
 }
 
 .metric-card__icon--purple {
-  background-color: rgba(168, 85, 247, 0.1);
-  color: #a855f7;
+  background-color: color-mix(in srgb, var(--color-brain), transparent 90%);
+  color: var(--color-brain);
 }
 
 .metric-card__icon--orange {
-  background-color: rgba(249, 115, 22, 0.1);
-  color: #f97316;
+  background-color: color-mix(in srgb, var(--emotion-fear), transparent 90%);
+  color: var(--emotion-fear);
 }
 
 .metric-card__body {
@@ -175,7 +175,9 @@
   color: var(--text-muted);
   font-weight: 600;
   font-size: 0.875rem;
-}/* --- Section Headings --- */
+}
+
+/* --- Section Headings --- */
 .section-title-group {
   border-left: 4px solid var(--brand-primary);
   padding-left: 1.25rem;
@@ -206,7 +208,7 @@
   width: 2.25rem;
   height: 2.25rem;
   background-color: var(--brand-primary);
-  color: #fff;
+  color: var(--color-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -223,7 +225,6 @@
 }
 
 .user-email {
-  font-family: ui-monospace, monospace;
   font-size: 0.75rem;
   color: var(--text-muted);
 }
@@ -231,7 +232,7 @@
 .user-count {
   font-weight: 800;
   color: var(--brand-primary);
-  background-color: rgba(108, 99, 255, 0.1);
+  background-color: color-mix(in srgb, var(--brand-primary), transparent 90%);
   padding: 0.25rem 0.625rem;
   border-radius: 0.5rem;
 }
@@ -248,6 +249,37 @@
   padding-top: 2rem;
   padding-bottom: 2rem;
 }
+
+/* --- Metric Icon Variants --- */
+.metric-icon--success {
+  background-color: color-mix(in srgb, var(--color-success), transparent 90%);
+  color: var(--color-success);
+}
+
+.metric-icon--pink {
+  background-color: color-mix(in srgb, var(--color-brain), transparent 90%);
+  color: var(--color-brain);
+}
+
+.metric-icon--accent {
+  background-color: color-mix(in srgb, var(--color-accent), transparent 90%);
+  color: var(--color-accent);
+}
+
+.metric-icon--joy {
+  background-color: color-mix(in srgb, var(--emotion-joy), transparent 90%);
+  color: var(--emotion-joy);
+}
+
+.metric-icon--danger {
+  background-color: color-mix(in srgb, var(--color-danger), transparent 90%);
+  color: var(--color-danger);
+}
+
+.text-success {
+  color: var(--color-success);
+}
+
 /* --- Mobile Responsive Classes --- */
 .mobile-sort {
   display: flex;
@@ -310,6 +342,7 @@
   .mobile-cards {
     display: flex;
   }
+
   .hide-mobile-dashboard {
     display: none !important;
   }
@@ -319,4 +352,44 @@
   .hide-desktop-dashboard {
     display: none !important;
   }
+}
+
+.stealth-scroll {
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  display: block;
+  max-width: 100%;
+}
+
+.stealth-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.user-info-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.user-name {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  min-width: 0;
+}
+
+.user-email {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  min-width: 0;
+}
+
+/* Ensure table cells don't expand beyond viewport on small screens */
+.top-active-users-table td {
+  max-width: 150px;
+  /* Limit cell width to force scroll */
 }

@@ -88,8 +88,8 @@ export class ToastService {
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
       // Use dynamic limit from settings
-      const userLimit = this.settingsService.settings().maxNotifications;
-      const limit = isMobile ? Math.min(2, userLimit) : userLimit;
+      const settings = this.settingsService.settings();
+      const limit = isMobile ? settings.maxMobileNotifications : settings.maxNotifications;
 
       // NEW notifications on TOP
       let updated = [newToast, ...toasts];

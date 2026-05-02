@@ -21,7 +21,7 @@
   height: 2.25rem;
   border-radius: 50%;
   background-color: var(--brand-primary);
-  color: #fff;
+  color: var(--color-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -103,23 +103,23 @@
 }
 
 .toggle-btn--ban {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.2);
+  background-color: color-mix(in srgb, var(--color-danger), transparent 90%);
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger), transparent 80%);
 }
 
 .toggle-btn--ban:hover {
-  background-color: rgba(239, 68, 68, 0.2);
+  background-color: color-mix(in srgb, var(--color-danger), transparent 80%);
 }
 
 .toggle-btn--activate {
-  background-color: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-  border-color: rgba(34, 197, 94, 0.2);
+  background-color: color-mix(in srgb, var(--color-success), transparent 90%);
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success), transparent 80%);
 }
 
 .toggle-btn--activate:hover {
-  background-color: rgba(34, 197, 94, 0.2);
+  background-color: color-mix(in srgb, var(--color-success), transparent 80%);
 }
 
 .toggle-btn--full {
@@ -137,16 +137,16 @@
   align-items: center;
   justify-content: center;
   border-radius: 0.5rem;
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background-color: color-mix(in srgb, var(--color-danger), transparent 90%);
+  color: var(--color-danger);
+  border: 1px solid color-mix(in srgb, var(--color-danger), transparent 80%);
   cursor: pointer;
   transition: all 150ms ease;
   flex-shrink: 0;
 }
 
 .delete-btn:hover:not(:disabled) {
-  background-color: rgba(239, 68, 68, 0.2);
+  background-color: color-mix(in srgb, var(--color-danger), transparent 80%);
 }
 
 .delete-btn:active:not(:disabled) {
@@ -232,13 +232,13 @@
 
 /* --- Modal Icon Overrides --- */
 .modal-icon--ban {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background-color: color-mix(in srgb, var(--color-danger), transparent 90%);
+  color: var(--color-danger);
 }
 
 .modal-icon--activate {
-  background-color: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
+  background-color: color-mix(in srgb, var(--color-success), transparent 90%);
+  color: var(--color-success);
 }
 
 /* --- Responsive --- */
@@ -246,6 +246,24 @@
   .user-email-mobile {
     display: block;
   }
+}
+
+.user-email-mobile {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.user-last-seen {
+  display: block;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
 }
 
 .user-email-table {
@@ -267,34 +285,21 @@
   }
 }
 
-/* --- Ban Modal Enhancements --- */
-.ban-modal-container {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-color) transparent;
-}
-
-.ban-modal-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.ban-modal-container::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 10px;
-}
-
-/* Force dropdowns to push height instead of floating outside modal */
-.ban-modal-container ::ng-deep .emotra-dropdown-menu {
-  position: relative !important;
-  top: 8px !important;
-  box-shadow: none !important;
-  margin-bottom: 0.5rem;
-  border-color: color-mix(in srgb, var(--brand-primary) 30%, var(--border-color));
-}
-
+/* --- Ban Modal --- */
 .modal-footer {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+.modal-footer button {
+  flex: 1;
+}
+
+@media (min-width: 638px) {
+  .modal-footer {
+    flex-direction: row;
+  }
 }
 
 .modal-footer button {
@@ -319,4 +324,26 @@
 
 .modal-user-email::-webkit-scrollbar {
   display: none;
+}
+
+.ban-reason-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  outline: none;
+  transition: all 150ms ease;
+}
+
+.ban-reason-input:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary), transparent 85%);
+}
+
+.text-success {
+  color: var(--color-success);
 }

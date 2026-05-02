@@ -65,17 +65,19 @@ export class EmotionDistributionComponent {
       },
       tooltip: {
         trigger: 'item',
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        textStyle: { color: '#1A1D1F' },
-        extraCssText: 'border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); padding: 12px;',
+        backgroundColor: 'var(--bg-card)',
+        textStyle: { color: 'var(--text-primary)' },
+        extraCssText: 'border-radius: 12px; border: 1px solid var(--border-color); padding: 12px; backdrop-filter: blur(8px); box-shadow: 0 8px 32px rgba(0,0,0,0.12);',
         formatter: (params: any) => {
+          const textColor = getComputedStyle(document.documentElement).getPropertyValue('--color-text').trim();
+          const mutedColor = getComputedStyle(document.documentElement).getPropertyValue('--color-text-muted').trim();
           return `
             <div style="display: flex; align-items: center; gap: 8px;">
               <div style="width: 10px; height: 10px; border-radius: 50%; background: ${params.color}"></div>
-              <span style="font-weight: 800; font-size: 13px; color: #1A1D1F">${params.name}</span>
+              <span style="font-weight: 800; font-size: 13px; color: ${textColor}">${params.name}</span>
             </div>
-            <div style="margin-top: 4px; font-weight: 600; font-size: 18px; color: #1A1D1F">${params.value} <span style="font-size: 11px; color: #6F767E">logs</span></div>
-            <div style="font-size: 11px; font-weight: 700; color: #6F767E; margin-top: 2px">${params.percent}% of Total</div>
+            <div style="margin-top: 4px; font-weight: 600; font-size: 18px; color: ${textColor}">${params.value} <span style="font-size: 11px; color: ${mutedColor}">logs</span></div>
+            <div style="font-size: 11px; font-weight: 700; color: ${mutedColor}; margin-top: 2px">${params.percent}% of Total</div>
           `;
         }
       },

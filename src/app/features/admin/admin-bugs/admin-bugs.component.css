@@ -53,34 +53,34 @@
 }
 
 .priority-badge--high {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background-color: color-mix(in srgb, var(--color-danger), transparent 90%);
+  color: var(--color-danger);
 }
 
 .priority-badge--medium {
-  background-color: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
+  background-color: color-mix(in srgb, var(--emotion-joy), transparent 90%);
+  color: var(--emotion-joy);
 }
 
 .priority-badge--low {
-  background-color: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
+  background-color: color-mix(in srgb, var(--color-success), transparent 90%);
+  color: var(--color-success);
 }
 
 /* --- Status Badge Overrides --- */
 .status-badge--open {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
+  background-color: color-mix(in srgb, var(--brand-primary), transparent 90%);
+  color: var(--brand-primary);
 }
 
 .status-badge--progress {
-  background-color: rgba(234, 179, 8, 0.1);
-  color: #eab308;
+  background-color: color-mix(in srgb, var(--emotion-joy), transparent 90%);
+  color: var(--emotion-joy);
 }
 
 .status-badge--closed {
-  background-color: rgba(107, 114, 128, 0.1);
-  color: #6b7280;
+  background-color: color-mix(in srgb, var(--color-text-muted), transparent 90%);
+  color: var(--color-text-muted);
 }
 
 /* --- Expand Button --- */
@@ -113,7 +113,7 @@
 .expand-btn--active {
   background-color: var(--brand-primary);
   border-color: var(--brand-primary);
-  color: #fff;
+  color: var(--color-surface);
 }
 
 .expand-btn--active:hover {
@@ -270,21 +270,21 @@
 }
 
 .status-select-btn--active.status-select-btn--open {
-  background-color: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.3);
-  color: #3b82f6;
+  background-color: color-mix(in srgb, var(--brand-primary), transparent 90%);
+  border-color: color-mix(in srgb, var(--brand-primary), transparent 70%);
+  color: var(--brand-primary);
 }
 
 .status-select-btn--active.status-select-btn--progress {
-  background-color: rgba(234, 179, 8, 0.1);
-  border-color: rgba(234, 179, 8, 0.3);
-  color: #eab308;
+  background-color: color-mix(in srgb, var(--emotion-joy), transparent 90%);
+  border-color: color-mix(in srgb, var(--emotion-joy), transparent 70%);
+  color: var(--emotion-joy);
 }
 
 .status-select-btn--active.status-select-btn--closed {
-  background-color: rgba(107, 114, 128, 0.1);
-  border-color: rgba(107, 114, 128, 0.3);
-  color: #6b7280;
+  background-color: color-mix(in srgb, var(--color-text-muted), transparent 90%);
+  border-color: color-mix(in srgb, var(--color-text-muted), transparent 70%);
+  color: var(--color-text-muted);
 }
 
 .detail-actions__divider {
@@ -303,16 +303,16 @@
   font-size: 0.75rem;
   font-weight: 700;
   border-radius: 0.5rem;
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  border: 1px solid color-mix(in srgb, var(--color-danger), transparent 80%);
+  background-color: color-mix(in srgb, var(--color-danger), transparent 90%);
+  color: var(--color-danger);
   cursor: pointer;
   transition: all 150ms ease;
   margin-left: auto;
 }
 
 .delete-bug-btn:hover:not(:disabled) {
-  background-color: rgba(239, 68, 68, 0.2);
+  background-color: color-mix(in srgb, var(--color-danger), transparent 80%);
 }
 
 .delete-bug-btn:active:not(:disabled) {
@@ -455,7 +455,7 @@
 .mobile-expand-btn--active {
   background-color: var(--brand-primary);
   border-color: var(--brand-primary);
-  color: #fff;
+  color: var(--color-surface);
 }
 
 .mobile-expand-btn--active:hover {

@@ -11,10 +11,12 @@ import { SettingsApiService } from '../../../core/services/settings-api.service'
 import { TooltipComponent } from '../../../shared/components/tooltip/tooltip.component';
 
 
+import { CommonModule } from '@angular/common';
+
 @Component({
   selector: 'app-app-navbar',
   standalone: true,
-  imports: [RouterLink, TooltipComponent, BugReportModalComponent],
+  imports: [CommonModule, RouterLink, TooltipComponent, BugReportModalComponent],
   templateUrl: './app-navbar.component.html'
 })
 export class AppNavbarComponent {

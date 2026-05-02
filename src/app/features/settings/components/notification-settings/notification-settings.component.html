@@ -123,7 +123,29 @@
             <button (click)="updateMax(count)" [ngClass]="{
                         'active-setting bg-[color:var(--color-primary)] text-white shadow-sm border-[color:var(--color-primary)]': settings().maxNotifications === count,
                         'text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text)] border-transparent': settings().maxNotifications !== count
-                      }" class="w-12 h-12 border rounded-[1.125rem] text-sm font-black transition-all duration-300">
+                       }" class="w-12 h-12 border rounded-[1.125rem] text-sm font-black transition-all duration-300">
+              {{ count }}
+            </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="p-6 sm:p-8 bg-[color:var(--color-surface)]/80 backdrop-blur-md border border-[color:var(--color-border)] rounded-3xl sm:rounded-[2.5rem] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+        <div class="space-y-1">
+          <h3 class="font-bold text-lg text-[color:var(--color-text)]">Mobile Capacity</h3>
+          <p class="text-xs text-[color:var(--color-text-muted)] font-medium">Parallel messages on smaller viewports</p>
+        </div>
+
+        <div class="w-full md:w-auto flex justify-center">
+          <div
+            class="flex flex-wrap items-center justify-center gap-2 bg-[color:var(--color-bg)]/60 p-1.5 rounded-[1.5rem] border border-[color:var(--color-border)]">
+            @for (count of [1, 2, 3, 4, 5]; track count) {
+            <button (click)="updateMaxMobile(count)" [ngClass]="{
+                        'active-setting bg-[color:var(--color-primary)] text-white shadow-sm border-[color:var(--color-primary)]': settings().maxMobileNotifications === count,
+                        'text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text)] border-transparent': settings().maxMobileNotifications !== count
+                       }" class="w-12 h-12 border rounded-[1.125rem] text-sm font-black transition-all duration-300">
               {{ count }}
             </button>
             }

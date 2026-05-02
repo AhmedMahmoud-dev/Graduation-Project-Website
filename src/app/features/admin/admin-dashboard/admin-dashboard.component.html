@@ -2,299 +2,317 @@
 
   <!-- Loading State (Shared Component) -->
   @if (isLoading()) {
-    <app-loading-state
-      message="Loading Dashboard..."
-      subtitle="Gathering platform insights"
-      size="md"
-      [fullPage]="true">
-    </app-loading-state>
+  <app-loading-state message="Loading Dashboard..." subtitle="Gathering platform insights" size="md" [fullPage]="true">
+  </app-loading-state>
   }
 
   <!-- Error State (Shared Component) -->
   @if (!isLoading() && error()) {
-    <app-empty-state [isFullPage]="true">
-      <svg empty-icon xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-      </svg>
-      <span empty-msg>Failed to Load Dashboard</span>
-      <span empty-hint>{{ error() }}</span>
-      <button empty-actions (click)="fetchStats()" class="action-btn action-btn--primary">
-        Try Again
-      </button>
-    </app-empty-state>
+  <app-empty-state [isFullPage]="true">
+    <svg empty-icon xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+      <path
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
+    <span empty-msg>Failed to Load Dashboard</span>
+    <span empty-hint>{{ error() }}</span>
+    <button empty-actions (click)="fetchStats()" class="action-btn action-btn--primary">
+      Try Again
+    </button>
+  </app-empty-state>
   }
 
   <!-- Content State -->
   @if (!isLoading() && stats()) {
 
-    <!-- Header -->
-    <section class="admin-header-section">
-      <app-page-header
-        title="Platform Overview"
-        subtitle="ADMIN PANEL"
-        description="Monitor real-time statistics and growth trends.">
-        <div actions class="flex items-center gap-3">
-          <button (click)="fetchStats()" class="refresh-btn" [class.refresh-btn--spinning]="isRefreshing()">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-            </svg>
-            <span class="refresh-btn__label">Refresh</span>
-          </button>
-        </div>
-      </app-page-header>
-    </section>
-
-    <!-- Page Content -->
-    <section class="admin-content-section">
-      <!-- Metric Cards Grid -->
-      <div class="metrics-grid">
-        <!-- Online Now -->
-        <div class="metric-card">
-          <div class="metric-card__icon" style="background-color: rgba(16, 185, 129, 0.1); color: #10b981;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728M8.464 15.536a5 5 0 010-7.072m7.072 0a5 5 0 010 7.072M12 12h.01" />
-            </svg>
-          </div>
-          <div class="metric-card__body">
-            <span class="metric-card__label">Online Now</span>
-            <span class="metric-card__value" [style.color]="(stats()?.online_users ?? 0) > 0 ? '#10b981' : 'inherit'">{{ (stats()?.online_users ?? 0) | number }}</span>
-          </div>
-        </div>
-
-        <!-- Total Users -->
-        <div class="metric-card">
-          <div class="metric-card__icon metric-card__icon--blue">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-            </svg>
-          </div>
-          <div class="metric-card__body">
-            <span class="metric-card__label">Total Users</span>
-            <span class="metric-card__value">{{ stats()!.total_users | number }}</span>
-          </div>
-        </div>
-
-        <!-- Active Users -->
-        <div class="metric-card">
-          <div class="metric-card__icon metric-card__icon--green">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-          </div>
-          <div class="metric-card__body">
-            <span class="metric-card__label">Active Users</span>
-            <span class="metric-card__value">{{ stats()!.active_users | number }}</span>
-          </div>
-        </div>
-
-        <!-- Total Analyses -->
-        <div class="metric-card">
-          <div class="metric-card__icon metric-card__icon--purple">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
-            </svg>
-          </div>
-          <div class="metric-card__body">
-            <span class="metric-card__label">Total Analyses</span>
-            <span class="metric-card__value">{{ stats()!.total_analyses | number }}</span>
-          </div>
-        </div>
-
-        <!-- Bug Reports -->
-        <div class="metric-card">
-          <div class="metric-card__icon metric-card__icon--orange">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-            </svg>
-          </div>
-          <div class="metric-card__body">
-            <span class="metric-card__label">Bug Reports</span>
-            <span class="metric-card__value">{{ stats()!.total_bug_reports | number }}</span>
-          </div>
-        </div>
-
+  <!-- Header -->
+  <section class="admin-header-section">
+    <app-page-header title="Platform Overview" subtitle="ADMIN PANEL"
+      description="Monitor real-time statistics and growth trends.">
+      <div actions class="flex items-center gap-3">
+        <button (click)="fetchStats()" class="refresh-btn" [class.refresh-btn--spinning]="isRefreshing()">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span class="refresh-btn__label">Refresh</span>
+        </button>
       </div>
+    </app-page-header>
+  </section>
 
-      <!-- Growth Trends Grid -->
-      <div class="charts-grid">
-        <div class="chart-card chart-card--wide">
-          <h3 class="chart-card__title">Platform Growth Trends</h3>
-          <div class="chart-card__body">
-            <div echarts [options]="trendChartOptions()" class="w-full h-full"></div>
-          </div>
+  <!-- Page Content -->
+  <section class="admin-content-section">
+    <!-- Metric Cards Grid -->
+    <div class="metrics-grid">
+      <!-- Online Now -->
+      <div class="metric-card">
+        <div class="metric-card__icon metric-icon--success">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728M8.464 15.536a5 5 0 010-7.072m7.072 0a5 5 0 010 7.072M12 12h.01" />
+          </svg>
         </div>
-
-        <div class="chart-card">
-          <h3 class="chart-card__title">Emotion Distribution</h3>
-          @if (emotionData().length > 0) {
-            <app-emotion-distribution [data]="emotionData()" viewType="pie" height="340px" seriesName="Global Emotions"></app-emotion-distribution>
-          } @else {
-            <div class="chart-card__empty"><p>No emotion data available.</p></div>
-          }
+        <div class="metric-card__body">
+          <span class="metric-card__label">Online Now</span>
+          <span class="metric-card__value" [class.text-success]="(stats()?.online_users ?? 0) > 0">{{
+            (stats()?.online_users ?? 0) | number }}</span>
         </div>
       </div>
 
-      <!-- Engagement & Feedback Section -->
-      <app-analysis-section-header 
-        title="Engagement & Feedback" 
-        description="User satisfaction and interaction metrics."
+      <!-- Total Users -->
+      <div class="metric-card">
+        <div class="metric-card__icon metric-card__icon--blue">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+        <div class="metric-card__body">
+          <span class="metric-card__label">Total Users</span>
+          <span class="metric-card__value">{{ stats()!.total_users | number }}</span>
+        </div>
+      </div>
+
+      <!-- Active Users -->
+      <div class="metric-card">
+        <div class="metric-card__icon metric-card__icon--green">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="metric-card__body">
+          <span class="metric-card__label">Active Users</span>
+          <span class="metric-card__value">{{ stats()!.active_users | number }}</span>
+        </div>
+      </div>
+
+      <!-- Total Analyses -->
+      <div class="metric-card">
+        <div class="metric-card__icon metric-card__icon--purple">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+          </svg>
+        </div>
+        <div class="metric-card__body">
+          <span class="metric-card__label">Total Analyses</span>
+          <span class="metric-card__value">{{ stats()!.total_analyses | number }}</span>
+        </div>
+      </div>
+
+      <!-- Bug Reports -->
+      <div class="metric-card">
+        <div class="metric-card__icon metric-card__icon--orange">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <div class="metric-card__body">
+          <span class="metric-card__label">Bug Reports</span>
+          <span class="metric-card__value">{{ stats()!.total_bug_reports | number }}</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Growth Trends Grid -->
+    <div class="charts-grid">
+      <div class="chart-card chart-card--wide">
+        <h3 class="chart-card__title">Platform Growth Trends</h3>
+        <div class="chart-card__body">
+          <div echarts [options]="trendChartOptions()" class="w-full h-full"></div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3 class="chart-card__title">Emotion Distribution</h3>
+        @if (emotionData().length > 0) {
+        <app-emotion-distribution [data]="emotionData()" viewType="pie" height="340px"
+          seriesName="Global Emotions"></app-emotion-distribution>
+        } @else {
+        <div class="chart-card__empty">
+          <p>No emotion data available.</p>
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- Engagement & Feedback Section -->
+    <app-analysis-section-header title="Engagement & Feedback" description="User satisfaction and interaction metrics."
+      marginBottom="mb-6">
+    </app-analysis-section-header>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-card__icon metric-icon--pink">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+          </svg>
+        </div>
+        <div class="metric-card__body">
+          <span class="metric-card__label">Average Rating</span>
+          <span class="metric-card__value">{{ stats()!.average_system_rating | number:'1.1-1' }} / 5</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-card__icon metric-icon--accent">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+          </svg>
+        </div>
+        <div class="metric-card__body">
+          <span class="metric-card__label">Total Feedback</span>
+          <span class="metric-card__value">{{ stats()!.total_feedback | number }}</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-card__icon metric-icon--joy">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="metric-card__body">
+          <span class="metric-card__label">Pending Moderation</span>
+          <span class="metric-card__value">{{ stats()!.pending_testimonials | number }}</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-card__icon metric-icon--danger">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+          </svg>
+        </div>
+        <div class="metric-card__body">
+          <span class="metric-card__label">Banned Users</span>
+          <span class="metric-card__value">{{ stats()!.banned_users | number }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced Analytics Grid -->
+    <div class="charts-grid" style="margin-top: 2rem;">
+      <div class="chart-card">
+        <h3 class="chart-card__title">Analysis Type Distribution</h3>
+        @if (analysesByTypeData().length > 0) {
+        <app-emotion-distribution [data]="analysesByTypeData()" viewType="pie" height="300px"
+          seriesName="Analysis Type"></app-emotion-distribution>
+        } @else {
+        <div class="chart-card__empty">
+          <p>No type data available.</p>
+        </div>
+        }
+      </div>
+
+      <div class="chart-card">
+        <h3 class="chart-card__title">Analyses by Type Trend</h3>
+        <div class="chart-card__body" style="height: 300px;">
+          <div echarts [options]="typeTrendOptions()" class="w-full h-full"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Active Users Table -->
+    <div class="top-users-section" style="margin-top: 3rem;">
+      <app-analysis-section-header title="Top Active Users" description="Users with the highest analysis activity."
         marginBottom="mb-6">
       </app-analysis-section-header>
 
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-card__icon" style="background-color: rgba(236, 72, 153, 0.1); color: #ec4899;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
-          </div>
-          <div class="metric-card__body">
-            <span class="metric-card__label">Average Rating</span>
-            <span class="metric-card__value">{{ stats()!.average_system_rating | number:'1.1-1' }} / 5</span>
-          </div>
-        </div>
-
-        <div class="metric-card">
-          <div class="metric-card__icon" style="background-color: rgba(20, 184, 166, 0.1); color: #14b8a6;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
-          </div>
-          <div class="metric-card__body">
-            <span class="metric-card__label">Total Feedback</span>
-            <span class="metric-card__value">{{ stats()!.total_feedback | number }}</span>
-          </div>
-        </div>
-
-        <div class="metric-card">
-          <div class="metric-card__icon" style="background-color: rgba(245, 158, 11, 0.1); color: #f59e0b;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          </div>
-          <div class="metric-card__body">
-            <span class="metric-card__label">Pending Moderation</span>
-            <span class="metric-card__value">{{ stats()!.pending_testimonials | number }}</span>
-          </div>
-        </div>
-
-        <div class="metric-card">
-          <div class="metric-card__icon" style="background-color: rgba(239, 68, 68, 0.1); color: #ef4444;">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
-          </div>
-          <div class="metric-card__body">
-            <span class="metric-card__label">Banned Users</span>
-            <span class="metric-card__value">{{ stats()!.banned_users | number }}</span>
-          </div>
+      <!-- Mobile Sort (shown only on small screens) -->
+      <div class="mobile-sort hide-desktop-dashboard" style="margin-top: 1rem;">
+        <label>Sort by:</label>
+        <div class="select-wrapper" style="z-index: 50;">
+          <app-dropdown-menu [options]="sortOptions" [selectedValue]="selectedSortValue()"
+            (selectedValueChange)="onMobileSortChange($event)">
+          </app-dropdown-menu>
         </div>
       </div>
 
-      <!-- Advanced Analytics Grid -->
-      <div class="charts-grid" style="margin-top: 2rem;">
-        <div class="chart-card">
-          <h3 class="chart-card__title">Analysis Type Distribution</h3>
-          @if (analysesByTypeData().length > 0) {
-            <app-emotion-distribution [data]="analysesByTypeData()" viewType="pie" height="300px" seriesName="Analysis Type"></app-emotion-distribution>
-          } @else {
-            <div class="chart-card__empty"><p>No type data available.</p></div>
-          }
-        </div>
-
-        <div class="chart-card">
-          <h3 class="chart-card__title">Analyses by Type Trend</h3>
-          <div class="chart-card__body" style="height: 300px;">
-            <div echarts [options]="typeTrendOptions()" class="w-full h-full"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Top Active Users Table -->
-      <div class="top-users-section" style="margin-top: 3rem;">
-        <app-analysis-section-header 
-          title="Top Active Users" 
-          description="Users with the highest analysis activity."
-          marginBottom="mb-6">
-        </app-analysis-section-header>
-        
-        <!-- Mobile Sort (shown only on small screens) -->
-        <div class="mobile-sort hide-desktop-dashboard" style="margin-top: 1rem;">
-          <label>Sort by:</label>
-          <div class="select-wrapper" style="z-index: 50;">
-            <app-dropdown-menu
-              [options]="sortOptions"
-              [selectedValue]="selectedSortValue()"
-              (selectedValueChange)="onMobileSortChange($event)">
-            </app-dropdown-menu>
-          </div>
-        </div>
-
-        <div class="table-wrapper hide-mobile-dashboard">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th (click)="sortState.toggleSort('full_name')" class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
-                  <div class="flex items-center gap-1">
-                    User
-                    <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'full_name'" [class.group-hover:opacity-50]="sortState.sortColumn() !== 'full_name'" [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'full_name'">
-                      {{ sortState.sortColumn() === 'full_name' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
-                    </span>
-                  </div>
-                </th>
-                <th>Email</th>
-                <th (click)="sortState.toggleSort('analysis_count')" class="text-right cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
-                  <div class="flex items-center justify-end gap-1">
-                    Analyses
-                    <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'analysis_count'" [class.group-hover:opacity-50]="sortState.sortColumn() !== 'analysis_count'" [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'analysis_count'">
-                      {{ sortState.sortColumn() === 'analysis_count' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
-                    </span>
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (user of sortedTopUsers(); track user.user_id) {
-                <tr>
-                  <td>
-                    <div class="user-info-cell">
-                      <div class="user-avatar">{{ user.full_name.charAt(0) }}</div>
-                      <span class="user-name">{{ user.full_name }}</span>
-                    </div>
-                  </td>
-                  <td><span class="user-email">{{ user.email }}</span></td>
-                  <td class="text-right"><span class="user-count">{{ user.analysis_count }}</span></td>
-                </tr>
-              }
-              @if (!sortedTopUsers().length) {
-                <tr>
-                  <td colspan="3" class="text-center py-8 text-muted">No active users recorded yet.</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Mobile Cards (shown only on small screens) -->
-        <div class="mobile-cards hide-desktop-dashboard">
-          @for (user of sortedTopUsers(); track user.user_id) {
-            <div class="mobile-card">
-              <div class="mobile-card__header">
+      <div class="table-wrapper hide-mobile-dashboard">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th (click)="sortState.toggleSort('full_name')"
+                class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
+                <div class="flex items-center gap-1">
+                  User
+                  <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'full_name'"
+                    [class.group-hover:opacity-50]="sortState.sortColumn() !== 'full_name'"
+                    [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'full_name'">
+                    {{ sortState.sortColumn() === 'full_name' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                  </span>
+                </div>
+              </th>
+              <th>Email</th>
+              <th (click)="sortState.toggleSort('analysis_count')"
+                class="text-right cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
+                <div class="flex items-center justify-end gap-1">
+                  Analyses
+                  <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'analysis_count'"
+                    [class.group-hover:opacity-50]="sortState.sortColumn() !== 'analysis_count'"
+                    [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'analysis_count'">
+                    {{ sortState.sortColumn() === 'analysis_count' && sortState.sortDirection() === 'desc' ? '▼' : '▲'
+                    }}
+                  </span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of sortedTopUsers(); track user.user_id) {
+            <tr>
+              <td>
                 <div class="user-info-cell">
-                  <div class="user-avatar">{{ user.full_name.charAt(0) }}</div>
-                  <div class="flex flex-col">
-                    <span class="user-name">{{ user.full_name }}</span>
-                    <span class="user-email">{{ user.email }}</span>
-                  </div>
+                  <div class="user-avatar">{{ getInitials(user.full_name) }}</div>
+                  <span class="user-name stealth-scroll">{{ user.full_name }}</span>
                 </div>
-              </div>
-              <div class="mobile-card__body">
-                <div class="mobile-card__stat">
-                  <span class="text-muted font-bold">Analyses</span>
-                  <span class="user-count">{{ user.analysis_count }}</span>
-                </div>
+              </td>
+              <td><span class="user-email stealth-scroll">{{ user.email }}</span></td>
+              <td class="text-right"><span class="user-count">{{ user.analysis_count }}</span></td>
+            </tr>
+            }
+            @if (!sortedTopUsers().length) {
+            <tr>
+              <td colspan="3" class="text-center py-8 text-muted">No active users recorded yet.</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Cards (shown only on small screens) -->
+      <div class="mobile-cards hide-desktop-dashboard">
+        @for (user of sortedTopUsers(); track user.user_id) {
+        <div class="mobile-card">
+          <div class="mobile-card__header">
+            <div class="user-info-cell">
+              <div class="user-avatar">{{ getInitials(user.full_name) }}</div>
+              <div class="flex flex-col min-w-0">
+                <span class="user-name stealth-scroll">{{ user.full_name }}</span>
+                <span class="user-email stealth-scroll">{{ user.email }}</span>
               </div>
             </div>
-          }
-          @if (!sortedTopUsers().length) {
-            <div class="text-center py-8 text-muted">No active users recorded yet.</div>
-          }
+          </div>
+          <div class="mobile-card__body">
+            <div class="mobile-card__stat">
+              <span class="text-muted font-bold">Analyses</span>
+              <span class="user-count">{{ user.analysis_count }}</span>
+            </div>
+          </div>
         </div>
+        }
+        @if (!sortedTopUsers().length) {
+        <div class="text-center py-8 text-muted">No active users recorded yet.</div>
+        }
       </div>
-    </section>
+    </div>
+  </section>
 
   }
 

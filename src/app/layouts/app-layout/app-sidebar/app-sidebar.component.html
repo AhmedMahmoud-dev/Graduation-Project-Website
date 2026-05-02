@@ -175,7 +175,7 @@
       <app-tooltip text="Settings" position="right" [visible]="!isExpanded() && !isMobile()"></app-tooltip>
     </a>
 
-    <div (click)="$event.stopPropagation(); copyEmailToClipboard($event)"
+    <div (click)="copyEmailToClipboard($event)"
       class="flex items-center rounded-xl group relative h-12 cursor-pointer hover:bg-[color:var(--bg-surface)] transition-all"
       [ngClass]="(!isExpanded() && !isMobile()) ? 'justify-start' : 'justify-start'">
       <div class="w-12 h-12 shrink-0 flex items-center justify-center">
@@ -199,6 +199,8 @@
             d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
         </svg>
       </button>
+
+
 
       <!-- Tooltip for collapsed state -->
       <app-tooltip [text]="emailCopied() ? 'Copied!' : (currentUser()?.full_name || 'User')" position="right"

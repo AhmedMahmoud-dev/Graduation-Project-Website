@@ -8,6 +8,8 @@ import { AuthService } from '../../../core/services/auth.service';
 import { AlertsService } from '../../../core/services/alerts.service';
 import { TooltipComponent } from '../../../shared/components/tooltip/tooltip.component';
 
+import { ThemeService } from '../../../core/services/theme.service';
+
 @Component({
   selector: 'app-app-sidebar',
   standalone: true,
@@ -19,6 +21,7 @@ export class AppSidebarComponent {
   public authService = inject(AuthService);
   private router = inject(Router);
   private sanitizer = inject(DomSanitizer);
+
 
   get isLandingPage(): boolean {
     return this.router.url === '/' || this.router.url.startsWith('/#');

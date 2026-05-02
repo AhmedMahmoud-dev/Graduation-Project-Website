@@ -34,6 +34,10 @@ export class NotificationSettingsComponent {
     this.settingsService.updateSettings({ maxNotifications: max });
   }
 
+  updateMaxMobile(max: number) {
+    this.settingsService.updateSettings({ maxMobileNotifications: max });
+  }
+
   updateAlertPersistence(seconds: number) {
     this.settingsService.updateSettings({ alertPersistence: seconds * 1000 });
   }

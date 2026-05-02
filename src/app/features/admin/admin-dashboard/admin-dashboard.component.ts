@@ -89,13 +89,16 @@ export class AdminDashboardComponent implements OnInit {
   analysesByTypeData = computed<DistributionDataPoint[]>(() => {
     const currentStats = this.stats();
     if (!currentStats || !currentStats.analyses_by_type) return [];
+    const purple = getComputedStyle(document.documentElement).getPropertyValue('--color-brain').trim() || '#a855f7';
+    const blue = getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim() || '#3b82f6';
+
     return Object.entries(currentStats.analyses_by_type).map(([label, value]) => {
       const isAudio = label.toLowerCase() === 'audio';
       const isText = label.toLowerCase() === 'text';
       return {
         label: label.charAt(0).toUpperCase() + label.slice(1),
         value,
-        color: isAudio ? '#a855f7' : (isText ? '#3b82f6' : undefined)
+        color: isAudio ? purple : (isText ? blue : undefined)
       };
     });
   });
@@ -149,8 +152,8 @@ export class AdminDashboardComponent implements OnInit {
     const textData = currentStats.analyses_by_type_trend.map(t => t.text_count);
     const audioData = currentStats.analyses_by_type_trend.map(t => t.audio_count);
 
-    const purple = '#a855f7';
-    const blue = '#3b82f6';
+    const purple = getComputedStyle(document.documentElement).getPropertyValue('--color-brain').trim() || '#a855f7';
+    const blue = getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim() || '#3b82f6';
 
     return {
       ...theme,
@@ -176,6 +179,15 @@ export class AdminDashboardComponent implements OnInit {
   private formatDate(dateStr: string): string {
     const parts = dateStr.split('T')[0].split('-');
     return parts.length === 3 ? `${parts[1]}/${parts[2]}` : dateStr;
+  }
+
+  getInitials(name: string): string {
+    if (!name) return 'U';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0][0].toUpperCase();
   }
 
   ngOnInit(): void {

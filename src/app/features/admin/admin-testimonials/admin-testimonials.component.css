@@ -70,7 +70,7 @@
   height: 2.25rem;
   border-radius: 50%;
   background-color: var(--brand-primary);
-  color: #fff;
+  color: var(--color-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -114,7 +114,7 @@
 }
 
 .star-icon--filled {
-  color: #fbbf24;
+  color: var(--emotion-joy);
 }
 
 .star-icon--empty {
@@ -170,23 +170,23 @@
 }
 
 .mod-btn--reject {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.15);
+  background-color: color-mix(in srgb, var(--color-danger), transparent 90%);
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger), transparent 85%);
 }
 
 .mod-btn--reject:hover:not(:disabled) {
-  background-color: rgba(239, 68, 68, 0.2);
+  background-color: color-mix(in srgb, var(--color-danger), transparent 80%);
 }
 
 .mod-btn--approve {
-  background-color: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-  border-color: rgba(34, 197, 94, 0.15);
+  background-color: color-mix(in srgb, var(--color-success), transparent 90%);
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success), transparent 85%);
 }
 
 .mod-btn--approve:hover:not(:disabled) {
-  background-color: rgba(34, 197, 94, 0.2);
+  background-color: color-mix(in srgb, var(--color-success), transparent 80%);
 }
 
 /* --- Mobile Overrides --- */

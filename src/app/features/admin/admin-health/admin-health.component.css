@@ -40,11 +40,11 @@
 }
 
 .health-card--online {
-  border-left: 3px solid #22c55e;
+  border-left: 3px solid var(--color-success);
 }
 
 .health-card--offline {
-  border-left: 3px solid #ef4444;
+  border-left: 3px solid var(--color-danger);
 }
 
 /* --- Status Dot --- */
@@ -62,38 +62,32 @@
 }
 
 .status-dot--online {
-  background-color: #22c55e;
-  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  background-color: var(--color-success);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-success), transparent 60%);
   animation: pulse-green 2s ease-in-out infinite;
 }
 
 .status-dot--offline {
-  background-color: #ef4444;
-  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  background-color: var(--color-danger);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-danger), transparent 60%);
   animation: pulse-red 2s ease-in-out infinite;
 }
 
 @keyframes pulse-green {
-
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-success), transparent 60%);
   }
-
   50% {
-    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-success), transparent 100%);
   }
 }
 
 @keyframes pulse-red {
-
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-danger), transparent 60%);
   }
-
   50% {
-    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-danger), transparent 100%);
   }
 }
 
@@ -138,13 +132,13 @@
 }
 
 .health-card__status-label--online {
-  background-color: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
+  background-color: color-mix(in srgb, var(--color-success), transparent 90%);
+  color: var(--color-success);
 }
 
 .health-card__status-label--offline {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background-color: color-mix(in srgb, var(--color-danger), transparent 90%);
+  color: var(--color-danger);
 }
 
 /* --- Metrics --- */
@@ -183,15 +177,15 @@
 
 /* --- Response Time Colors --- */
 .response-time--fast {
-  color: #22c55e;
+  color: var(--color-success);
 }
 
 .response-time--normal {
-  color: #eab308;
+  color: var(--emotion-joy);
 }
 
 .response-time--slow {
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 /* --- Mobile Overrides --- */

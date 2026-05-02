@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, effect, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
@@ -37,6 +37,17 @@ export class AdminUsersComponent implements OnInit {
   private authService = inject(AuthService);
   private fb = inject(FormBuilder);
   protected format = inject(FormattingService);
+  private destroyRef = inject(DestroyRef);
+
+  constructor() {
+    effect(() => {
+      if (this.isBanModalOpen()) {
+        document.body.classList.add('no-scroll');
+      } else {
+        document.body.classList.remove('no-scroll');
+      }
+    });
+  }
 
   currentUser = this.authService.currentUser;
 

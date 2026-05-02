@@ -5,6 +5,7 @@ export interface NotificationSettings {
   toastDuration: number;
   alertPersistence: number; // Multiplier or fixed time for alerts
   maxNotifications: number;
+  maxMobileNotifications: number;
   showIcons: boolean;
   soundEnabled: boolean;
 }
@@ -21,6 +22,7 @@ export class NotificationSettingsService {
     toastDuration: 5000,
     alertPersistence: 30000, // Default 30s for sticking alerts
     maxNotifications: 5,
+    maxMobileNotifications: 2,
     showIcons: true,
     soundEnabled: false
   };
