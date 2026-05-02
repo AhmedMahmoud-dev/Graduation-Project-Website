@@ -39,17 +39,11 @@ export class AccountSettingsComponent {
       error: (err) => {
         this.isResetLoading.set(false);
         
-        const isLimitError = err.message?.includes('30 days');
         const errorMsg = err.validationErrors ? 
           Object.values(err.validationErrors).flat()[0] as string : 
           (err.message || 'Failed to send reset code');
         
-        this.toastService.show(
-          isLimitError ? 'Policy Limit' : 'Error', 
-          errorMsg, 
-          isLimitError ? 'warning' : 'error', 
-          isLimitError ? 'info' : 'error'
-        );
+        this.toastService.show('Error', errorMsg, 'error', 'error');
       }
     });
   }

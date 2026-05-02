@@ -34,17 +34,20 @@ export class AdminHealthComponent implements OnInit {
     if (cached && cached.length > 0) {
       this.services.set(cached);
       this.isLoading.set(false);
+      // Background sync
+      this.fetchHealth(true);
     } else {
-      // Only fetch if cache is empty
-      this.fetchHealth();
+      this.fetchHealth(false);
     }
   }
 
-  fetchHealth(): void {
-    if (this.services().length === 0) {
-      this.isLoading.set(true);
-    } else {
-      this.isRefreshing.set(true);
+  fetchHealth(isBackground: boolean = false): void {
+    if (!isBackground) {
+      if (this.services().length === 0) {
+        this.isLoading.set(true);
+      } else {
+        this.isRefreshing.set(true);
+      }
     }
     this.error.set(null);
 

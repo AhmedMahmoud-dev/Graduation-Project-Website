@@ -12,6 +12,7 @@ import { ColorSettingsService } from './color-settings.service';
 import { AlertsService } from './alerts.service';
 import { AlertService } from './alert.service';
 import { AdminService } from './admin.service';
+import { AdminSupportService } from './admin-support.service';
 
 @Injectable({
   providedIn: 'root'
@@ -25,6 +26,7 @@ export class AuthService {
   private alertsService = inject(AlertsService);
   private alertService = inject(AlertService);
   private adminService = inject(AdminService);
+  private adminSupportService = inject(AdminSupportService);
 
   private isBrowser = isPlatformBrowser(this.platformId);
 
@@ -438,6 +440,15 @@ export class AuthService {
     // 5. Health (Infrastructure Monitor)
     this.adminService.getHealth().subscribe(r => {
       if (r.is_success && r.data) localStorage.setItem('emotra_admin_health', JSON.stringify(r.data));
+    });
+
+    // 6. Support (Queue)
+    this.adminSupportService.getMessages(1, 100).subscribe(r => {
+      if (r.is_success && r.data) {
+        const data = r.data;
+        const items = Array.isArray(data) ? data : (data.items || []);
+        localStorage.setItem('emotra_admin_support', JSON.stringify(items));
+      }
     });
   }
 

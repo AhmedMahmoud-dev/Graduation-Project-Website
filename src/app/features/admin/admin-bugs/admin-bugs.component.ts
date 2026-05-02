@@ -58,6 +58,8 @@ export class AdminBugsComponent implements OnInit {
   // Available statuses for the dropdown
   readonly statuses = ['Open', 'In Progress', 'Closed'];
 
+  isRefreshing = signal<boolean>(false);
+
   ngOnInit(): void {
     // 1. Check cache
     const cached = this.cache.getItem<CachedBugsData>(CACHE_KEY);
@@ -68,15 +70,20 @@ export class AdminBugsComponent implements OnInit {
       this.totalBugs.set(cached.total);
       this.currentPage.set(cached.page);
       this.isLoading.set(false);
+      // Fetch in background
+      this.fetchBugs(true);
     } else {
-      // Only fetch if cache is empty
-      this.fetchBugs();
+      this.fetchBugs(false);
     }
   }
 
-  fetchBugs(): void {
-    if (this.bugs().length === 0) {
-      this.isLoading.set(true);
+  fetchBugs(isBackground: boolean = false): void {
+    if (!isBackground) {
+      if (this.bugs().length === 0) {
+        this.isLoading.set(true);
+      } else {
+        this.isRefreshing.set(true);
+      }
     }
     this.error.set(null);
 
@@ -97,12 +104,14 @@ export class AdminBugsComponent implements OnInit {
           }
         }
         this.isLoading.set(false);
+        this.isRefreshing.set(false);
       },
       error: () => {
         if (this.bugs().length === 0) {
           this.error.set('Could not connect to the server.');
         }
         this.isLoading.set(false);
+        this.isRefreshing.set(false);
       }
     });
   }

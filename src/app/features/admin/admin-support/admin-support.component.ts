@@ -37,6 +37,7 @@ export class AdminSupportComponent implements OnInit {
   pendingMessagesCount = computed(() => this.messages().filter(m => m.status === 'open' || m.status === 'pending').length);
   isLoading = signal(true);
   error = signal<string | null>(null);
+  isRefreshing = signal<boolean>(false);
 
   // Interaction State
   expandedMessageId = signal<number | null>(null);
@@ -49,13 +50,21 @@ export class AdminSupportComponent implements OnInit {
       this.messages.set(cached);
       this.totalMessages.set(cached.length);
       this.isLoading.set(false);
+      // Background sync
+      this.fetchMessages(true);
     } else {
-      this.fetchMessages();
+      this.fetchMessages(false);
     }
   }
 
-  fetchMessages() {
-    this.isLoading.set(true);
+  fetchMessages(isBackground: boolean = false) {
+    if (!isBackground) {
+      if (this.messages().length === 0) {
+        this.isLoading.set(true);
+      } else {
+        this.isRefreshing.set(true);
+      }
+    }
     this.error.set(null);
     this.adminSupportService.getMessages(1, 100).subscribe({
       next: (res) => {
@@ -74,10 +83,14 @@ export class AdminSupportComponent implements OnInit {
           this.cache.setItem(CACHE_KEY, items);
         }
         this.isLoading.set(false);
+        this.isRefreshing.set(false);
       },
       error: (err) => {
-        this.error.set(err.message || 'Failed to load support queue');
+        if (this.messages().length === 0) {
+          this.error.set(err.message || 'Failed to load support queue');
+        }
         this.isLoading.set(false);
+        this.isRefreshing.set(false);
       }
     });
   }
@@ -99,7 +112,14 @@ export class AdminSupportComponent implements OnInit {
       next: (res) => {
         if (res.is_success) {
           this.toastService.show('Reply Sent', 'Your response has been sent to the user.', 'success', 'check');
-          this.fetchMessages();
+          
+          // Update local state instantly
+          const updatedList = this.messages().map(m => 
+            m.id === id ? ({ ...m, status: 'replied', replied_at: new Date().toISOString() } as AdminSupportMessage) : m
+          );
+          this.messages.set(updatedList);
+          this.cache.setItem(CACHE_KEY, updatedList);
+          
           this.expandedMessageId.set(null); // Close on success
         }
         this.isReplying.set(null);

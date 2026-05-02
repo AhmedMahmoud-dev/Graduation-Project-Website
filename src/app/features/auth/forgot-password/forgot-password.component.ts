@@ -43,12 +43,11 @@ export class ForgotPasswordComponent {
           this.isLoading = false;
           this.forgotForm.enable();
           
-          const isLimitError = err.message?.includes('30 days');
           this.toastService.show(
-            isLimitError ? 'Policy Limit reached' : 'Error', 
+            'Error', 
             err.message || 'Unable to process your request.', 
-            isLimitError ? 'warning' : 'error', 
-            isLimitError ? 'info' : 'error'
+            'error', 
+            'error'
           );
         }
       });

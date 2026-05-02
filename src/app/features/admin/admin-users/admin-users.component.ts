@@ -85,6 +85,7 @@ export class AdminUsersComponent implements OnInit {
 
   isUpdating = signal<boolean>(false);
   updatingUserId = signal<string | null>(null);
+  isRefreshing = signal<boolean>(false);
 
   // Ban Modal
   isBanModalOpen = signal<boolean>(false);
@@ -202,14 +203,20 @@ export class AdminUsersComponent implements OnInit {
       this.totalUsers.set(cached.total);
       this.currentPage.set(cached.page);
       this.isLoading.set(false);
+      // Fetch in background
+      this.fetchUsers(true);
     } else {
-      this.fetchUsers();
+      this.fetchUsers(false);
     }
   }
 
-  fetchUsers(): void {
-    if (this.users().length === 0) {
-      this.isLoading.set(true);
+  fetchUsers(isBackground: boolean = false): void {
+    if (!isBackground) {
+      if (this.users().length === 0) {
+        this.isLoading.set(true);
+      } else {
+        this.isRefreshing.set(true);
+      }
     }
     this.error.set(null);
 
@@ -229,12 +236,14 @@ export class AdminUsersComponent implements OnInit {
           }
         }
         this.isLoading.set(false);
+        this.isRefreshing.set(false);
       },
       error: () => {
         if (this.users().length === 0) {
           this.error.set('Could not connect to the server.');
         }
         this.isLoading.set(false);
+        this.isRefreshing.set(false);
       }
     });
   }

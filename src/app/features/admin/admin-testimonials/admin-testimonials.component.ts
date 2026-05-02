@@ -27,6 +27,7 @@ export class AdminTestimonialsComponent implements OnInit {
   testimonials = signal<AdminTestimonial[]>([]);
   isLoading = signal<boolean>(true);
   error = signal<string | null>(null);
+  isRefreshing = signal<boolean>(false);
 
   // Track which card is currently being processed
   processingId = signal<number | null>(null);
@@ -36,18 +37,22 @@ export class AdminTestimonialsComponent implements OnInit {
     const cached = this.cache.getItem<AdminTestimonial[]>(CACHE_KEY);
     
     if (cached !== null) {
-      // If we have any cached state (even an empty list), use it and avoid fetching
       this.testimonials.set(cached);
       this.isLoading.set(false);
+      // Background sync
+      this.fetchTestimonials(true);
     } else {
-      // Only fetch automatically if there is absolutely no cache
-      this.fetchTestimonials();
+      this.fetchTestimonials(false);
     }
   }
 
-  fetchTestimonials(): void {
-    if (this.testimonials().length === 0) {
-      this.isLoading.set(true);
+  fetchTestimonials(isBackground: boolean = false): void {
+    if (!isBackground) {
+      if (this.testimonials().length === 0) {
+        this.isLoading.set(true);
+      } else {
+        this.isRefreshing.set(true);
+      }
     }
     this.error.set(null);
 
@@ -62,12 +67,14 @@ export class AdminTestimonialsComponent implements OnInit {
           }
         }
         this.isLoading.set(false);
+        this.isRefreshing.set(false);
       },
       error: () => {
         if (this.testimonials().length === 0) {
           this.error.set('Could not connect to the server.');
         }
         this.isLoading.set(false);
+        this.isRefreshing.set(false);
       }
     });
   }

@@ -43,6 +43,7 @@ export class AdminDashboardComponent implements OnInit {
   stats = signal<PlatformStats | null>(null);
   isLoading = signal<boolean>(true);
   error = signal<string | null>(null);
+  isRefreshing = signal<boolean>(false);
 
   topUsersList = computed(() => this.stats()?.top_active_users || []);
   sortState = useTableSort<{ user_id: string; full_name: string; email: string; analysis_count: number }>(this.topUsersList);
@@ -182,19 +183,24 @@ export class AdminDashboardComponent implements OnInit {
     const cached = this.cache.getItem<PlatformStats>(CACHE_KEY);
 
     if (cached) {
-      // Use cached data and do NOT fetch in background (per user requirement)
+      // Show cached data instantly
       this.stats.set(cached);
       this.isLoading.set(false);
+      // Still fetch in background to sync
+      this.fetchStats(true);
     } else {
-      // Only fetch if cache is empty
-      this.fetchStats();
+      // No cache, full fetch with loading spinner
+      this.fetchStats(false);
     }
   }
 
-  fetchStats(): void {
-    // Only show loading spinner if there is no cached data
-    if (!this.stats()) {
-      this.isLoading.set(true);
+  fetchStats(isBackground: boolean = false): void {
+    if (!isBackground) {
+      if (!this.stats()) {
+        this.isLoading.set(true);
+      } else {
+        this.isRefreshing.set(true);
+      }
     }
     this.error.set(null);
 
@@ -210,13 +216,14 @@ export class AdminDashboardComponent implements OnInit {
           this.cache.removeItem(CACHE_KEY);
         }
         this.isLoading.set(false);
+        this.isRefreshing.set(false);
       },
       error: () => {
-        // On network error, keep cached data visible — only show error if nothing cached
         if (!this.stats()) {
           this.error.set('An error occurred while connecting to the server.');
         }
         this.isLoading.set(false);
+        this.isRefreshing.set(false);
       }
     });
   }
