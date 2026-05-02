@@ -52,7 +52,11 @@
         <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       }
 
-      <!-- CHEVRON DOWN -->
+      <!-- CLOSE / X -->
+      @case ('close') {
+        <path d="M18 6L6 18M6 6l12 12" />
+      }
+
       @case ('chevron-down') {
         <path d="M19 9l-7 7-7-7" />
       }

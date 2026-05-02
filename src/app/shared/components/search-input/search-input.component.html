@@ -1,0 +1,29 @@
+<div class="relative w-full group">
+  <!-- Search Icon -->
+  <div class="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none opacity-40 group-focus-within:opacity-100 transition-opacity">
+    <app-icon name="search" className="w-5 h-5 text-[color:var(--color-text)]"></app-icon>
+  </div>
+
+  <!-- Input Field -->
+  <input
+    type="text"
+    [value]="value()"
+    (input)="onInput($event)"
+    [placeholder]="placeholder()"
+    class="search-input-field"
+    (focus)="$any($event.target).style.boxShadow='0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent)'"
+    (blur)="$any($event.target).style.boxShadow='none'"
+  />
+
+  <!-- Clear Button -->
+  @if (value()) {
+  <button
+    type="button"
+    (click)="onClear()"
+    class="clear-button"
+    aria-label="Clear search"
+  >
+    <app-icon name="close" className="w-4 h-4"></app-icon>
+  </button>
+  }
+</div>

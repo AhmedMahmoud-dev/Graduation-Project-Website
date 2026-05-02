@@ -105,13 +105,22 @@ export class AlertsService {
           severity: 'critical' 
         }
       );
+      if (banDetails?.ban_reason) {
+        sessionStorage.setItem('emotra_ban_details', JSON.stringify(banDetails));
+      }
       this.forceLogout$.next(banDetails);
     });
 
     this.hubConnection.start()
       .then(() => this.hubConnection?.invoke('JoinUserGroup'))
-      .catch(_ => {
-        this.toastService.show('Connection Error', 'Real-time alerts may not work. Please refresh.', 'error', 'wifi-off');
+      .catch((err) => {
+        // If connection was aborted due to ban (hub sends ReceiveForceLogout before aborting),
+        // the forceLogout$ will handle it. Only show the connection error toast if no ban details
+        // were already stored (meaning it's a real network issue, not a ban rejection).
+        const isBanned = !!sessionStorage.getItem('emotra_ban_details');
+        if (!isBanned) {
+          this.toastService.show('Connection Error', 'Real-time alerts may not work. Please refresh.', 'error', 'wifi-off');
+        }
       });
 
     this.hubConnection.onreconnecting(_ => { });

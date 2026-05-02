@@ -17,11 +17,12 @@ import { EmptyStateComponent } from '../../shared/components/empty-state/empty-s
 import { DropdownMenuComponent, DropdownOption } from '../../shared/components/dropdown-menu/dropdown-menu.component';
 import { FooterSectionComponent } from '../../shared/components/footer/footer.component';
 import { LoadingStateComponent } from '../../shared/components/loading-state/loading-state.component';
+import { AppIconComponent } from "../../shared/components/app-icon/app-icon.component";
 
 @Component({
   selector: 'app-alerts',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, EmptyStateComponent, DropdownMenuComponent, FooterSectionComponent, LoadingStateComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, EmptyStateComponent, DropdownMenuComponent, FooterSectionComponent, LoadingStateComponent, AppIconComponent],
   templateUrl: './alerts.component.html',
   styleUrl: './alerts.component.css'
 })
@@ -59,9 +60,9 @@ export class AlertsComponent implements OnInit {
   // Use global stats from service as single source of truth
   stats = this.alertsService.stats;
 
-  private totalCount = signal<number>(0);
-  private currentPage = 1;
-  private readonly pageSize = 50;
+  protected totalCount = signal<number>(0);
+  protected currentPage = signal<number>(1);
+  private readonly pageSize = 10;
 
   // Computed display list
   filteredAlerts = computed(() => {
@@ -89,7 +90,6 @@ export class AlertsComponent implements OnInit {
   canLoadMore = computed(() => this.alerts().length < this.totalCount());
 
   ngOnInit() {
-    this.loadFromCache();
     this.fetchData();
 
     // Set up real-time listener
@@ -99,26 +99,33 @@ export class AlertsComponent implements OnInit {
         // Add the new alert to the top of the list instantly
         this.alerts.update(prev => [alert, ...prev]);
         this.totalCount.update(c => c + 1);
-        
+
         // Update cache
-        this.cache.setItem('emotra_alerts_meta', this.alerts());
+        this.cache.setItem('emotra_alerts_meta', {
+          data: this.alerts(),
+          total: this.totalCount()
+        });
       });
   }
 
-  private loadFromCache() {
-    const cachedMeta = this.cache.getItem<AlertItem[]>('emotra_alerts_meta');
 
-    if (cachedMeta) {
-      this.alerts.set(cachedMeta);
-      this.totalCount.set(cachedMeta.length); // Assume count based on cache for now
-      this.isLoading.set(false);
-    }
-
-    // Shared stats are already loaded by AlertsService constructor
-  }
 
   private fetchData() {
-    // Stats Fetch
+    const isFirstPage = this.currentPage() === 1;
+    const cacheKey = 'emotra_alerts_meta';
+
+    if (isFirstPage) {
+      const cached = this.cache.getItem<{ data: AlertItem[], total: number }>(cacheKey);
+      if (cached) {
+        this.alerts.set(cached.data);
+        this.totalCount.set(cached.total);
+        this.isLoading.set(false);
+      }
+    } else {
+      this.isLoadingMore.set(true);
+    }
+
+    // Stats Fetch (always)
     this.alertService.getStats()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -130,41 +137,35 @@ export class AlertsComponent implements OnInit {
       });
 
     // Alerts Fetch
-    this.currentPage = 1;
-    this.alertService.getAlerts(this.currentPage, this.pageSize)
+    this.alertService.getAlerts(this.currentPage(), this.pageSize)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
           if (res.is_success && res.data) {
-            this.alerts.set(res.data.items);
-            this.totalCount.set(res.data.total_count);
-            this.cache.setItem('emotra_alerts_meta', res.data.items);
+            const totalCount = res.data.total_count;
+            this.totalCount.set(totalCount);
+
+            if (isFirstPage) {
+              this.alerts.set(res.data.items);
+              this.cache.setItem(cacheKey, { data: res.data.items, total: totalCount });
+            } else {
+              this.alerts.update(prev => [...prev, ...res.data!.items]);
+            }
           }
           this.isLoading.set(false);
+          this.isLoadingMore.set(false);
         },
-        error: () => this.isLoading.set(false)
+        error: () => {
+          this.isLoading.set(false);
+          this.isLoadingMore.set(false);
+        }
       });
   }
 
   loadMore() {
     if (this.isLoadingMore()) return;
-
-    this.isLoadingMore.set(true);
-    this.currentPage++;
-
-    this.alertService.getAlerts(this.currentPage, this.pageSize)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          if (res.is_success && res.data) {
-            this.alerts.update(prev => [...prev, ...res.data!.items]);
-            this.totalCount.set(res.data.total_count);
-            this.cache.setItem('emotra_alerts_meta', this.alerts());
-          }
-          this.isLoadingMore.set(false);
-        },
-        error: () => this.isLoadingMore.set(false)
-      });
+    this.currentPage.update(p => p + 1);
+    this.fetchData();
   }
 
   resolveAlert(id: number) {
@@ -184,7 +185,10 @@ export class AlertsComponent implements OnInit {
             }
 
             // Sync caches (meta is local to this component's view)
-            this.cache.setItem('emotra_alerts_meta', this.alerts());
+            this.cache.setItem('emotra_alerts_meta', {
+              data: this.alerts(),
+              total: this.totalCount()
+            });
 
             this.toastService.show('Alert Resolved', 'The alert has been marked as read.', 'success', 'check');
           } else {
@@ -223,7 +227,10 @@ export class AlertsComponent implements OnInit {
               this.alertsService.handleAlertDeleted(item);
 
               // Sync caches
-              this.cache.setItem('emotra_alerts_meta', this.alerts());
+              this.cache.setItem('emotra_alerts_meta', {
+                data: this.alerts(),
+                total: this.totalCount()
+              });
 
               this.toastService.show('Deleted', 'Alert removed successfully.', 'success', 'trash');
             }

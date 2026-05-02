@@ -14,6 +14,7 @@ import { PageHeaderComponent } from '../../../shared/components/layout/page-head
 import { DistributionDataPoint } from '../../../core/models/chart-data.model';
 import { useTableSort } from '../../../core/utils/sort.util';
 import { DropdownMenuComponent, DropdownOption } from '../../../shared/components/dropdown-menu/dropdown-menu.component';
+import { AnalysisSectionHeaderComponent } from '../../../shared/components/analysis-section-header/analysis-section-header.component';
 
 const CACHE_KEY = 'emotra_admin_stats';
 
@@ -27,7 +28,8 @@ const CACHE_KEY = 'emotra_admin_stats';
     EmptyStateComponent,
     EmotionDistributionComponent,
     PageHeaderComponent,
-    DropdownMenuComponent
+    DropdownMenuComponent,
+    AnalysisSectionHeaderComponent
   ],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.css'
@@ -86,10 +88,15 @@ export class AdminDashboardComponent implements OnInit {
   analysesByTypeData = computed<DistributionDataPoint[]>(() => {
     const currentStats = this.stats();
     if (!currentStats || !currentStats.analyses_by_type) return [];
-    return Object.entries(currentStats.analyses_by_type).map(([label, value]) => ({
-      label: label.charAt(0).toUpperCase() + label.slice(1),
-      value
-    }));
+    return Object.entries(currentStats.analyses_by_type).map(([label, value]) => {
+      const isAudio = label.toLowerCase() === 'audio';
+      const isText = label.toLowerCase() === 'text';
+      return {
+        label: label.charAt(0).toUpperCase() + label.slice(1),
+        value,
+        color: isAudio ? '#a855f7' : (isText ? '#3b82f6' : undefined)
+      };
+    });
   });
 
   /** Trend line chart options for general platform growth */

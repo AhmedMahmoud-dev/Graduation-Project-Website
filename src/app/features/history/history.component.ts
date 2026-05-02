@@ -406,12 +406,14 @@ export class HistoryComponent implements OnInit {
     }
 
     // 4. Cleanup alerts meta (list of alerts)
-    const alertsList = this.cache.getItem<any[]>('emotra_alerts_meta');
-    if (alertsList) {
-      const originalLen = alertsList.length;
-      const filtered = alertsList.filter((a: any) => a.analysis_id !== cloudId && a.client_id !== clientId);
+    const alertsCache = this.cache.getItem<{ data: any[], total: number }>('emotra_alerts_meta');
+    if (alertsCache?.data) {
+      const originalLen = alertsCache.data.length;
+      const filtered = alertsCache.data.filter((a: any) => a.analysis_id !== cloudId && a.client_id !== clientId);
       if (filtered.length !== originalLen) {
-        this.cache.setItem('emotra_alerts_meta', filtered);
+        alertsCache.data = filtered;
+        alertsCache.total = Math.max(0, alertsCache.total - (originalLen - filtered.length));
+        this.cache.setItem('emotra_alerts_meta', alertsCache);
       }
     }
   }

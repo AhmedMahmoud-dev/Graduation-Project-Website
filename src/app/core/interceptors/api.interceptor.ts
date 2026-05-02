@@ -36,13 +36,22 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      // 3. Handle 401 and 403: Clear state and redirect
-      if (error.status === 401 || error.status === 403) {
-        // If 403 and body contains ban details in 'data' field, store them
+      // 3. Handle 401, 403, and 0 (CORS/Ban short-circuits)
+      if (error.status === 401 || error.status === 403 || (error.status === 0 && navigator.onLine)) {
         if (error.status === 403 && error.error?.data?.ban_reason) {
           authService.storeBanDetails(error.error.data);
         }
-        authService.logout(true);
+
+        // Wipe local credentials immediately to block AuthGuard and reactive UI
+        authService.clearAllAuth();
+
+        // Only call logout if the app is fully initialized (router is ready)
+        // During app init, verifySessionWithServer() handles the redirect itself
+        // via window.location.href — calling logout() here during init causes
+        // a race condition between router.navigate() and window.location.href
+        if (authService.isAppInitialized()) {
+          authService.logout(true);
+        }
       }
 
       // Handle other errors normally

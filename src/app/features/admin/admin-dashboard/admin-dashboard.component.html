@@ -48,6 +48,19 @@
     <section class="admin-content-section">
       <!-- Metric Cards Grid -->
       <div class="metrics-grid">
+        <!-- Online Now -->
+        <div class="metric-card">
+          <div class="metric-card__icon" style="background-color: rgba(16, 185, 129, 0.1); color: #10b981;">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728M8.464 15.536a5 5 0 010-7.072m7.072 0a5 5 0 010 7.072M12 12h.01" />
+            </svg>
+          </div>
+          <div class="metric-card__body">
+            <span class="metric-card__label">Online Now</span>
+            <span class="metric-card__value" [style.color]="(stats()?.online_users ?? 0) > 0 ? '#10b981' : 'inherit'">{{ (stats()?.online_users ?? 0) | number }}</span>
+          </div>
+        </div>
 
         <!-- Total Users -->
         <div class="metric-card">
@@ -123,10 +136,11 @@
       </div>
 
       <!-- Engagement & Feedback Section -->
-      <div class="section-title-group" style="margin-top: 3rem; margin-bottom: 1.5rem;">
-        <h2 class="section-heading">Engagement & Feedback</h2>
-        <p class="section-subheading">User satisfaction and interaction metrics.</p>
-      </div>
+      <app-analysis-section-header 
+        title="Engagement & Feedback" 
+        description="User satisfaction and interaction metrics."
+        marginBottom="mb-6">
+      </app-analysis-section-header>
 
       <div class="metrics-grid">
         <div class="metric-card">
@@ -191,10 +205,11 @@
 
       <!-- Top Active Users Table -->
       <div class="top-users-section" style="margin-top: 3rem;">
-        <div class="section-title-group" style="margin-bottom: 1.5rem;">
-          <h2 class="section-heading">Top Active Users</h2>
-          <p class="section-subheading">Users with the highest analysis activity.</p>
-        </div>
+        <app-analysis-section-header 
+          title="Top Active Users" 
+          description="Users with the highest analysis activity."
+          marginBottom="mb-6">
+        </app-analysis-section-header>
         
         <!-- Mobile Sort (shown only on small screens) -->
         <div class="mobile-sort hide-desktop-dashboard" style="margin-top: 1rem;">

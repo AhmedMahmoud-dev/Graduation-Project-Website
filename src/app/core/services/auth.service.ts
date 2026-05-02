@@ -37,6 +37,8 @@ export class AuthService {
   // Tracks if the user has successfully requested a reset code
   resetEmailInitiated = signal<string | null>(null);
 
+  isAppInitialized = signal(false);
+
   constructor() {
     if (this.isBrowser) {
       // Subscribe to remote force logout events from SignalR
@@ -52,20 +54,6 @@ export class AuthService {
         this.clearAllAuth();
       } else {
         this.currentUser.set(user);
-
-        // Professional Logic: Only trigger normal website APIs if NOT an admin
-        if (!this.isAdmin()) {
-          if (user.token) {
-            this.alertsService.fetchStats();
-            this.alertsService.fetchSettings();
-            this.alertsService.initSignalR(user.token);
-          }
-        } else {
-          // Admins only need SignalR (if needed) but NO user-specific alert APIs
-          if (user.token) {
-            this.alertsService.initSignalR(user.token);
-          }
-        }
       }
     }
   }
@@ -106,9 +94,14 @@ export class AuthService {
             this.alertsService.fetchStats();
             this.alertsService.fetchSettings();
 
-            // Alerts Page Background Prefetch
-            this.alertService.getAlerts(1, 50).subscribe(r => {
-              if (r.is_success && r.data) localStorage.setItem('emotra_alerts_meta', JSON.stringify(r.data.items));
+            // Alerts Page Background Prefetch (Matches AlertsComponent pageSize: 10)
+            this.alertService.getAlerts(1, 10).subscribe(r => {
+              if (r.is_success && r.data) {
+                localStorage.setItem('emotra_alerts_meta', JSON.stringify({
+                  data: r.data.items,
+                  total: r.data.total_count
+                }));
+              }
             });
             this.alertService.getStats().subscribe(r => {
               if (r.is_success && r.data) localStorage.setItem('emotra_alerts_stats', JSON.stringify(r.data));
@@ -216,7 +209,7 @@ export class AuthService {
   /**
    * Clears all auth-related and cache storage keys for both admin and user
    */
-  private clearAllAuth(): void {
+  public clearAllAuth(): void {
     if (!this.isBrowser) return;
 
     // Core keys that MUST be removed
@@ -257,7 +250,7 @@ export class AuthService {
     // Clear Session Storage
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
-      if (key && key.startsWith('emotra_')) {
+      if (key && key.startsWith('emotra_') && key !== 'emotra_ban_details') {
         sessionStorage.removeItem(key);
         i--;
       }
@@ -275,12 +268,47 @@ export class AuthService {
       return of(null);
     }
 
-    const url = `${environment.apiUrl}/api/alerts/stats`;
+    const isAdmin = this.isAdmin();
+    const url = isAdmin
+      ? `${environment.apiUrl}/api/admin/health`
+      : `${environment.apiUrl}/api/alerts/stats`;
+
     return this.http.get(url).pipe(
-      catchError(() => {
-        // Interceptor handles 401/403 (logout & ban notice)
-        // We return of(null) here to allow the APP_INITIALIZER to complete
-        // and let the app handle the navigation triggered by the interceptor
+      tap(() => {
+        this.isAppInitialized.set(true);
+        const user = this.getCurrentUser();
+        if (user?.token) {
+          if (!this.isAdmin()) {
+            this.alertsService.fetchStats();
+            this.alertsService.fetchSettings();
+          }
+          this.alertsService.initSignalR(user.token);
+        }
+      }),
+      catchError((error) => {
+        // If the backend ban middleware short-circuits before CORS, the browser
+        // blocks the response and Angular sees status === 0.
+        // We must treat status 0 (when online) as a potential ban to prevent access.
+        if (error?.status === 0) {
+          if (this.isBrowser && navigator.onLine) {
+            this.clearAllAuth();
+            window.location.href = '/auth/login';
+            return new Observable(); // Halt bootstrap
+          }
+          // If genuinely offline, we might allow optimistic load, but usually, we just stop.
+          this.isAppInitialized.set(true);
+          return of(null);
+        }
+        if (error?.status === 401 || error?.status === 403) {
+          if (error.status === 403 && error.error?.data?.ban_reason) {
+            this.storeBanDetails(error.error.data);
+          }
+          this.clearAllAuth();
+          if (this.isBrowser) {
+            window.location.href = '/auth/login';
+            return new Observable();
+          }
+        }
         return of(null);
       })
     );

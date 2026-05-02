@@ -56,26 +56,26 @@
                     <thead>
                         <tr>
                             <th>User</th>
-                            <th (click)="sortState.toggleSort('subject')" class="cursor-pointer select-none group">
+                            <th (click)="sortState.toggleSort('subject')" class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
                                 <div class="flex items-center gap-1">
                                     Subject
-                                    <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'subject'">
+                                    <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'subject'" [class.group-hover:opacity-50]="sortState.sortColumn() !== 'subject'" [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'subject'">
                                         {{ sortState.sortColumn() === 'subject' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
                                     </span>
                                 </div>
                             </th>
-                            <th (click)="sortState.toggleSort('created_at')" class="cursor-pointer select-none group">
+                            <th (click)="sortState.toggleSort('created_at')" class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
                                 <div class="flex items-center gap-1">
                                     Date
-                                    <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'created_at'">
+                                    <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'created_at'" [class.group-hover:opacity-50]="sortState.sortColumn() !== 'created_at'" [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'created_at'">
                                         {{ sortState.sortColumn() === 'created_at' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
                                     </span>
                                 </div>
                             </th>
-                            <th (click)="sortState.toggleSort('status')" class="cursor-pointer select-none group">
+                            <th (click)="sortState.toggleSort('status')" class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
                                 <div class="flex items-center gap-1">
                                     Status
-                                    <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'status'">
+                                    <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'status'" [class.group-hover:opacity-50]="sortState.sortColumn() !== 'status'" [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'status'">
                                         {{ sortState.sortColumn() === 'status' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
                                     </span>
                                 </div>

@@ -12,6 +12,8 @@ import { PageHeaderComponent } from '../../../shared/components/layout/page-head
 import { ToastService } from '../../../core/services/toast.service';
 import { DropdownMenuComponent, DropdownOption } from '../../../shared/components/dropdown-menu/dropdown-menu.component';
 import { AuthService } from '../../../core/services/auth.service';
+import { SearchInputComponent } from '../../../shared/components/search-input/search-input.component';
+
 
 interface CachedUsersData {
   users: AdminUser[];
@@ -24,7 +26,7 @@ const CACHE_KEY = 'emotra_admin_users';
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, LoadingStateComponent, EmptyStateComponent, PageHeaderComponent, DropdownMenuComponent, ReactiveFormsModule],
+  imports: [CommonModule, LoadingStateComponent, EmptyStateComponent, PageHeaderComponent, DropdownMenuComponent, ReactiveFormsModule, SearchInputComponent],
   templateUrl: './admin-users.component.html',
   styleUrl: './admin-users.component.css'
 })
@@ -39,9 +41,36 @@ export class AdminUsersComponent implements OnInit {
   currentUser = this.authService.currentUser;
 
   users = signal<AdminUser[]>([]);
+  searchQuery = signal<string>('');
+  statusFilter = signal<string>('all');
+
+  filteredUsers = computed(() => {
+    const q = this.searchQuery().toLowerCase().trim();
+    const status = this.statusFilter();
+    let list = this.users();
+
+    // 1. Status Filter
+    if (status !== 'all') {
+      list = list.filter(user => {
+        if (status === 'online') return this.isUserOnline(user);
+        if (status === 'offline') return !this.isUserOnline(user) && user.is_active;
+        if (status === 'banned') return !user.is_active;
+        return true;
+      });
+    }
+
+    // 2. Search Query
+    if (!q) return list;
+
+    return list.filter(user =>
+      `${user.first_name} ${user.last_name}`.toLowerCase().includes(q) ||
+      user.email.toLowerCase().includes(q) ||
+      user.id.toLowerCase().includes(q)
+    );
+  });
 
   // Sorting
-  sortState = useTableSort<AdminUser>(this.users);
+  sortState = useTableSort<AdminUser>(this.filteredUsers);
   sortedUsers = this.sortState.sortedData;
 
   isLoading = signal<boolean>(true);
@@ -82,6 +111,13 @@ export class AdminUsersComponent implements OnInit {
     { label: "7 Days", value: 168 },
     { label: "30 Days", value: 720 },
     { label: "Permanent", value: -1 }
+  ];
+
+  statusOptions: DropdownOption[] = [
+    { label: 'All Status', value: 'all' },
+    { label: 'Online', value: 'online' },
+    { label: 'Offline', value: 'offline' },
+    { label: 'Banned', value: 'banned' }
   ];
 
   onBanReasonChange(value: any) {
@@ -136,7 +172,7 @@ export class AdminUsersComponent implements OnInit {
             u.id === user.id ? { ...u, is_active: false } : u
           );
           this.users.set(updatedList);
-          
+
           this.cache.setItem<CachedUsersData>(CACHE_KEY, {
             users: updatedList,
             total: this.totalUsers(),
@@ -215,7 +251,8 @@ export class AdminUsersComponent implements OnInit {
     { label: 'Name (Z-A)', value: 'first_name:desc' },
     { label: 'Newest First', value: 'created_at:desc' },
     { label: 'Oldest First', value: 'created_at:asc' },
-    { label: 'Analyses (High-Low)', value: 'total_analyses:desc' }
+    { label: 'Analyses (High-Low)', value: 'total_analyses:desc' },
+    { label: 'Status', value: 'is_active:asc' }
   ];
 
   selectedSortValue = computed(() => {
@@ -316,7 +353,7 @@ export class AdminUsersComponent implements OnInit {
           const updatedList = this.users().filter(u => u.id !== user.id);
           this.users.set(updatedList);
           this.totalUsers.update(t => t - 1);
-          
+
           this.cache.setItem<CachedUsersData>(CACHE_KEY, {
             users: updatedList,
             total: this.totalUsers(),
@@ -354,6 +391,19 @@ export class AdminUsersComponent implements OnInit {
       pages.push(i);
     }
     return pages;
+  }
+
+  isUserOnline(user: AdminUser): boolean {
+    // A user is online if their account is active AND the server reports them as online
+    if (!user.is_active) return false;
+    if (user.is_online) return true;
+
+    // Fallback: If not explicitly online but seen in the last 60 seconds (heartbeat delay)
+    if (!user.last_seen_at) return false;
+    const dateStr = user.last_seen_at.endsWith('Z') ? user.last_seen_at : user.last_seen_at + 'Z';
+    const lastSeen = new Date(dateStr).getTime();
+    const now = Date.now();
+    return (now - lastSeen) < 60 * 1000;
   }
 
 }

@@ -26,6 +26,7 @@ export interface PlatformStats {
   analyses_by_type_trend: Array<{ date: string; text_count: number; audio_count: number }>;
   top_active_users: Array<{ user_id: string; full_name: string; email: string; analysis_count: number }>;
   system_feedback_count: number;
+  online_users: number;
 }
 
 export interface AdminUser {
@@ -34,6 +35,10 @@ export interface AdminUser {
   last_name: string;
   email: string;
   is_active: boolean;
+  is_online: boolean;
+  last_seen_at: string | null;
+  ban_reason: string | null;
+  ban_expires_at: string | null;
   created_at: string;
   total_analyses: number;
 }

@@ -41,20 +41,42 @@
 
   <!-- Page Content -->
   <section class="admin-content-section">
+    <!-- Toolbar Row -->
+    <div class="flex flex-col md:flex-row items-center gap-4 mb-8 relative z-[70]">
+      <div class="w-full md:flex-1">
+        <app-search-input [value]="searchQuery()" (valueChange)="searchQuery.set($event)"
+          placeholder="Search by name, email or ID...">
+        </app-search-input>
+      </div>
+      <div class="w-full md:w-48">
+        <app-dropdown-menu [options]="statusOptions" [selectedValue]="statusFilter()"
+          (selectedValueChange)="statusFilter.set($event)" placeholder="Filter by Status">
+        </app-dropdown-menu>
+      </div>
+    </div>
+
     <!-- Empty List -->
-    @if (users().length === 0) {
+    @if (sortedUsers().length === 0) {
     <app-empty-state>
       <svg empty-icon xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
         <path
           d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
-      <span empty-msg>No Users Found</span>
-      <span empty-hint>There are no registered users yet.</span>
+      <span empty-msg>
+        {{ searchQuery().trim() || statusFilter() !== 'all' ? 'No Matching Users' : 'No Users Found' }}
+      </span>
+      <span empty-hint>
+        {{ 
+          searchQuery().trim() || statusFilter() !== 'all' 
+          ? 'Try adjusting your filters or search query to find what you\'re looking for.' 
+          : 'There are no registered users yet.' 
+        }}
+      </span>
     </app-empty-state>
     }
 
     <!-- Table (Desktop) -->
-    @if (users().length > 0) {
+    @if (sortedUsers().length > 0) {
     <div class="table-wrapper hide-mobile">
       <table class="data-table">
         <thead>
@@ -122,10 +144,20 @@
           <tr>
             <td>
               <div class="user-cell">
-                <div class="user-avatar">{{ user.first_name[0] }}{{ user.last_name[0] }}</div>
+                <div class="relative">
+                  <div class="user-avatar">{{ user.first_name[0] }}{{ user.last_name[0] }}</div>
+                  <span
+                    class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[color:var(--color-surface)]"
+                    [style.background]="isUserOnline(user) ? 'var(--color-success)' : 'var(--color-text-muted)'"
+                    [title]="isUserOnline(user) ? 'Online now' : (user.last_seen_at ? 'Last seen: ' + format.formatDate(user.last_seen_at) : 'Never seen')">
+                  </span>
+                </div>
                 <div class="user-info">
                   <span class="user-name">{{ user.first_name }} {{ user.last_name }}</span>
                   <span class="user-email-mobile">{{ user.email }}</span>
+                  @if (user.last_seen_at && !isUserOnline(user)) {
+                  <span class="user-last-seen">Last seen: {{ format.formatDate(user.last_seen_at) }}</span>
+                  }
                 </div>
               </div>
             </td>
@@ -139,10 +171,13 @@
               <span class="text-secondary">{{ format.formatDate(user.created_at) }}</span>
             </td>
             <td>
-              <span class="status-badge" [class.status-badge--active]="user.is_active"
-                [class.status-badge--banned]="!user.is_active">
-                {{ user.is_active ? 'Active' : 'Banned' }}
-              </span>
+              @if (!user.is_active) {
+              <span class="status-badge status-badge--banned">Banned</span>
+              } @else if (isUserOnline(user)) {
+              <span class="status-badge status-badge--online">Online</span>
+              } @else {
+              <span class="status-badge status-badge--offline">Offline</span>
+              }
             </td>
             <td>
               <div class="flex items-center gap-2">
@@ -182,16 +217,31 @@
       <div class="mobile-card">
         <div class="mobile-card__header">
           <div class="user-cell">
-            <div class="user-avatar">{{ user.first_name[0] }}{{ user.last_name[0] }}</div>
+            <div class="relative">
+              <div class="user-avatar">{{ user.first_name[0] }}{{ user.last_name[0] }}</div>
+              <span
+                class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[color:var(--color-surface)]"
+                [style.background]="isUserOnline(user) ? 'var(--color-success)' : 'var(--color-text-muted)'"
+                [title]="isUserOnline(user) ? 'Online now' : (user.last_seen_at ? 'Last seen: ' + format.formatDate(user.last_seen_at) : 'Never seen')">
+              </span>
+            </div>
             <div class="user-info">
               <span class="user-name">{{ user.first_name }} {{ user.last_name }}</span>
               <span class="user-email-mobile" style="display: block;">{{ user.email }}</span>
+              @if (user.last_seen_at && !isUserOnline(user)) {
+              <span class="user-last-seen" style="display: block; font-size: 10px; color: var(--text-muted); margin-top: 2px;">
+                Last seen: {{ format.formatDate(user.last_seen_at) }}
+              </span>
+              }
             </div>
           </div>
-          <span class="status-badge" [class.status-badge--active]="user.is_active"
-            [class.status-badge--banned]="!user.is_active">
-            {{ user.is_active ? 'Active' : 'Banned' }}
-          </span>
+          @if (!user.is_active) {
+          <span class="status-badge status-badge--banned">Banned</span>
+          } @else if (isUserOnline(user)) {
+          <span class="status-badge status-badge--online">Online</span>
+          } @else {
+          <span class="status-badge status-badge--offline">Offline</span>
+          }
         </div>
         <div class="mobile-card__body">
           <div class="mobile-card__stat">
@@ -267,6 +317,13 @@
           <h2 class="text-xl font-extrabold font-heading text-[color:var(--text-primary)]">Ban User</h2>
           <p class="text-[11px] font-bold text-[color:var(--text-muted)] tracking-wider mt-0.5">{{
             selectedUserForBan()?.email }}</p>
+          @if (isUserOnline(selectedUserForBan()!)) {
+          <span class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest mt-1"
+            style="color: var(--color-success)">
+            <span class="w-1.5 h-1.5 rounded-full bg-[color:var(--color-success)]"></span>
+            User is online now
+          </span>
+          }
         </div>
         <button (click)="closeBanModal()"
           class="p-2 hover:bg-[color:var(--bg-hover)] rounded-xl transition-all text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)]">
