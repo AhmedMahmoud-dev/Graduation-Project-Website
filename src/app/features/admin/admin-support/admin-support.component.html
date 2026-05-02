@@ -2,7 +2,8 @@
 
     <!-- Loading -->
     @if (isLoading()) {
-    <app-loading-state message="Loading Support Queue..." subtitle="Fetching pending inquiries" size="md" [fullPage]="true">
+    <app-loading-state message="Loading Support Queue..." subtitle="Fetching pending inquiries" size="md"
+        [fullPage]="true">
     </app-loading-state>
     }
 
@@ -10,7 +11,8 @@
     @if (!isLoading() && error()) {
     <app-empty-state [isFullPage]="true">
         <svg empty-icon xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <path
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
         <span empty-msg>Failed to Load Support Queue</span>
         <span empty-hint>{{ error() }}</span>
@@ -22,7 +24,7 @@
 
     <!-- Content -->
     @if (!isLoading() && !error()) {
-    
+
     <!-- Header Section -->
     <section class="admin-header-section">
         <app-page-header title="Support Queue" subtitle="ADMIN PANEL"
@@ -42,209 +44,232 @@
     <!-- Content Section -->
     <section class="admin-content-section">
         @if (messages().length === 0) {
-            <app-empty-state minHeight="40vh">
-                <svg empty-icon fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <ng-container empty-msg>Clear for now!</ng-container>
-                <ng-container empty-hint>All support requests have been handled.</ng-container>
-            </app-empty-state>
+        <app-empty-state minHeight="40vh">
+            <svg empty-icon fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <ng-container empty-msg>Clear for now!</ng-container>
+            <ng-container empty-hint>All support requests have been handled.</ng-container>
+        </app-empty-state>
         } @else {
-            <!-- Desktop Table -->
-            <div class="table-wrapper hide-mobile">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th (click)="sortState.toggleSort('subject')" class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
-                                <div class="flex items-center gap-1">
-                                    Subject
-                                    <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'subject'" [class.group-hover:opacity-50]="sortState.sortColumn() !== 'subject'" [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'subject'">
-                                        {{ sortState.sortColumn() === 'subject' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
-                                    </span>
-                                </div>
-                            </th>
-                            <th (click)="sortState.toggleSort('created_at')" class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
-                                <div class="flex items-center gap-1">
-                                    Date
-                                    <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'created_at'" [class.group-hover:opacity-50]="sortState.sortColumn() !== 'created_at'" [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'created_at'">
-                                        {{ sortState.sortColumn() === 'created_at' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
-                                    </span>
-                                </div>
-                            </th>
-                            <th (click)="sortState.toggleSort('status')" class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
-                                <div class="flex items-center gap-1">
-                                    Status
-                                    <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'status'" [class.group-hover:opacity-50]="sortState.sortColumn() !== 'status'" [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'status'">
-                                        {{ sortState.sortColumn() === 'status' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
-                                    </span>
-                                </div>
-                            </th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (msg of sortedMessages(); track msg.id) {
-                        <tr [class.row--expanded]="expandedMessageId() === msg.id">
-                            <td>
-                                <div class="user-cell">
-                                    <div class="user-avatar">{{ msg.user_name.charAt(0) }}</div>
-                                    <div class="user-info">
-                                        <span class="user-name">{{ msg.user_name }}</span>
-                                        <span class="user-email-table">{{ msg.user_email }}</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="font-bold text-[color:var(--text-primary)]">{{ msg.subject }}</span></td>
-                            <td><span class="text-[color:var(--text-secondary)]">{{ format.formatDate(msg.created_at) }}</span></td>
-                            <td>
-                                <span class="status-badge" 
-                                    [class.status-badge--pending]="msg.status === 'open' || msg.status === 'pending'"
-                                    [class.status-badge--success]="msg.status === 'replied'">
-                                    {{ (msg.status === 'open' || msg.status === 'pending') ? 'Pending' : 'Replied' }}
+        <!-- Desktop Table -->
+        <div class="table-wrapper hide-mobile">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th (click)="sortState.toggleSort('subject')"
+                            class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
+                            <div class="flex items-center gap-1">
+                                Subject
+                                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'subject'"
+                                    [class.group-hover:opacity-50]="sortState.sortColumn() !== 'subject'"
+                                    [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'subject'">
+                                    {{ sortState.sortColumn() === 'subject' && sortState.sortDirection() === 'desc' ?
+                                    '▼' : '▲' }}
                                 </span>
-                            </td>
-                            <td>
-                                <button (click)="toggleMessage(msg.id)" class="expand-btn" [class.expand-btn--active]="expandedMessageId() === msg.id">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                        <path d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </button>
-                            </td>
-                        </tr>
-                        @if (expandedMessageId() === msg.id) {
-                        <tr>
-                            <td colspan="5" class="p-0 border-none">
-                                <div class="detail-panel">
-                                    <div class="detail-grid">
-                                        <div class="detail-section">
-                                            <h4 class="detail-label">Message Content</h4>
-                                            <div class="detail-text">{{ msg.message }}</div>
+                            </div>
+                        </th>
+                        <th (click)="sortState.toggleSort('created_at')"
+                            class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
+                            <div class="flex items-center gap-1">
+                                Date
+                                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'created_at'"
+                                    [class.group-hover:opacity-50]="sortState.sortColumn() !== 'created_at'"
+                                    [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'created_at'">
+                                    {{ sortState.sortColumn() === 'created_at' && sortState.sortDirection() === 'desc' ?
+                                    '▼' : '▲' }}
+                                </span>
+                            </div>
+                        </th>
+                        <th (click)="sortState.toggleSort('status')"
+                            class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
+                            <div class="flex items-center gap-1">
+                                Status
+                                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'status'"
+                                    [class.group-hover:opacity-50]="sortState.sortColumn() !== 'status'"
+                                    [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'status'">
+                                    {{ sortState.sortColumn() === 'status' && sortState.sortDirection() === 'desc' ? '▼'
+                                    : '▲' }}
+                                </span>
+                            </div>
+                        </th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (msg of sortedMessages(); track msg.id) {
+                    <tr [class.row--expanded]="expandedMessageId() === msg.id">
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar">{{ msg.user_name.charAt(0) }}</div>
+                                <div class="user-info">
+                                    <span class="user-name">{{ msg.user_name }}</span>
+                                    <span class="user-email-table">{{ msg.user_email }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="font-bold text-[color:var(--text-primary)]">{{ msg.subject }}</span></td>
+                        <td><span class="text-[color:var(--text-secondary)]">{{ format.formatDate(msg.created_at)
+                                }}</span></td>
+                        <td>
+                            <span class="status-badge"
+                                [class.status-badge--pending]="msg.status === 'open' || msg.status === 'pending'"
+                                [class.status-badge--success]="msg.status === 'replied'">
+                                {{ (msg.status === 'open' || msg.status === 'pending') ? 'Pending' : 'Replied' }}
+                            </span>
+                        </td>
+                        <td>
+                            <button (click)="toggleMessage(msg.id)" class="expand-btn"
+                                [class.expand-btn--active]="expandedMessageId() === msg.id">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                    @if (expandedMessageId() === msg.id) {
+                    <tr>
+                        <td colspan="5" class="p-0 border-none">
+                            <div class="detail-panel">
+                                <div class="detail-grid">
+                                    <div class="detail-section">
+                                        <h4 class="detail-label">Message Content</h4>
+                                        <div class="detail-text">{{ msg.message }}</div>
+                                    </div>
+
+                                    <div class="detail-section">
+                                        <h4 class="detail-label">{{ msg.status === 'replied' ? 'Response Sent' :
+                                            'Compose Reply' }}</h4>
+
+                                        @if (msg.status !== 'replied') {
+                                        <div class="reply-container">
+                                            <textarea [ngModel]="replyText()[msg.id]"
+                                                (ngModelChange)="updateReplyText(msg.id, $event)"
+                                                placeholder="Type your response here..." rows="4"
+                                                class="reply-textarea"></textarea>
+                                            <div class="flex justify-end mt-4">
+                                                <button (click)="submitReply(msg.id)"
+                                                    [disabled]="isReplying() === msg.id || !replyText()[msg.id]"
+                                                    class="action-btn action-btn--primary">
+                                                    @if (isReplying() === msg.id) {
+                                                    <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                                                        <circle class="opacity-25" cx="12" cy="12" r="10"
+                                                            stroke="currentColor" stroke-width="4"></circle>
+                                                        <path class="opacity-75" fill="currentColor"
+                                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                                        </path>
+                                                    </svg>
+                                                    Sending...
+                                                    } @else {
+                                                    Submit Reply
+                                                    }
+                                                </button>
+                                            </div>
                                         </div>
-                                        
-                                        <div class="detail-section">
-                                            <h4 class="detail-label">{{ msg.status === 'replied' ? 'Response Sent' : 'Compose Reply' }}</h4>
-                                            
-                                            @if (msg.status !== 'replied') {
-                                                <div class="reply-container">
-                                                    <textarea [ngModel]="replyText()[msg.id]" (ngModelChange)="updateReplyText(msg.id, $event)"
-                                                        placeholder="Type your response here..."
-                                                        rows="4"
-                                                        class="reply-textarea"></textarea>
-                                                    <div class="flex justify-end mt-4">
-                                                        <button (click)="submitReply(msg.id)" [disabled]="isReplying() === msg.id || !replyText()[msg.id]"
-                                                            class="action-btn action-btn--primary">
-                                                            @if (isReplying() === msg.id) {
-                                                                <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
-                                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                                </svg>
-                                                                Sending...
-                                                            } @else {
-                                                                Submit Reply
-                                                            }
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            } @else {
-                                                <div class="replied-success-box">
-                                                    <div class="success-icon">
-                                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                                        </svg>
-                                                    </div>
-                                                    <div>
-                                                        <p class="success-title">Message Handled</p>
-                                                        <p class="success-subtitle">Replied on {{ format.formatDate(msg.replied_at) }}</p>
-                                                    </div>
-                                                </div>
-                                            }
+                                        } @else {
+                                        <div class="replied-success-box">
+                                            <div class="success-icon">
+                                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                                    stroke-width="3">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p class="success-title">Message Handled</p>
+                                                <p class="success-subtitle">Replied on {{
+                                                    format.formatDate(msg.replied_at) }}</p>
+                                            </div>
                                         </div>
+                                        }
                                     </div>
                                 </div>
-                            </td>
-                        </tr>
-                        }
-                        }
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Mobile View -->
-            <div class="mobile-sort hide-desktop">
-                <label>Sort by:</label>
-                <div class="select-wrapper">
-                    <app-dropdown-menu [options]="sortOptions" [selectedValue]="selectedSortValue()"
-                        (selectedValueChange)="onMobileSortChange($event)">
-                    </app-dropdown-menu>
-                </div>
-            </div>
-
-            <div class="mobile-cards hide-desktop">
-                @for (msg of sortedMessages(); track msg.id) {
-                <div class="mobile-card">
-                    <div class="mobile-card__header">
-                        <div class="user-cell">
-                            <div class="user-avatar">{{ msg.user_name.charAt(0) }}</div>
-                            <div class="user-info">
-                                <span class="user-name">{{ msg.user_name }}</span>
-                                <span class="user-email-mobile">{{ msg.user_email }}</span>
                             </div>
+                        </td>
+                    </tr>
+                    }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile View -->
+        <div class="mobile-sort hide-desktop">
+            <label>Sort by:</label>
+            <div class="select-wrapper">
+                <app-dropdown-menu [options]="sortOptions" [selectedValue]="selectedSortValue()"
+                    (selectedValueChange)="onMobileSortChange($event)">
+                </app-dropdown-menu>
+            </div>
+        </div>
+
+        <div class="mobile-cards hide-desktop">
+            @for (msg of sortedMessages(); track msg.id) {
+            <div class="mobile-card">
+                <div class="mobile-card__header">
+                    <div class="user-cell">
+                        <div class="user-avatar">{{ msg.user_name.charAt(0) }}</div>
+                        <div class="user-info">
+                            <span class="user-name">{{ msg.user_name }}</span>
+                            <span class="user-email-mobile">{{ msg.user_email }}</span>
                         </div>
-                        <span class="status-badge" 
-                            [class.status-badge--pending]="msg.status === 'open' || msg.status === 'pending'"
-                            [class.status-badge--success]="msg.status === 'replied'">
-                            {{ (msg.status === 'open' || msg.status === 'pending') ? 'Pending' : 'Replied' }}
-                        </span>
+                    </div>
+                    <span class="status-badge"
+                        [class.status-badge--pending]="msg.status === 'open' || msg.status === 'pending'"
+                        [class.status-badge--success]="msg.status === 'replied'">
+                        {{ (msg.status === 'open' || msg.status === 'pending') ? 'Pending' : 'Replied' }}
+                    </span>
+                </div>
+
+                <div class="mobile-card__body">
+                    <div class="mobile-card__stat">
+                        <span class="text-secondary">Subject</span>
+                        <span class="text-primary font-bold">{{ msg.subject }}</span>
+                    </div>
+                    <div class="mobile-card__stat">
+                        <span class="text-secondary">Received</span>
+                        <span class="text-primary font-bold">{{ format.formatDate(msg.created_at) }}</span>
+                    </div>
+                </div>
+
+                <button (click)="toggleMessage(msg.id)" class="mobile-expand-btn"
+                    [class.mobile-expand-btn--active]="expandedMessageId() === msg.id">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M19 9l-7 7-7-7" />
+                    </svg>
+                    {{ expandedMessageId() === msg.id ? 'Hide Details' : 'View & Reply' }}
+                </button>
+
+                @if (expandedMessageId() === msg.id) {
+                <div class="mobile-detail">
+                    <div class="detail-section">
+                        <h4 class="detail-label">Message</h4>
+                        <div class="detail-text">{{ msg.message }}</div>
                     </div>
 
-                    <div class="mobile-card__body">
-                        <div class="mobile-card__stat">
-                            <span class="text-secondary">Subject</span>
-                            <span class="text-primary font-bold">{{ msg.subject }}</span>
-                        </div>
-                        <div class="mobile-card__stat">
-                            <span class="text-secondary">Received</span>
-                            <span class="text-primary font-bold">{{ format.formatDate(msg.created_at) }}</span>
-                        </div>
+                    @if (msg.status !== 'replied') {
+                    <div class="detail-section mt-2">
+                        <h4 class="detail-label">Your Reply</h4>
+                        <textarea [ngModel]="replyText()[msg.id]" (ngModelChange)="updateReplyText(msg.id, $event)"
+                            placeholder="Type response..." rows="3" class="reply-textarea"></textarea>
+                        <button (click)="submitReply(msg.id)"
+                            [disabled]="isReplying() === msg.id || !replyText()[msg.id]"
+                            class="action-btn action-btn--primary w-full mt-3">
+                            {{ isReplying() === msg.id ? 'Sending...' : 'Submit Reply' }}
+                        </button>
                     </div>
-
-                    <button (click)="toggleMessage(msg.id)" class="mobile-expand-btn" [class.mobile-expand-btn--active]="expandedMessageId() === msg.id">
-                        <span>{{ expandedMessageId() === msg.id ? 'Close Details' : 'View & Reply' }}</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <path d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
-
-                    @if (expandedMessageId() === msg.id) {
-                    <div class="mobile-detail">
-                        <div class="detail-section">
-                            <h4 class="detail-label">Message</h4>
-                            <div class="detail-text">{{ msg.message }}</div>
-                        </div>
-
-                        @if (msg.status !== 'replied') {
-                        <div class="detail-section mt-2">
-                            <h4 class="detail-label">Your Reply</h4>
-                            <textarea [ngModel]="replyText()[msg.id]" (ngModelChange)="updateReplyText(msg.id, $event)"
-                                placeholder="Type response..."
-                                rows="3"
-                                class="reply-textarea"></textarea>
-                            <button (click)="submitReply(msg.id)" [disabled]="isReplying() === msg.id || !replyText()[msg.id]"
-                                class="action-btn action-btn--primary w-full mt-3">
-                                {{ isReplying() === msg.id ? 'Sending...' : 'Submit Reply' }}
-                            </button>
-                        </div>
-                        } @else {
-                        <div class="replied-success-box mt-2">
-                            <p class="success-title">Replied on {{ format.formatDate(msg.replied_at) }}</p>
-                        </div>
-                        }
+                    } @else {
+                    <div class="replied-success-box mt-2">
+                        <p class="success-title">Replied on {{ format.formatDate(msg.replied_at) }}</p>
                     </div>
                     }
                 </div>
                 }
             </div>
+            }
+        </div>
         }
     </section>
     }

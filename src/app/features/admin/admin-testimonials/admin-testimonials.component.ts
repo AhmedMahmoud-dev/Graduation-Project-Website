@@ -48,10 +48,12 @@ export class AdminTestimonialsComponent implements OnInit {
 
   fetchTestimonials(isBackground: boolean = false): void {
     if (!isBackground) {
-      if (this.testimonials().length === 0) {
-        this.isLoading.set(true);
-      } else {
+      // If we already have data OR it's not the initial load (isLoading is false), 
+      // we prefer the refreshing spinner over the full-page loader
+      if (this.testimonials().length > 0 || !this.isLoading()) {
         this.isRefreshing.set(true);
+      } else {
+        this.isLoading.set(true);
       }
     }
     this.error.set(null);
