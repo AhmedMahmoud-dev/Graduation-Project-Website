@@ -19,6 +19,7 @@ export interface Toast {
   isAlert?: boolean;
   severity?: string;
   alertType?: string;
+  disableBackdropClose?: boolean;
 }
 
 export interface ConfirmToastOptions extends Partial<Toast> {
@@ -59,9 +60,15 @@ export class ToastService {
     }, duration);
   }
 
-  confirm(title: string, subtitle: string, onConfirm: (value?: string) => void, options?: Partial<Toast>) {
+  confirm(title: string, subtitle: string, onConfirm: (value?: string) => void, options?: Partial<Toast> & { duration?: number, forceOverride?: boolean }) {
     // Prevent opening multiple confirmations. User must resolve the current one first.
-    if (this.toastsSignal().some(t => t.isConfirmation)) return;
+    if (this.toastsSignal().some(t => t.isConfirmation)) {
+      if (options?.forceOverride) {
+        this.toastsSignal.update(toasts => toasts.filter(t => !t.isConfirmation));
+      } else {
+        return;
+      }
+    }
 
     const id = Math.random().toString(36).substring(2, 9);
     const newToast: Toast = {
@@ -77,10 +84,17 @@ export class ToastService {
       type: options?.type || 'warning',
       requireInput: options?.requireInput,
       expectedValue: options?.expectedValue,
-      inputType: options?.inputType || 'text'
+      inputType: options?.inputType || 'text',
+      disableBackdropClose: options?.disableBackdropClose
     };
 
     this.addToast(newToast);
+
+    if (options?.duration) {
+      setTimeout(() => {
+        this.dismiss(id);
+      }, options.duration);
+    }
   }
 
   private addToast(newToast: Toast) {

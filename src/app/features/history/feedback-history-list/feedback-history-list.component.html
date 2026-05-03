@@ -78,9 +78,14 @@
           </span>
           }
           @if (item.isPublic && item.moderationStatus) {
-          <span class="moderation-badge" [attr.data-status]="item.moderationStatus">
-            {{ item.moderationStatus }}
-          </span>
+          <div class="relative flex items-center group"
+               (mouseenter)="hoveredTooltipId.set(item.id + '-mobile')"
+               (mouseleave)="hoveredTooltipId.set(null)">
+            <span class="moderation-badge" [attr.data-status]="item.moderationStatus">
+              {{ item.moderationStatus }}
+            </span>
+            <app-tooltip [visible]="hoveredTooltipId() === item.id + '-mobile'" [text]="getTooltipText(item.moderationStatus)" position="top" class="pointer-events-none"></app-tooltip>
+          </div>
           }
         </div>
       </div>
@@ -134,9 +139,14 @@
 
           @if (item.isPublic && item.moderationStatus) {
           <span class="meta-divider !hidden md:!block"></span>
-          <span class="moderation-badge !hidden md:!inline-flex" [attr.data-status]="item.moderationStatus">
-            {{ item.moderationStatus }}
-          </span>
+          <div class="relative !hidden md:!inline-flex items-center group"
+               (mouseenter)="hoveredTooltipId.set(item.id + '-desktop')"
+               (mouseleave)="hoveredTooltipId.set(null)">
+            <span class="moderation-badge" [attr.data-status]="item.moderationStatus">
+              {{ item.moderationStatus }}
+            </span>
+            <app-tooltip [visible]="hoveredTooltipId() === item.id + '-desktop'" [text]="getTooltipText(item.moderationStatus)" position="top" class="pointer-events-none"></app-tooltip>
+          </div>
           }
         </div>
 

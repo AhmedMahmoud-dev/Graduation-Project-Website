@@ -28,6 +28,7 @@ import { AnalysisSectionHeaderComponent } from '../../../../shared/components/an
 import { TimelineDataPoint, DistributionDataPoint } from '../../../../core/models/chart-data.model';
 
 import { BaseAnalysisComponent } from '../../../../shared/base/base-analysis.component';
+import { AnalysisBgService } from '../../../../core/services/analysis-bg.service';
 
 type InputTab = 'upload' | 'record';
 
@@ -62,6 +63,7 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
   private sanitizer = inject(DomSanitizer);
   private themeService = inject(ThemeService);
   private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private analysisBgService = inject(AnalysisBgService);
 
   // ─── Base Contract ────────────────────────────────────────────────
   protected readonly analysisType = 'audio' as const;
@@ -77,6 +79,9 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
   isMobile = signal<boolean>(false);
   isDragging = signal<boolean>(false);
   isDraggingInvalid = signal<boolean>(false);
+  
+  showBrowseOption = signal<boolean>(false);
+  userChoseToBrowse = signal<boolean>(false);
 
   // File Upload State
   uploadedFile = signal<File | null>(null);
@@ -238,6 +243,33 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
           this.drawWaveform(true);
         }
       });
+    });
+
+    // Background Job Results Effect
+    effect(() => {
+      const jobResult = this.analysisBgService.jobResult();
+      if (jobResult && this.state() === 'loading' && !this.userChoseToBrowse()) {
+         untracked(() => {
+            const sid = jobResult.id;
+            const res = jobResult.result as AudioAnalysisResponse;
+            this.result.set(res);
+            this.sessionId.set(sid);
+            this.buildChartData(this.chartThemeService.getChartTheme());
+            this.state.set('results');
+            this.router.navigate([this.analysisRoute, sid], { replaceUrl: true });
+         });
+      }
+    });
+
+    // Background Job Error Effect
+    effect(() => {
+      const jobError = this.analysisBgService.jobError();
+      if (jobError && this.state() === 'loading' && !this.userChoseToBrowse()) {
+         untracked(() => {
+             this.error.set('Something went wrong. Please try again later.');
+             this.state.set('input');
+         });
+      }
     });
   }
 
@@ -651,7 +683,41 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
   startAnalysis() {
     const file = this.selectedFile();
     if (!file) return;
-    this.executeAnalysisFlow(this.audioService.analyze(file));
+    
+    this.state.set('loading');
+    this.error.set(null);
+    this.showBrowseOption.set(false);
+    this.userChoseToBrowse.set(false);
+    
+    this.analysisBgService.startBackgroundJob({
+      label: file.name,
+      type: 'audio',
+      resultRoute: this.analysisRoute,
+      analysis$: this.audioService.analyze(file),
+      onSuccess: (result: AudioAnalysisResponse, jobId: string) => {
+        const session = this.buildSessionPayload(jobId, result);
+        this.saveLocalSession(session);
+        this.onAnalysisSuccess(jobId, result);
+
+        this.orchestrationService.syncSessionToCloud(
+          jobId,
+          result,
+          this.analysisType,
+          (sid, res) => this.syncToCloud(sid, res)
+        );
+      }
+    });
+    
+    setTimeout(() => {
+      if (this.state() === 'loading') {
+        this.showBrowseOption.set(true);
+      }
+    }, 3000);
+  }
+
+  continueBrowsing() {
+    this.userChoseToBrowse.set(true);
+    this.router.navigate(['/dashboard']);
   }
 
   protected override onAnalysisSuccess(sid: string, _result: AudioAnalysisResponse): void {

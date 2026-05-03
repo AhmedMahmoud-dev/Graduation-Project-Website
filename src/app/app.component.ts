@@ -4,6 +4,7 @@ import { ColorSettingsService } from './core/services/color-settings.service';
 import { AuthService } from './core/services/auth.service';
 import { ToastComponent } from './shared/components/toast/toast.component';
 import { FaviconService } from './core/services/favicon.service';
+import { AnalysisBgService } from './core/services/analysis-bg.service';
 
 @Component({
   selector: 'app-root',
@@ -17,6 +18,7 @@ export class AppComponent implements OnInit {
   private colorSettingsService = inject(ColorSettingsService);
   private authService = inject(AuthService);
   private faviconService = inject(FaviconService); // Initialize dynamic favicon
+  private analysisBgService = inject(AnalysisBgService);
 
   ngOnInit(): void {
     // Initial application of colors is already handled by effects in ColorSettingsService
@@ -24,5 +26,7 @@ export class AppComponent implements OnInit {
     if (this.authService.isAuthenticated()) {
       this.colorSettingsService.syncWithBackend();
     }
+    
+    this.analysisBgService.checkPendingJobOnInit();
   }
 }

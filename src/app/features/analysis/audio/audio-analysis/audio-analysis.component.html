@@ -55,8 +55,7 @@
                 {{ formatDuration(currentTime()) }} / {{ formatDuration(duration()) }} · {{ fileInfo()?.size }}
               </p>
             </div>
-            <button (click)="clearFile()"
-              class="btn-remove">
+            <button (click)="clearFile()" class="btn-remove">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -165,14 +164,16 @@
             <div
               class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl flex items-center justify-center mb-4 border border-[color:var(--border-color)]"
               style="background: var(--bg-secondary)">
-              <svg class="w-9 h-9 sm:w-11 sm:h-11" style="color: var(--brand-primary); opacity: 0.6" fill="none" stroke="currentColor"
-                viewBox="0 0 24 24">
+              <svg class="w-9 h-9 sm:w-11 sm:h-11" style="color: var(--brand-primary); opacity: 0.6" fill="none"
+                stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                   d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
               </svg>
             </div>
-            <p class="text-base sm:text-lg font-bold tracking-tight" style="color: var(--text-primary)">Ready to Record</p>
-            <p class="text-xs sm:text-sm font-medium" style="color: var(--text-muted)">Click below to start capturing audio</p>
+            <p class="text-base sm:text-lg font-bold tracking-tight" style="color: var(--text-primary)">Ready to Record
+            </p>
+            <p class="text-xs sm:text-sm font-medium" style="color: var(--text-muted)">Click below to start capturing
+              audio</p>
           </div>
           <button (click)="startRecording()" class="btn-action btn-primary-action w-full sm:w-72 mt-5">
             <span class="record-dot" style="background: #fff"></span>
@@ -181,33 +182,42 @@
 
           <!-- Permission Guide -->
           @if (showPermissionGuide()) {
-          <div class="mt-6 p-6 rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] w-full max-w-lg animate-fade-in shadow-sm">
+          <div
+            class="mt-6 p-6 rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] w-full max-w-lg animate-fade-in shadow-sm">
             <div class="flex flex-col sm:flex-row items-start gap-5">
-              <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm" style="background: color-mix(in srgb, var(--emotion-fear), transparent 90%)">
-                <svg class="w-6 h-6" style="color: var(--emotion-fear)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+                style="background: color-mix(in srgb, var(--emotion-fear), transparent 90%)">
+                <svg class="w-6 h-6" style="color: var(--emotion-fear)" fill="none" stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
               <div class="flex-1">
-                <h5 class="text-base font-bold mb-3 tracking-tight" style="color: var(--text-primary)">How to unblock?</h5>
+                <h5 class="text-base font-bold mb-3 tracking-tight" style="color: var(--text-primary)">How to unblock?
+                </h5>
                 <ol class="space-y-3">
                   @for (step of permissionSteps(); track step; let i = $index) {
-                    <li class="text-sm leading-relaxed flex gap-3" style="color: var(--text-muted)">
-                      <span class="font-black opacity-20">{{ i + 1 }}.</span>
-                      <span [innerHTML]="step"></span>
-                    </li>
+                  <li class="text-sm leading-relaxed flex gap-3" style="color: var(--text-muted)">
+                    <span class="font-black opacity-20">{{ i + 1 }}.</span>
+                    <span [innerHTML]="step"></span>
+                  </li>
                   }
                 </ol>
-                
-                <div class="mt-6 pt-5 border-t border-[color:var(--color-border)] flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <button (click)="startRecording()" class="text-sm font-bold transition-colors hover:underline cursor-pointer" style="color: var(--color-primary)">
+
+                <div
+                  class="mt-6 pt-5 border-t border-[color:var(--color-border)] flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <button (click)="startRecording()"
+                    class="text-sm font-bold transition-colors hover:underline cursor-pointer"
+                    style="color: var(--color-primary)">
                     Already done? Try again
                   </button>
-                  
+
                   @if (micStillBlocked()) {
-                    <span class="text-[11px] font-bold px-3 py-1 rounded-full animate-fade-in" style="background: color-mix(in srgb, var(--color-danger), transparent 90%); color: var(--color-danger)">
-                      Microphone still blocked — please check the steps above
-                    </span>
+                  <span class="text-[11px] font-bold px-3 py-1 rounded-full animate-fade-in"
+                    style="background: color-mix(in srgb, var(--color-danger), transparent 90%); color: var(--color-danger)">
+                    Microphone still blocked — please check the steps above
+                  </span>
                   }
                 </div>
               </div>
@@ -236,13 +246,31 @@
 
   <!-- ===================== STATE: LOADING ===================== -->
   @if (state() === 'loading') {
-  <app-loading-tips [tips]="loadingTips"></app-loading-tips>
+  <div class="relative flex-1 flex flex-col">
+    <app-loading-tips [tips]="loadingTips" class="flex-1"></app-loading-tips>
+    @if (showBrowseOption() && !userChoseToBrowse()) {
+    <div class="absolute bottom-12 left-1/2 -translate-x-1/2 animate-fade-in z-10 text-center w-full px-4">
+      <p class="text-sm font-medium mb-3" style="color: var(--text-muted)">
+        This audio is taking a while to process. You can safely leave this page.
+      </p>
+      <button (click)="continueBrowsing()"
+        class="btn-action btn-outline-action inline-flex items-center px-6 py-2.5 mx-auto shadow-lg hover:shadow-xl transition-all"
+        style="background: var(--bg-card)">
+        <svg class="w-4 h-4 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Continue Browsing
+      </button>
+    </div>
+    }
+  </div>
   }
 
   <!-- ===================== STATE: FETCHING (REPORT) ===================== -->
   @if (state() === 'fetching') {
   <div class="flex-1 flex flex-col items-center justify-center p-12 min-h-[60vh]">
-    <app-loading-state message="Retrieving audio analysis report..." subtitle="Decoding emotional markers from the voice track"></app-loading-state>
+    <app-loading-state message="Retrieving audio analysis report..."
+      subtitle="Decoding emotional markers from the voice track"></app-loading-state>
   </div>
   }
 
@@ -302,9 +330,7 @@
       <!-- 3.4 Emotion Timeline -->
       <div
         class="rounded-2xl p-5 sm:p-12 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] shadow-xl relative overflow-hidden w-full">
-        <app-analysis-section-header 
-          title="Emotion Timeline" 
-          subtitle="Temporal Logic" 
+        <app-analysis-section-header title="Emotion Timeline" subtitle="Temporal Logic"
           description="A chronological journey of detected sentiments across speech segments">
         </app-analysis-section-header>
 
@@ -319,9 +345,7 @@
         <!-- Confidence Distribution -->
         <div
           class="rounded-2xl p-5 sm:p-10 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] shadow-xl w-full max-w-[calc(100vw-2.5rem)] sm:max-w-full">
-          <app-analysis-section-header 
-            title="Confidence Distribution" 
-            subtitle="Distribution" 
+          <app-analysis-section-header title="Confidence Distribution" subtitle="Distribution"
             description="Final confidence scores across the emotional spectrum">
           </app-analysis-section-header>
 
@@ -425,9 +449,7 @@
       </div>
       <!-- 3.6 Audio Segment Breakdown -->
       <section class="px-0 py-12" style="border-top: 1px solid var(--border-color)">
-        <app-analysis-section-header 
-          title="Segment Analysis" 
-          subtitle="Deep Dive" 
+        <app-analysis-section-header title="Segment Analysis" subtitle="Deep Dive"
           description="Detailed emotion analysis for each audio segment">
         </app-analysis-section-header>
 

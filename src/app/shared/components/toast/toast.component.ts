@@ -58,7 +58,7 @@ export class ToastComponent {
   }
 
   cancelAllConfirmations() {
-    const confirmations = this.toasts().filter(t => t.isConfirmation);
+    const confirmations = this.toasts().filter(t => t.isConfirmation && !t.disableBackdropClose);
     confirmations.forEach(toast => this.handleCancel(toast));
   }
 
