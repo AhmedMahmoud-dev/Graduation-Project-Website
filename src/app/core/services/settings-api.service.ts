@@ -3,16 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
-
-export interface ThemeColorsDto {
-  color_bg?: string;
-  color_surface?: string;
-  color_border?: string;
-  color_text?: string;
-  color_text_muted?: string;
-  color_primary?: string;
-  color_accent?: string;
-}
+import { ThemeColorsDto } from '../models/appearance.model';
 
 export interface AppearanceSettingsDto {
   light_theme?: ThemeColorsDto;

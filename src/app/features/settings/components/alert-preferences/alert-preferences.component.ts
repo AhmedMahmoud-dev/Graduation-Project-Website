@@ -2,7 +2,7 @@ import { Component, inject, signal, Output, EventEmitter, computed } from '@angu
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AlertsService } from '../../../../core/services/alerts.service';
-import { AlertSettings } from '../../../../core/models/alert.models';
+import { AlertSettings } from '../../../../core/models/alert.model';
 import { ToastService } from '../../../../core/services/toast.service';
 import { AppCacheService } from '../../../../core/services/app-cache.service';
 import { DropdownMenuComponent } from '../../../../shared/components/dropdown-menu/dropdown-menu.component';

@@ -3,7 +3,8 @@ import { Component, inject, signal, Output, EventEmitter, effect, computed } fro
 import { FormsModule } from '@angular/forms';
 import { ColorSettingsService, DEFAULT_LIGHT_COLORS, DEFAULT_DARK_COLORS, DEFAULT_EMOTION_COLORS, PRESET_THEMES } from '../../../../core/services/color-settings.service';
 import { SegmentedNavComponent } from '../../../../shared/components/segmented-nav/segmented-nav.component';
-import { SettingsApiService, AppearanceSettingsDto, ThemeColorsDto } from '../../../../core/services/settings-api.service';
+import { SettingsApiService, AppearanceSettingsDto } from '../../../../core/services/settings-api.service';
+import { ThemeColorsDto } from '../../../../core/models/appearance.model';
 import { ThemeService } from '../../../../core/services/theme.service';
 import { finalize } from 'rxjs/operators';
 

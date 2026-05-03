@@ -2,6 +2,7 @@ import { Injectable, signal, effect, inject, PLATFORM_ID, untracked } from '@ang
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ThemeService } from './theme.service';
+import { ThemeColorsDto } from '../models/appearance.model';
 import { environment } from '../../../environments/environment';
 
 export const DEFAULT_LIGHT_COLORS: Record<string, string> = {
@@ -33,16 +34,6 @@ export const DEFAULT_EMOTION_COLORS: Record<string, string> = {
   'sadness': '#4a90d9',
   'surprise': '#00d4aa',
 };
-
-export interface ThemeColorsDto {
-  color_bg?: string;
-  color_surface?: string;
-  color_border?: string;
-  color_text?: string;
-  color_text_muted?: string;
-  color_primary?: string;
-  color_accent?: string;
-}
 
 export const PRESET_THEMES = [
   {

@@ -5,8 +5,7 @@ import { environment } from '../../../environments/environment';
 import { ToastService } from './toast.service';
 import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 
-import { AlertStats, AlertSettings } from '../models/alert.models';
-import { AlertItem } from '../models/alert.model';
+import { AlertItem, AlertStats, AlertSettings } from '../models/alert.model';
 import { NotificationSettingsService } from './notification-settings.service';
 
 @Injectable({
