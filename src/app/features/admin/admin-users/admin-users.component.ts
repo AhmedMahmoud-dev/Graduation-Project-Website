@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal, computed, effect, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
@@ -177,7 +178,9 @@ export class AdminUsersComponent implements OnInit {
 
     this.isUpdating.set(true);
     this.updatingUserId.set(user.id);
-    this.adminService.updateUserStatus(user.id, false, finalReason, finalDuration).subscribe({
+    this.adminService.updateUserStatus(user.id, false, finalReason, finalDuration)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: (res) => {
         if (res.is_success) {
           const updatedList = this.users().map(u =>
@@ -231,7 +234,9 @@ export class AdminUsersComponent implements OnInit {
     }
     this.error.set(null);
 
-    this.adminService.getUsers(this.currentPage(), this.pageSize()).subscribe({
+    this.adminService.getUsers(this.currentPage(), this.pageSize())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: (res) => {
         if (res.is_success && res.data) {
           this.users.set(res.data);
@@ -307,7 +312,9 @@ export class AdminUsersComponent implements OnInit {
           this.isUpdating.set(true);
           this.updatingUserId.set(user.id);
 
-          this.adminService.updateUserStatus(user.id, true).subscribe({
+          this.adminService.updateUserStatus(user.id, true)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
             next: (res) => {
               if (res.is_success) {
                 const updatedList = this.users().map(u =>
@@ -367,7 +374,9 @@ export class AdminUsersComponent implements OnInit {
     this.isUpdating.set(true);
     this.updatingUserId.set(user.id);
 
-    this.adminService.deleteUser(user.id, password).subscribe({
+    this.adminService.deleteUser(user.id, password)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: (res) => {
         if (res.is_success) {
           const updatedList = this.users().filter(u => u.id !== user.id);

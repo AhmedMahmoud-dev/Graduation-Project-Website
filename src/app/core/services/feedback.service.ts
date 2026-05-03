@@ -26,7 +26,7 @@ export class FeedbackService {
   // 0. Caching Logic
   // ==========================================
 
-  getCachedAnalysisFeedback(analysisId: string): any | null {
+  getCachedAnalysisFeedback(analysisId: string): AnalysisFeedbackResponse | null {
     try {
       const raw = localStorage.getItem(this.FEEDBACK_STORAGE_KEY);
       if (!raw) return null;
@@ -37,7 +37,7 @@ export class FeedbackService {
     }
   }
 
-  cacheAnalysisFeedback(feedback: any): void {
+  cacheAnalysisFeedback(feedback: AnalysisFeedbackResponse): void {
     if (!feedback || !feedback.analysis_id) return;
     try {
       const raw = localStorage.getItem(this.FEEDBACK_STORAGE_KEY);
@@ -61,7 +61,7 @@ export class FeedbackService {
     }
   }
 
-  getCachedSystemFeedback(): any | null {
+  getCachedSystemFeedback(): SystemFeedbackResponse | null {
     try {
       const raw = localStorage.getItem(this.SYSTEM_FEEDBACK_STORAGE_KEY);
       return raw ? JSON.parse(raw) : null;
@@ -70,7 +70,7 @@ export class FeedbackService {
     }
   }
 
-  cacheSystemFeedback(feedback: any): void {
+  cacheSystemFeedback(feedback: SystemFeedbackResponse): void {
     try {
       localStorage.setItem(this.SYSTEM_FEEDBACK_STORAGE_KEY, JSON.stringify(feedback));
     } catch (e) {

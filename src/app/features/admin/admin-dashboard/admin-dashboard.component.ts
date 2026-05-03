@@ -1,10 +1,13 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { NgxEchartsDirective } from 'ngx-echarts';
 import { EChartsOption } from 'echarts';
 import { AdminService } from '../../../core/services/admin.service';
 import { PlatformStats } from '../../../core/models/admin.model';
 import { ChartThemeService } from '../../../core/services/chart-theme.service';
+import { ThemeService } from '../../../core/services/theme.service';
+import { ColorSettingsService } from '../../../core/services/color-settings.service';
 import { FormattingService } from '../../../core/services/formatting.service';
 import { AppCacheService } from '../../../core/services/app-cache.service';
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
@@ -15,6 +18,7 @@ import { DistributionDataPoint } from '../../../core/models/chart-data.model';
 import { useTableSort } from '../../../core/utils/sort.util';
 import { DropdownMenuComponent, DropdownOption } from '../../../shared/components/dropdown-menu/dropdown-menu.component';
 import { AnalysisSectionHeaderComponent } from '../../../shared/components/analysis-section-header/analysis-section-header.component';
+import { AdminChartService } from '../../../core/services/admin-chart.service';
 
 const CACHE_KEY = 'emotra_admin_stats';
 
@@ -37,8 +41,12 @@ const CACHE_KEY = 'emotra_admin_stats';
 export class AdminDashboardComponent implements OnInit {
   private adminService = inject(AdminService);
   private chartTheme = inject(ChartThemeService);
+  private themeService = inject(ThemeService);
+  private colorSettings = inject(ColorSettingsService);
   private cache = inject(AppCacheService);
   protected format = inject(FormattingService);
+  private destroyRef = inject(DestroyRef);
+  private chartService = inject(AdminChartService);
 
   stats = signal<PlatformStats | null>(null);
   isLoading = signal<boolean>(true);
@@ -89,18 +97,14 @@ export class AdminDashboardComponent implements OnInit {
   analysesByTypeData = computed<DistributionDataPoint[]>(() => {
     const currentStats = this.stats();
     if (!currentStats || !currentStats.analyses_by_type) return [];
-    const purple = getComputedStyle(document.documentElement).getPropertyValue('--color-brain').trim() || '#a855f7';
-    const blue = getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim() || '#3b82f6';
 
-    return Object.entries(currentStats.analyses_by_type).map(([label, value]) => {
-      const isAudio = label.toLowerCase() === 'audio';
-      const isText = label.toLowerCase() === 'text';
-      return {
-        label: label.charAt(0).toUpperCase() + label.slice(1),
-        value,
-        color: isAudio ? purple : (isText ? blue : undefined)
-      };
-    });
+    const isDark = this.themeService.resolvedTheme() === 'dark';
+    const themeColors = isDark ? this.colorSettings.darkColors() : this.colorSettings.lightColors();
+
+    const purple = themeColors['--color-primary'] || '#a855f7';
+    const blue = themeColors['--color-accent'] || '#3b82f6';
+
+    return this.chartService.getAnalysesByTypeOptions(currentStats, purple, blue);
   });
 
   /** Trend line chart options for general platform growth */
@@ -109,37 +113,13 @@ export class AdminDashboardComponent implements OnInit {
     const theme = this.chartTheme.getChartTheme();
     if (!currentStats) return {};
 
-    const dates = currentStats.analysis_trend.map(t => this.formatDate(t.date));
-    const newUsersDates = currentStats.new_users_trend.map(t => this.formatDate(t.date));
+    const isDark = this.themeService.resolvedTheme() === 'dark';
+    const themeColors = isDark ? this.colorSettings.darkColors() : this.colorSettings.lightColors();
 
-    const brandPrimary = getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim() || '#6c63ff';
-    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#00d4aa';
+    const brandPrimary = themeColors['--color-primary'] || '#6c63ff';
+    const accent = themeColors['--color-accent'] || '#00d4aa';
 
-    const allDates = Array.from(new Set([...dates, ...newUsersDates])).sort();
-    const dateToAnalysis = new Map(currentStats.analysis_trend.map(t => [this.formatDate(t.date), t.count]));
-    const dateToUsers = new Map(currentStats.new_users_trend.map(t => [this.formatDate(t.date), t.count]));
-
-    return {
-      ...theme,
-      backgroundColor: 'transparent',
-      tooltip: { ...theme.tooltip, trigger: 'axis' },
-      legend: { data: ['Analyses', 'New Users'], bottom: 0, textStyle: { ...theme.legend?.textStyle } },
-      grid: { left: 12, right: 24, bottom: 40, top: 16, containLabel: true },
-      xAxis: { ...theme.xAxis, type: 'category', boundaryGap: false, data: allDates } as any,
-      yAxis: { ...theme.yAxis, type: 'value' } as any,
-      series: [
-        {
-          name: 'Analyses', type: 'line', smooth: true, data: allDates.map(d => dateToAnalysis.get(d) ?? 0),
-          itemStyle: { color: brandPrimary }, lineStyle: { width: 2.5 },
-          areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: brandPrimary + '40' }, { offset: 1, color: brandPrimary + '00' }] } }
-        },
-        {
-          name: 'New Users', type: 'line', smooth: true, data: allDates.map(d => dateToUsers.get(d) ?? 0),
-          itemStyle: { color: accent }, lineStyle: { width: 2.5 },
-          areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: accent + '40' }, { offset: 1, color: accent + '00' }] } }
-        }
-      ]
-    } as any;
+    return this.chartService.getTrendChartOptions(currentStats, theme, brandPrimary, accent);
   });
 
   /** Detailed trend comparing Text vs Audio analyses over time */
@@ -148,46 +128,17 @@ export class AdminDashboardComponent implements OnInit {
     const theme = this.chartTheme.getChartTheme();
     if (!currentStats || !currentStats.analyses_by_type_trend) return {};
 
-    const dates = currentStats.analyses_by_type_trend.map(t => this.formatDate(t.date));
-    const textData = currentStats.analyses_by_type_trend.map(t => t.text_count);
-    const audioData = currentStats.analyses_by_type_trend.map(t => t.audio_count);
+    const isDark = this.themeService.resolvedTheme() === 'dark';
+    const themeColors = isDark ? this.colorSettings.darkColors() : this.colorSettings.lightColors();
 
-    const purple = getComputedStyle(document.documentElement).getPropertyValue('--color-brain').trim() || '#a855f7';
-    const blue = getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim() || '#3b82f6';
+    const purple = themeColors['--color-primary'] || '#a855f7';
+    const blue = themeColors['--color-accent'] || '#3b82f6';
 
-    return {
-      ...theme,
-      backgroundColor: 'transparent',
-      tooltip: { ...theme.tooltip, trigger: 'axis' },
-      legend: { data: ['Text', 'Audio'], bottom: 0, textStyle: { ...theme.legend?.textStyle } },
-      grid: { left: 12, right: 24, bottom: 40, top: 16, containLabel: true },
-      xAxis: { ...theme.xAxis, type: 'category', boundaryGap: true, data: dates } as any,
-      yAxis: { ...theme.yAxis, type: 'value' } as any,
-      series: [
-        {
-          name: 'Text', type: 'bar', stack: 'total', barWidth: '40%',
-          data: textData, itemStyle: { color: blue, borderRadius: [4, 4, 0, 0] }
-        },
-        {
-          name: 'Audio', type: 'bar', stack: 'total', barWidth: '40%',
-          data: audioData, itemStyle: { color: purple, borderRadius: [4, 4, 0, 0] }
-        }
-      ]
-    } as any;
+    return this.chartService.getTypeTrendOptions(currentStats, theme, purple, blue);
   });
 
-  private formatDate(dateStr: string): string {
-    const parts = dateStr.split('T')[0].split('-');
-    return parts.length === 3 ? `${parts[1]}/${parts[2]}` : dateStr;
-  }
-
   getInitials(name: string): string {
-    if (!name) return 'U';
-    const parts = name.trim().split(/\s+/);
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return parts[0][0].toUpperCase();
+    return this.format.getInitials(name);
   }
 
   ngOnInit(): void {
@@ -216,27 +167,29 @@ export class AdminDashboardComponent implements OnInit {
     }
     this.error.set(null);
 
-    this.adminService.getStats().subscribe({
-      next: (res) => {
-        if (res.is_success && res.data) {
-          this.cache.setItem(CACHE_KEY, res.data);
-          this.stats.set(res.data);
-        } else {
-          if (!this.stats()) {
-            this.error.set(res.message || 'Failed to load platform statistics.');
+    this.adminService.getStats()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          if (res.is_success && res.data) {
+            this.cache.setItem(CACHE_KEY, res.data);
+            this.stats.set(res.data);
+          } else {
+            if (!this.stats()) {
+              this.error.set(res.message || 'Failed to load platform statistics.');
+            }
+            this.cache.removeItem(CACHE_KEY);
           }
-          this.cache.removeItem(CACHE_KEY);
+          this.isLoading.set(false);
+          this.isRefreshing.set(false);
+        },
+        error: () => {
+          if (!this.stats()) {
+            this.error.set('An error occurred while connecting to the server.');
+          }
+          this.isLoading.set(false);
+          this.isRefreshing.set(false);
         }
-        this.isLoading.set(false);
-        this.isRefreshing.set(false);
-      },
-      error: () => {
-        if (!this.stats()) {
-          this.error.set('An error occurred while connecting to the server.');
-        }
-        this.isLoading.set(false);
-        this.isRefreshing.set(false);
-      }
-    });
+      });
   }
 }

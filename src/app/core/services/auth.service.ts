@@ -1,7 +1,7 @@
 import { Injectable, signal, inject, PLATFORM_ID, computed } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError, of } from 'rxjs';
-import { catchError, tap, map } from 'rxjs/operators';
+import { Observable, throwError, of, Subject } from 'rxjs';
+import { catchError, tap, map, takeUntil } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { environment } from '../../../environments/environment';
@@ -40,6 +40,8 @@ export class AuthService {
   resetEmailInitiated = signal<string | null>(null);
 
   isAppInitialized = signal(false);
+
+  private logout$ = new Subject<void>();
 
   constructor() {
     if (this.isBrowser) {
@@ -97,16 +99,24 @@ export class AuthService {
             this.alertsService.fetchSettings();
 
             // Alerts Page Background Prefetch (Matches AlertsComponent pageSize: 10)
-            this.alertService.getAlerts(1, 10).subscribe(r => {
-              if (r.is_success && r.data) {
-                localStorage.setItem('emotra_alerts_meta', JSON.stringify({
-                  data: r.data.items,
-                  total: r.data.total_count
-                }));
-              }
+            this.alertService.getAlerts(1, 10).pipe(takeUntil(this.logout$)).subscribe({
+              next: r => {
+                if (!this.isAuthenticated()) return;
+                if (r.is_success && r.data) {
+                  localStorage.setItem('emotra_alerts_meta', JSON.stringify({
+                    data: r.data.items,
+                    total: r.data.total_count
+                  }));
+                }
+              },
+              error: () => {}
             });
-            this.alertService.getStats().subscribe(r => {
-              if (r.is_success && r.data) localStorage.setItem('emotra_alerts_stats', JSON.stringify(r.data));
+            this.alertService.getStats().pipe(takeUntil(this.logout$)).subscribe({
+              next: r => {
+                if (!this.isAuthenticated()) return;
+                if (r.is_success && r.data) localStorage.setItem('emotra_alerts_stats', JSON.stringify(r.data));
+              },
+              error: () => {}
             });
           } else {
             // Admin Logic: Prefetch all management data for instant dashboard loading
@@ -213,6 +223,8 @@ export class AuthService {
    */
   public clearAllAuth(): void {
     if (!this.isBrowser) return;
+
+    this.logout$.next();
 
     // Core keys that MUST be removed
     const coreKeys = [
@@ -350,7 +362,13 @@ export class AuthService {
 
     if (raw) {
       try {
-        return JSON.parse(raw);
+        const user = JSON.parse(raw) as AuthUser;
+        const tokenKey = adminData ? 'emotra_admin_token' : environment.tokenKey;
+        const token = localStorage.getItem(tokenKey);
+        if (token) {
+          user.token = token;
+        }
+        return user;
       } catch (e) {
         return null;
       }
@@ -369,7 +387,11 @@ export class AuthService {
     const userKey = isAdmin ? 'emotra_admin_user' : environment.userKey;
 
     localStorage.setItem(tokenKey, user.token);
-    localStorage.setItem(userKey, JSON.stringify(user));
+    
+    // Security: Do not redundantly store the JWT in the user JSON payload
+    const { token, ...userWithoutToken } = user;
+    localStorage.setItem(userKey, JSON.stringify(userWithoutToken));
+    
     this.currentUser.set(user);
   }
 
@@ -380,8 +402,9 @@ export class AuthService {
   private prefetchHistoryMeta(): void {
     const baseUrl = `${environment.apiUrl}/api/analysis/history?page=1&limit=50`;
 
-    this.http.get<AnalysisHistoryResponse>(`${baseUrl}&type=Text`).subscribe({
+    this.http.get<AnalysisHistoryResponse>(`${baseUrl}&type=Text`).pipe(takeUntil(this.logout$)).subscribe({
       next: (res) => {
+        if (!this.isAuthenticated()) return;
         if (res.is_success && res.data) {
           try { localStorage.setItem('emotra_history_meta_text', JSON.stringify({ data: res.data, total: res.total })); } catch (e) { }
         }
@@ -389,8 +412,9 @@ export class AuthService {
       error: () => { }
     });
 
-    this.http.get<AnalysisHistoryResponse>(`${baseUrl}&type=Audio`).subscribe({
+    this.http.get<AnalysisHistoryResponse>(`${baseUrl}&type=Audio`).pipe(takeUntil(this.logout$)).subscribe({
       next: (res) => {
+        if (!this.isAuthenticated()) return;
         if (res.is_success && res.data) {
           try { localStorage.setItem('emotra_history_meta_audio', JSON.stringify({ data: res.data, total: res.total })); } catch (e) { }
         }
@@ -406,49 +430,73 @@ export class AuthService {
     if (!this.isBrowser) return;
 
     // 1. Stats (Dashboard)
-    this.adminService.getStats().subscribe(r => {
-      if (r.is_success && r.data) localStorage.setItem('emotra_admin_stats', JSON.stringify(r.data));
+    this.adminService.getStats().pipe(takeUntil(this.logout$)).subscribe({
+      next: r => {
+        if (!this.isAuthenticated()) return;
+        if (r.is_success && r.data) localStorage.setItem('emotra_admin_stats', JSON.stringify(r.data));
+      },
+      error: () => {}
     });
 
     // 2. Users (Management - First page)
-    this.adminService.getUsers(1, 10).subscribe(r => {
-      if (r.is_success && r.data) {
-        localStorage.setItem('emotra_admin_users', JSON.stringify({
-          users: r.data,
-          total: r.total,
-          page: 1
-        }));
-      }
+    this.adminService.getUsers(1, 10).pipe(takeUntil(this.logout$)).subscribe({
+      next: r => {
+        if (!this.isAuthenticated()) return;
+        if (r.is_success && r.data) {
+          localStorage.setItem('emotra_admin_users', JSON.stringify({
+            users: r.data,
+            total: r.total,
+            page: 1
+          }));
+        }
+      },
+      error: () => {}
     });
 
     // 3. Testimonials (Moderation)
-    this.adminService.getPendingTestimonials(1, 50).subscribe(r => {
-      if (r.is_success && r.data) localStorage.setItem('emotra_admin_testimonials', JSON.stringify(r.data));
+    this.adminService.getPendingTestimonials(1, 50).pipe(takeUntil(this.logout$)).subscribe({
+      next: r => {
+        if (!this.isAuthenticated()) return;
+        if (r.is_success && r.data) localStorage.setItem('emotra_admin_testimonials', JSON.stringify(r.data));
+      },
+      error: () => {}
     });
 
     // 4. Bugs (System Reports)
-    this.adminService.getBugReports(1, 10).subscribe(r => {
-      if (r.is_success && r.data) {
-        localStorage.setItem('emotra_admin_bugs', JSON.stringify({
-          bugs: r.data.map(b => ({ ...b, parsedMetadata: null })),
-          total: r.total,
-          page: 1
-        }));
-      }
+    this.adminService.getBugReports(1, 10).pipe(takeUntil(this.logout$)).subscribe({
+      next: r => {
+        if (!this.isAuthenticated()) return;
+        if (r.is_success && r.data) {
+          localStorage.setItem('emotra_admin_bugs', JSON.stringify({
+            bugs: r.data.map(b => ({ ...b, parsedMetadata: null })),
+            total: r.total,
+            page: 1
+          }));
+        }
+      },
+      error: () => {}
     });
 
     // 5. Health (Infrastructure Monitor)
-    this.adminService.getHealth().subscribe(r => {
-      if (r.is_success && r.data) localStorage.setItem('emotra_admin_health', JSON.stringify(r.data));
+    this.adminService.getHealth().pipe(takeUntil(this.logout$)).subscribe({
+      next: r => {
+        if (!this.isAuthenticated()) return;
+        if (r.is_success && r.data) localStorage.setItem('emotra_admin_health', JSON.stringify(r.data));
+      },
+      error: () => {}
     });
 
     // 6. Support (Queue)
-    this.adminSupportService.getMessages(1, 100).subscribe(r => {
-      if (r.is_success && r.data) {
-        const data = r.data;
-        const items = Array.isArray(data) ? data : (data.items || []);
-        localStorage.setItem('emotra_admin_support', JSON.stringify(items));
-      }
+    this.adminSupportService.getMessages(1, 100).pipe(takeUntil(this.logout$)).subscribe({
+      next: r => {
+        if (!this.isAuthenticated()) return;
+        if (r.is_success && r.data) {
+          const data = r.data;
+          const items = Array.isArray(data) ? data : (data.items || []);
+          localStorage.setItem('emotra_admin_support', JSON.stringify(items));
+        }
+      },
+      error: () => {}
     });
   }
 

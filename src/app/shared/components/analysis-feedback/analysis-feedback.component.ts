@@ -130,7 +130,9 @@ export class AnalysisFeedbackComponent implements OnInit {
           if (response.is_success) {
             this.existingFeedback.set(response.data);
             this.isEditing.set(false);
-            this.feedbackService.cacheAnalysisFeedback(response.data);
+            if (response.data) {
+              this.feedbackService.cacheAnalysisFeedback(response.data);
+            }
           } else {
             this.toastService.show('Submission Error', response.message || 'Failed to submit feedback.', 'error', 'error');
           }

@@ -1,4 +1,5 @@
-import { Component, signal, computed, effect, inject, OnInit } from '@angular/core';
+import { Component, signal, computed, effect, inject, OnInit, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { AnalysisSession, AudioAnalysisSession } from '../../../core/models/text-analysis.model';
 import { AnalysisHistoryItem, AnalysisDetails } from '../../../core/models/analysis-v2.model';
@@ -46,6 +47,7 @@ export class CompareComponent implements OnInit {
   private toast = inject(ToastService);
   private storageService = inject(AnalysisStorageService);
   private analysisV2Service = inject(AnalysisV2Service);
+  private destroyRef = inject(DestroyRef);
   private firstLoadDone = false;
 
   // Global Comparison State
@@ -154,7 +156,9 @@ export class CompareComponent implements OnInit {
     // 2. API fallback
     loadingSignal.set(true);
 
-    this.analysisV2Service.getAnalysisDetails(clientId).subscribe({
+    this.analysisV2Service.getAnalysisDetails(clientId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: (res) => {
         if (res.is_success && res.data) {
           const session = this.buildSessionFromApi(res.data, type);

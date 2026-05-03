@@ -666,11 +666,34 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
 
   // ─── RESULTS ──────────────────────────────────────────────────────────────
 
+  clearFile() {
+    this.isPlaying.set(false);
+    if (this.audioElement?.nativeElement) {
+      this.audioElement.nativeElement.pause();
+      this.audioElement.nativeElement.currentTime = 0;
+    }
+
+    if (this.activeTab() === 'upload') {
+      this.uploadedFile.set(null);
+      this.uploadUrl.set(null);
+      this.uploadedPeaks = [];
+    } else {
+      this.recordedFile.set(null);
+      this.recordedUrl.set(null);
+      this.recordedPeaks = [];
+    }
+  }
+
   resetToInput() {
+    this.isPlaying.set(false);
+    if (this.audioElement?.nativeElement) {
+      this.audioElement.nativeElement.pause();
+    }
     this.state.set('input');
     this.result.set(null);
     this.showEditHint.set(false);
     this.uploadedFile.set(null);
+    this.uploadUrl.set(null);
     this.uploadedPeaks = [];
     this.recordedFile.set(null);
     this.recordedPeaks = [];

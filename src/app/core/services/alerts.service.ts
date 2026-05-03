@@ -1,12 +1,13 @@
 import { Injectable, signal, inject, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Subject } from 'rxjs';
+import { Subject, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ToastService } from './toast.service';
 import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 
 import { AlertItem, AlertStats, AlertSettings } from '../models/alert.model';
 import { NotificationSettingsService } from './notification-settings.service';
+import { ApiResponse, BanDetails } from '../models/api-response.model';
 
 @Injectable({
   providedIn: 'root'
@@ -28,10 +29,13 @@ export class AlertsService {
   unreadCount = computed(() => this.stats().unread_alerts);
 
   private hubConnection: HubConnection | null = null;
-  private pollingIntervalId: any = null;
-  private alertSubject = new Subject<any>();
+  private pollingIntervalId: ReturnType<typeof setTimeout> | null = null;
+  isApiAvailable = signal<boolean>(true);
+  private consecutiveFailures = 0;
+  private currentPollingDelay = 60000;
+  private alertSubject = new Subject<AlertItem>();
   public alert$ = this.alertSubject.asObservable();
-  public forceLogout$ = new Subject<any>();
+  public forceLogout$ = new Subject<BanDetails | null>();
 
   constructor() {
     this.initializeFromLocalStorage();
@@ -44,7 +48,9 @@ export class AlertsService {
         const parsed = JSON.parse(stats);
         this.stats.set(parsed);
       }
-    } catch (e) { }
+    } catch (e) {
+      console.warn('AlertsService: Failed to parse alerts stats from localStorage.', e);
+    }
   }
 
   initSignalR(token: string) {
@@ -88,7 +94,7 @@ export class AlertsService {
       this.handleIncomingAlert(alert);
     });
 
-    this.hubConnection.on('ReceiveForceLogout', (payload?: any) => {
+    this.hubConnection.on('ReceiveForceLogout', (payload?: BanDetails | string) => {
       // payload could be a string (message) or an object { ban_reason, ban_expires_at, is_permanent }
       const banDetails = typeof payload === 'object' ? payload : null;
       const message = typeof payload === 'string' ? payload : null;
@@ -140,41 +146,52 @@ export class AlertsService {
   fetchStats() {
     if (!this.isUserAuthenticated()) return;
 
-    this.http.get<any>(`${environment.apiUrl}/api/alerts/stats`).subscribe({
+    this.http.get<ApiResponse<AlertStats>>(`${environment.apiUrl}/api/alerts/stats`).subscribe({
       next: (res) => {
         if (res.is_success && res.data) {
           this.stats.set(res.data);
           this.updateLocalStorageStats(res.data);
+          this.handleApiSuccess();
         }
       },
-      error: () => { }
+      error: (err) => {
+        console.error('AlertsService: Failed to fetch alert stats', err);
+        this.handleApiFailure();
+      }
     });
   }
 
   fetchSettings() {
     if (!this.isUserAuthenticated()) return;
 
-    this.http.get<any>(`${environment.apiUrl}/api/settings/alerts`).subscribe({
+    this.http.get<ApiResponse<AlertSettings>>(`${environment.apiUrl}/api/settings/alerts`).subscribe({
       next: (res) => {
         if (res.is_success && res.data) {
           try {
             localStorage.setItem('emotra_alert_settings', JSON.stringify(res.data));
-          } catch (e) { }
+            this.handleApiSuccess();
+          } catch (e) {
+            console.warn('AlertsService: Failed to save alert settings to localStorage', e);
+          }
         }
       },
-      error: () => { }
+      error: (err) => {
+        console.error('AlertsService: Failed to fetch alert settings', err);
+        this.handleApiFailure();
+      }
     });
   }
 
-  updateSettings(settings: AlertSettings) {
-    return this.http.put<any>(`${environment.apiUrl}/api/settings/alerts`, settings);
+  updateSettings(settings: AlertSettings): Observable<ApiResponse<AlertSettings>> {
+    return this.http.put<ApiResponse<AlertSettings>>(`${environment.apiUrl}/api/settings/alerts`, settings);
   }
 
-  private handleIncomingAlert(alert: any) {
+  private handleIncomingAlert(alert: AlertItem | ApiResponse<AlertItem> | string) {
     if (!alert) return;
 
     // 1. Handle ApiResponse wrapper if present (common for consistency)
-    const data = alert.is_success && alert.data ? alert.data : alert;
+    const alertObj = alert as any;
+    const data = alertObj.is_success && alertObj.data ? alertObj.data : alertObj;
 
     // 2. Extract message (handles snake_case, PascalCase, and direct alert object)
     const message = data.message || data.Message ||
@@ -267,27 +284,48 @@ export class AlertsService {
     this.updateLocalStorageStats(newStats);
   }
 
-  private updateLocalStorageStats(data: any) {
+  private updateLocalStorageStats(data: AlertStats) {
     try {
       localStorage.setItem('emotra_alerts_stats', JSON.stringify(data));
-    } catch (e) { }
+    } catch (e) {
+      console.warn('AlertsService: Failed to save alerts stats to localStorage. Quota exceeded?', e);
+    }
   }
 
 
-  // Backup polling in case SignalR is disconnected or fails to fire
+  // Backup polling with exponential backoff
   private startPolling() {
-    if (this.pollingIntervalId) return;
-
-    this.pollingIntervalId = setInterval(() => {
+    this.stopPolling();
+    this.pollingIntervalId = setTimeout(() => {
       this.fetchStats();
-    }, 60000);
+      this.startPolling();
+    }, this.currentPollingDelay);
   }
 
   private stopPolling() {
     if (this.pollingIntervalId) {
-      clearInterval(this.pollingIntervalId);
+      clearTimeout(this.pollingIntervalId);
       this.pollingIntervalId = null;
     }
+  }
+
+  private handleApiSuccess() {
+    if (!this.isApiAvailable()) {
+      this.toastService.show('Alerts Restored', 'Real-time alerts have been reconnected.', 'success', 'wifi');
+    }
+    this.isApiAvailable.set(true);
+    this.consecutiveFailures = 0;
+    this.currentPollingDelay = 60000;
+  }
+
+  private handleApiFailure() {
+    this.consecutiveFailures++;
+    if (this.consecutiveFailures >= 3 && this.isApiAvailable()) {
+      this.isApiAvailable.set(false);
+      this.toastService.show('Alerts Unavailable', 'We are having trouble connecting to the alerts service. Data may be stale.', 'error', 'wifi-off');
+    }
+    // Exponential backoff up to 5 minutes
+    this.currentPollingDelay = Math.min(this.currentPollingDelay * 2, 300000);
   }
 
   private isUserAuthenticated(): boolean {

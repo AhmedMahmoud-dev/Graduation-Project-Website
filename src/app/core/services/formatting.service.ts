@@ -67,6 +67,27 @@ export class FormattingService {
   }
 
   /**
+   * Formats a date string to MM/DD.
+   */
+  formatShortDate(dateStr: string | undefined | null): string {
+    if (!dateStr) return '';
+    const parts = dateStr.split('T')[0].split('-');
+    return parts.length === 3 ? `${parts[1]}/${parts[2]}` : dateStr;
+  }
+
+  /**
+   * Gets initials from a full name.
+   */
+  getInitials(name: string | undefined | null): string {
+    if (!name) return 'U';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0][0].toUpperCase();
+  }
+
+  /**
    * Generic chronological sort for any list with a date-like string property.
    * Returns a new sorted array — does not mutate the original.
    */

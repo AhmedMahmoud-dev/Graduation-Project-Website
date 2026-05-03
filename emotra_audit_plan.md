@@ -153,28 +153,7 @@
 
 ---
 
-## Problem 9 — No OnPush Change Detection on Any Component
-
-- **File(s):**
-  - `src/app/features/dashboard/dashboard.component.ts`
-  - `src/app/features/history/history.component.ts`
-  - `src/app/features/compare/compare/compare.component.ts`
-  - `src/app/features/alerts/alerts.component.ts`
-  - `src/app/features/admin/admin-dashboard/admin-dashboard.component.ts`
-  - `src/app/features/admin/admin-users/admin-users.component.ts`
-  - `src/app/features/admin/admin-support/admin-support.component.ts`
-  - `src/app/features/settings/settings.component.ts`
-  - (and all other feature components)
-
-- **What is wrong:** Not a single component in the entire codebase uses `changeDetection: ChangeDetectionStrategy.OnPush`. Every component uses the default change detection strategy, which means Angular runs change detection on every component in the tree on every browser event (click, mousemove, keypress, timer tick, HTTP response). The codebase already uses signals extensively, which are designed to work optimally with OnPush — the infrastructure is there, but the optimization is not enabled.
-
-- **Impact:** Every 60-second polling tick from `AlertsService`, every SignalR message, every mouse movement triggers a full change detection cycle across the entire component tree. On the admin dashboard with multiple ECharts instances and computed signals, this causes unnecessary re-evaluation of template bindings and potential frame drops. The performance cost scales with the number of components rendered simultaneously.
-
-- **Professional fix:** Add `changeDetection: ChangeDetectionStrategy.OnPush` to every component decorator. Since the codebase already uses signals for state management (not mutable properties), OnPush will work correctly out of the box — signals automatically notify Angular's change detection when they update. Start with the heaviest components (admin-dashboard, history, alerts) and roll out to the rest. This is a low-risk, high-reward change.
-
----
-
-## Problem 10 — `BaseAnalysisComponent` Route Params Subscription Bypasses Service Layer for API Fallback
+## Problem 9 — `BaseAnalysisComponent` Route Params Subscription Bypasses Service Layer for API Fallback
 
 - **File(s):**
   - `src/app/shared/base/base-analysis.component.ts` (lines 114–153, 162–210)

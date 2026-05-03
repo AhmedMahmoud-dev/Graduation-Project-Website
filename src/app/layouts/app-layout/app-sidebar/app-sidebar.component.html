@@ -32,11 +32,13 @@
     </div>
 
     <button (click)="$event.stopPropagation(); toggleSidebar()"
-      class="absolute -right-3 top-5 w-6 h-6 rounded-full bg-[color:var(--color-surface)] border border-[color:var(--color-border)] items-center justify-center text-[color:var(--color-text-muted)] hover:text-[color:var(--brand-primary)] hover:border-[color:var(--brand-primary)] transition-all z-10 hidden lg:flex shadow-sm">
+      class="group absolute -right-3 top-5 w-6 h-6 rounded-full bg-[color:var(--color-surface)] border border-[color:var(--color-border)] items-center justify-center text-[color:var(--color-text-muted)] hover:text-[color:var(--brand-primary)] hover:border-[color:var(--brand-primary)] transition-all z-10 hidden lg:flex shadow-sm">
       <svg class="w-3.5 h-3.5 transition-transform duration-300" [class.rotate-180]="!isExpanded()" viewBox="0 0 24 24"
         fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="15 18 9 12 15 6"></polyline>
       </svg>
+      <app-tooltip [text]="isExpanded() ? 'Collapse Sidebar' : 'Expand Sidebar'" position="right"
+        [visible]="true"></app-tooltip>
     </button>
   </div>
 

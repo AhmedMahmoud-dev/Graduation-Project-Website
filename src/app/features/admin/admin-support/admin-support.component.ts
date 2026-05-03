@@ -1,4 +1,5 @@
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminSupportService } from '../../../core/services/admin-support.service';
@@ -26,6 +27,7 @@ export class AdminSupportComponent implements OnInit {
   private toastService = inject(ToastService);
   protected format = inject(FormattingService);
   private cache = inject(AppCacheService);
+  private destroyRef = inject(DestroyRef);
 
   messages = signal<AdminSupportMessage[]>([]);
 
@@ -66,7 +68,9 @@ export class AdminSupportComponent implements OnInit {
       }
     }
     this.error.set(null);
-    this.adminSupportService.getMessages(1, 100).subscribe({
+    this.adminSupportService.getMessages(1, 100)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: (res) => {
         if (res.is_success && res.data) {
           const data = res.data;
@@ -108,7 +112,9 @@ export class AdminSupportComponent implements OnInit {
     if (!reply) return;
 
     this.isReplying.set(id);
-    this.adminSupportService.replyToMessage(id, { message: reply }).subscribe({
+    this.adminSupportService.replyToMessage(id, { message: reply })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: (res) => {
         if (res.is_success) {
           this.toastService.show('Reply Sent', 'Your response has been sent to the user.', 'success', 'check');

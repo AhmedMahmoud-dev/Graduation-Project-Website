@@ -53,7 +53,7 @@ export class AlertPreferencesComponent {
   private loadCurrentSettings() {
     this.isLoading.set(true);
     const parsed = this.cache.getItem<AlertSettings>('emotra_alert_settings');
-    
+
     if (parsed) {
       this.settings.set(parsed);
       this.initialSettings.set(JSON.stringify(parsed));
@@ -78,30 +78,30 @@ export class AlertPreferencesComponent {
     if (key === 'alert_negative_threshold') {
       current[key] = parseFloat(value) as any;
     } else if (key === 'alert_consecutive_count') {
-       current[key] = parseInt(value, 10) as any;
+      current[key] = parseInt(value, 10) as any;
     } else {
-       current[key] = value;
+      current[key] = value;
     }
     this.settings.set(current);
   }
 
   saveSettings() {
     if (!this.isDirty()) return;
-    
+
     this.isSaving.set(true);
     const payload = this.settings();
 
     this.alertsService.updateSettings(payload)
       .pipe(finalize(() => this.isSaving.set(false)))
       .subscribe({
-        next: (res) => {
+        next: (res: any) => {
           if (res.is_success) {
             this.cache.setItem('emotra_alert_settings', payload);
             this.initialSettings.set(JSON.stringify(payload));
             this.settingsChanged.emit();
           }
         },
-        error: (err) => {
+        error: (err: any) => {
           this.toastService.show('Error', 'Failed to save alert preferences.', 'error', 'alert-circle');
         }
       });

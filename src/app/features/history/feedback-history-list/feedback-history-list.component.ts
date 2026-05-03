@@ -159,7 +159,7 @@ export class FeedbackHistoryListComponent implements OnInit {
             items.filter(f => f.feedback_type === 'analysis' && f.analysis_id).forEach(f => {
               this.feedbackService.cacheAnalysisFeedback({
                 id: f.id,
-                analysis_id: f.analysis_id,
+                analysis_id: f.analysis_id!,
                 rating: f.rating,
                 comment: f.comment,
                 created_at: f.created_at
@@ -168,7 +168,14 @@ export class FeedbackHistoryListComponent implements OnInit {
 
             const systemEntry = items.find(f => f.feedback_type === 'system');
             if (systemEntry) {
-              this.feedbackService.cacheSystemFeedback(systemEntry);
+              this.feedbackService.cacheSystemFeedback({
+                id: systemEntry.id,
+                rating: systemEntry.rating,
+                comment: systemEntry.comment || '',
+                is_public: systemEntry.is_public ?? true,
+                moderation_status: systemEntry.moderation_status,
+                created_at: systemEntry.created_at
+              });
             }
           }
         },
