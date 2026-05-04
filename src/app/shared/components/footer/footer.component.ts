@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ThemeService, ThemeMode } from '../../../core/services/theme.service';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -19,6 +20,8 @@ export class FooterSectionComponent implements OnInit {
   private feedbackService = inject(FeedbackService);
   private uiService = inject(SystemFeedbackUIService);
 
+  private destroyRef = inject(DestroyRef);
+
   currentTheme = this.themeService.currentTheme;
   currentUser = this.authService.currentUser;
   hasFeedback = signal(false);
@@ -26,6 +29,13 @@ export class FooterSectionComponent implements OnInit {
 
   ngOnInit() {
     this.checkFeedbackStatus();
+
+    // Listen for instant feedback updates to refresh UI state without page reload
+    this.uiService.feedbackUpdated$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.hasFeedback.set(true);
+      });
   }
 
   checkFeedbackStatus() {

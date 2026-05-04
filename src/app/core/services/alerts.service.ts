@@ -35,7 +35,7 @@ export class AlertsService {
   private currentPollingDelay = 60000;
   private alertSubject = new Subject<AlertItem>();
   public alert$ = this.alertSubject.asObservable();
-  public forceLogout$ = new Subject<BanDetails | null>();
+  public forceLogout$ = new Subject<any>();
 
   constructor() {
     this.initializeFromLocalStorage();
@@ -95,13 +95,21 @@ export class AlertsService {
     });
 
     this.hubConnection.on('ReceiveForceLogout', (payload?: BanDetails | string) => {
-      // payload could be a string (message) or an object { ban_reason, ban_expires_at, is_permanent }
+      // payload could be a string (reason) or an object { ban_reason, ban_expires_at, is_permanent }
+      const reason = typeof payload === 'string' ? payload : null;
       const banDetails = typeof payload === 'object' ? payload : null;
-      const message = typeof payload === 'string' ? payload : null;
 
+      // Handle Account Deletion
+      if (reason === 'account_deleted') {
+        sessionStorage.setItem('emotra_account_deleted', 'true');
+        this.forceLogout$.next({ reason: 'account_deleted' });
+        return;
+      }
+
+      // Default/Ban behavior (reason = 'banned' or undefined/object)
       this.toastService.show(
         'Session Terminated',
-        message || (banDetails?.ban_reason ? `Banned: ${banDetails.ban_reason}` : 'Your account has been restricted or banned.'),
+        reason === 'banned' ? 'Your account has been restricted or banned.' : (reason || (banDetails?.ban_reason ? `Banned: ${banDetails.ban_reason}` : 'Your account has been restricted or banned.')),
         'error',
         'error',
         { 

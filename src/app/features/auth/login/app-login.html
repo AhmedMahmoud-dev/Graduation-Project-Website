@@ -17,6 +17,27 @@
     <p class="text-[color:var(--text-secondary)] text-[15px] font-medium text-center">Sign in to continue to Emotra</p>
   </div>
 
+  @if (accountDeleted()) {
+    <div class="mb-8 p-5 rounded-[1.25rem] border border-[color:color-mix(in srgb,var(--brand-primary)40%,transparent)] bg-[color:color-mix(in srgb,var(--brand-primary)8%,transparent)] border-l-[4px] border-l-[color:var(--brand-primary)] flex items-start gap-4 relative animate-in fade-in slide-in-from-top-4 duration-500">
+      <div class="p-2.5 rounded-xl bg-[color:var(--brand-primary)] text-white shrink-0 shadow-lg shadow-[color:color-mix(in srgb,var(--brand-primary)30%,transparent)]">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+        </svg>
+      </div>
+      <div class="flex-1 min-w-0 pr-8">
+        <h3 class="text-base font-bold text-[color:var(--text-primary)] mb-1.5 tracking-tight">Account Deleted</h3>
+        <p class="text-[14px] text-[color:var(--text-secondary)] font-medium leading-relaxed">
+          Your account has been deleted by an administrator. Please contact support if you believe this is a mistake.
+        </p>
+      </div>
+      <button (click)="dismissAccountDeletedNotice()" class="absolute top-4 right-4 p-2 hover:bg-[color:color-mix(in srgb,var(--brand-primary)15%,transparent)] rounded-xl transition-all duration-200 group" title="Dismiss">
+        <svg class="w-4 h-4 text-[color:var(--brand-primary)] opacity-60 group-hover:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  }
+
   @if (banDetails(); as details) {
     <div class="mb-8 p-5 rounded-[1.25rem] border border-[color:color-mix(in srgb,var(--color-danger)40%,transparent)] bg-[color:color-mix(in srgb,var(--color-danger)8%,transparent)] border-l-[4px] border-l-[color:var(--color-danger)] flex items-start gap-4 relative animate-in fade-in slide-in-from-top-4 duration-500 overflow-hidden">
       <div class="p-2.5 rounded-xl bg-[color:var(--color-danger)] text-white shrink-0 shadow-lg shadow-[color:color-mix(in srgb,var(--color-danger)30%,transparent)]">

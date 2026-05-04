@@ -44,15 +44,16 @@ export class AlertsComponent implements OnInit {
 
   // Filters
   searchQuery = signal<string>('');
-  severityFilter = signal<'all' | 'critical' | 'high' | 'medium' | 'low'>('all');
+  severityFilter = signal<'all' | 'critical' | 'high' | 'medium' | 'low' | 'support'>('all');
   hideRead = signal<boolean>(false);
 
   severityOptions: DropdownOption[] = [
-    { label: 'All Severities', value: 'all' },
+    { label: 'All Alerts', value: 'all' },
     { label: 'Critical', value: 'critical' },
     { label: 'High', value: 'high' },
     { label: 'Medium', value: 'medium' },
-    { label: 'Low', value: 'low' }
+    { label: 'Low', value: 'low' },
+    { label: 'Support', value: 'support' }
   ];
 
   // Data
@@ -73,9 +74,14 @@ export class AlertsComponent implements OnInit {
       list = list.filter(a => !a.resolved);
     }
 
-    // 2. Severity Filter
-    if (this.severityFilter() !== 'all') {
-      list = list.filter(a => a.severity.toLowerCase() === this.severityFilter().toLowerCase());
+    // 2. Severity & Type Filter
+    const filter = this.severityFilter();
+    if (filter !== 'all') {
+      if (filter === 'support') {
+        list = list.filter(a => a.type === 'support_reply');
+      } else {
+        list = list.filter(a => a.severity.toLowerCase() === filter.toLowerCase());
+      }
     }
 
     // 3. Search Filter

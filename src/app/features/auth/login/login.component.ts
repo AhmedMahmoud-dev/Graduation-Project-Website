@@ -26,18 +26,30 @@ export class LoginComponent implements OnInit {
   protected format = inject(FormattingService);
 
   banDetails = signal<BanDetails | null>(null);
+  accountDeleted = signal(false);
 
   ngOnInit() {
+    // Check for Ban Details
     const details = this.authService.getBanDetails();
     if (details) {
       this.banDetails.set(details);
       // Clear from storage so it doesn't show up again if they refresh
       this.authService.clearBanDetails();
     }
+
+    // Check for Account Deletion
+    if (typeof window !== 'undefined' && sessionStorage.getItem('emotra_account_deleted') === 'true') {
+      this.accountDeleted.set(true);
+      sessionStorage.removeItem('emotra_account_deleted');
+    }
   }
 
   dismissBanNotice() {
     this.banDetails.set(null);
+  }
+
+  dismissAccountDeletedNotice() {
+    this.accountDeleted.set(false);
   }
 
   loginForm = this.fb.nonNullable.group({

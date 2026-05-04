@@ -46,7 +46,14 @@ export class AuthService {
   constructor() {
     if (this.isBrowser) {
       // Subscribe to remote force logout events from SignalR
-      this.alertsService.forceLogout$.subscribe((banDetails) => {
+      this.alertsService.forceLogout$.subscribe((payload: any) => {
+        if (payload?.reason === 'account_deleted') {
+          // Flag already set in alerts.service.ts
+          this.logout(true);
+          return;
+        }
+
+        const banDetails = payload;
         if (banDetails && banDetails.ban_reason) {
           this.storeBanDetails(banDetails);
         }
@@ -319,6 +326,16 @@ export class AuthService {
           }
           this.clearAllAuth();
           if (this.isBrowser) {
+            window.location.href = '/auth/login';
+            return new Observable();
+          }
+        }
+        
+        // Handle Account Deletion
+        if (error?.status === 404 && error.error?.code === 'USER_DELETED') {
+          this.clearAllAuth();
+          if (this.isBrowser) {
+            sessionStorage.setItem('emotra_account_deleted', 'true');
             window.location.href = '/auth/login';
             return new Observable();
           }
