@@ -2,7 +2,7 @@ export const environment = {
   production: false,
   apiUrl: "https://emotion-detection.runasp.net",
   // textApiUrl: "http://13.63.140.123:8000",
-  // audioApiUrl: "http://13.51.255.179:8001",
+  // audioApiUrl: "http://13.51.255.179:8001",//
   textApiUrl: "https://graduation-project-website-eight.vercel.app/text",
   audioApiUrl: "https://graduation-project-website-eight.vercel.app/audio",
   tokenKey: "emotra_token",

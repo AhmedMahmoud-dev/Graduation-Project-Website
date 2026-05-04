@@ -16,31 +16,35 @@ This document outlines the security protocols and implementation details for the
 ## Security Protocols
 
 ### 1. Identity Verification
+
 Unlike standard deletions, this endpoint requires the administrator to re-enter their password. This is a **Security Challenge** to prevent:
+
 - Unauthorized deletion via an unattended admin session.
 - Accidental deletions of entire user histories.
 
 ### 2. Self-Deletion Prevention
+
 An administrator **cannot** delete their own account through this endpoint. Any attempt to do so will return a `400 Bad Request`.
 
 ### 3. Atomic Transactions
+
 The entire deletion process is wrapped in a **Database Transaction**. If any part of the record purging fails, the transaction is rolled back, and the user account remains intact.
 
 ## Cascading Deletion Behavior
 
 When a user is deleted, the system performs a **Hard Purge** of all related data. This action is **irreversible**. The following records are permanently removed:
 
-| Entity | Scope |
-| :--- | :--- |
-| **User Account** | Identity record, Roles, and Claims. |
-| **Analyses** | All records from Text, Audio, Video, and Image analysis. |
+| Entity               | Scope                                                             |
+| :------------------- | :---------------------------------------------------------------- |
+| **User Account**     | Identity record, Roles, and Claims.                               |
+| **Analyses**         | All records from Text, Audio, Video, and Image analysis.          |
 | **Analysis Results** | Emotion Timelines, Details, Summaries, and Sentence-level scores. |
-| **Media Files** | Storage paths and metadata for all uploaded content. |
-| **Feedback** | All session-specific feedback and analysis ratings. |
-| **Testimonials** | All public and private system feedback (SystemFeedback). |
-| **Bug Reports** | All bug reports submitted by the user. |
-| **Alerts** | All system alerts triggered for or by the user. |
-| **Settings** | All personalized user settings and preferences. |
+| **Media Files**      | Storage paths and metadata for all uploaded content.              |
+| **Feedback**         | All session-specific feedback and analysis ratings.               |
+| **Testimonials**     | All public and private system feedback (SystemFeedback).          |
+| **Bug Reports**      | All bug reports submitted by the user.                            |
+| **Alerts**           | All system alerts triggered for or by the user.                   |
+| **Settings**         | All personalized user settings and preferences.                   |
 
 ## Response States
 
