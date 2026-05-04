@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -6,6 +6,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FormFieldErrorComponent } from '../../../shared/components/form/form-field-error/form-field-error.component';
 import { PasswordInputComponent } from '../../../shared/components/form/password-input/password-input.component';
+import { SeoService } from '../../../core/services/seo.service';
 
 function passwordMatchValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -33,11 +34,20 @@ function passwordMatchValidator(): ValidatorFn {
   templateUrl: './app-register.html',
   styleUrl: './app-register.css'
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
   private toastService = inject(ToastService);
+  private seoService = inject(SeoService);
+
+  ngOnInit() {
+    this.seoService.updateMeta({
+      title: 'Create Account — Emotra',
+      description: 'Sign up for Emotra and start analyzing emotions from text, audio, image, and video with AI-powered timeline tracking.',
+      url: 'https://graduation-project-website-eight.vercel.app/auth/register'
+    });
+  }
 
   registerForm = this.fb.nonNullable.group({
     first_name: ['', [Validators.required, Validators.minLength(2)]],

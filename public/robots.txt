@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /analysis
+Disallow: /history
+Disallow: /compare
+Disallow: /alerts
+Disallow: /settings
+Disallow: /admin
+Disallow: /auth/reset-password
+
+Sitemap: https://graduation-project-website-eight.vercel.app/sitemap.xml

@@ -1,4 +1,4 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { FooterSectionComponent } from '../../../shared/components/footer/footer.component';
 import { ModelDocTocComponent, TocItem } from '../../../shared/components/model-docs/model-doc-toc/model-doc-toc.component';
@@ -6,6 +6,7 @@ import { ModelDocSectionComponent } from '../../../shared/components/model-docs/
 import { PythonCodeBlockComponent } from '../../../shared/components/model-docs/python-code-block/python-code-block.component';
 import { EmotionIconComponent } from '../../../shared/components/emotion-icon/emotion-icon.component';
 import { ModelDocScrollspyBase } from '../../../shared/components/model-docs/model-doc-scrollspy.base';
+import { SeoService } from '../../../core/services/seo.service';
 
 @Component({
   selector: 'app-text-model',
@@ -21,7 +22,17 @@ import { ModelDocScrollspyBase } from '../../../shared/components/model-docs/mod
   templateUrl: './text-model.component.html',
   styleUrl: './text-model.component.css'
 })
-export class TextModelComponent extends ModelDocScrollspyBase {
+export class TextModelComponent extends ModelDocScrollspyBase implements OnInit {
+  private seoService = inject(SeoService);
+
+  override ngOnInit() {
+    super.ngOnInit();
+    this.seoService.updateMeta({
+      title: 'Text Emotion Detection Model — Emotra',
+      description: 'Emotra\'s text emotion model analyzes written content and detects 7 emotions with per-sentence timeline tracking powered by DistilRoBERTa.',
+      url: 'https://graduation-project-website-eight.vercel.app/models/text'
+    });
+  }
 
   tocItems: TocItem[] = [
     { id: 'overview', label: 'Overview' },

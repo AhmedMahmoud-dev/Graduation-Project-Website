@@ -10,6 +10,7 @@ import { TooltipComponent } from '../../../shared/components/tooltip/tooltip.com
 import { FormattingService } from '../../../core/services/formatting.service';
 import { CommonModule } from '@angular/common';
 import { BanDetails } from '../../../core/models/api-response.model';
+import { SeoService } from '../../../core/services/seo.service';
 
 @Component({
   selector: 'app-login',
@@ -24,11 +25,18 @@ export class LoginComponent implements OnInit {
   private router = inject(Router);
   private toastService = inject(ToastService);
   protected format = inject(FormattingService);
+  private seoService = inject(SeoService);
 
   banDetails = signal<BanDetails | null>(null);
   accountDeleted = signal(false);
 
   ngOnInit() {
+    this.seoService.updateMeta({
+      title: 'Login — Emotra',
+      description: 'Log in to your Emotra account to access emotion analysis tools and your personal emotion timeline history.',
+      url: 'https://graduation-project-website-eight.vercel.app/auth/login'
+    });
+
     // Check for Ban Details
     const details = this.authService.getBanDetails();
     if (details) {
