@@ -179,23 +179,30 @@ export class ColorSettingsService {
 
     this.http.get<any>(this.apiUrl).subscribe({
       next: (res) => {
-        if (res.is_success && res.data) {
-          const data = res.data;
-          if (data.light_theme && data.dark_theme) {
-            const light = this.mapDtoToCss(data.light_theme);
-            const dark = this.mapDtoToCss(data.dark_theme);
-            this.saveThemeColors(light, dark);
-          }
-          if (data.emotion_colors) {
-            this.saveEmotionColors(data.emotion_colors);
-          }
-          if (data.active_theme) {
-            const localMode = localStorage.getItem('emotra_theme');
-            // Only overwrite if NO local preference exists at all. 
-            // Once a user sets it on a machine (even to 'system'), that machine's preference is authoritative.
-            if (!localMode) {
-              this.themeService.setTheme(data.active_theme);
+        if (res.is_success) {
+          if (res.data) {
+            const data = res.data;
+            if (data.light_theme && data.dark_theme) {
+              const light = this.mapDtoToCss(data.light_theme);
+              const dark = this.mapDtoToCss(data.dark_theme);
+              this.saveThemeColors(light, dark);
             }
+            if (data.emotion_colors) {
+              this.saveEmotionColors(data.emotion_colors);
+            }
+            if (data.active_theme) {
+              const localMode = localStorage.getItem('emotra_theme');
+              // Only overwrite if NO local preference exists at all. 
+              // Once a user sets it on a machine (even to 'system'), that machine's preference is authoritative.
+              if (!localMode) {
+                this.themeService.setTheme(data.active_theme);
+              }
+            }
+          } else {
+            // When data is null, it means the user has no custom settings (e.g. after a reset).
+            // We must explicitly reset local state and CSS variables to defaults.
+            this.resetThemeColors();
+            this.resetEmotionColors();
           }
         }
       },
