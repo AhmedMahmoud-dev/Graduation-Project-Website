@@ -86,10 +86,10 @@ export class SystemFeedbackComponent implements OnInit {
    */
   displayStatus = computed(() => {
     const currentStatus = this.moderationStatus();
-    
+
     // Visual feedback: if they edit content, show it will be pending
     if (this.hasContentChanges() && this.hasSubmittedBefore()) return 'Pending';
-    
+
     return currentStatus;
   });
 
@@ -170,7 +170,7 @@ export class SystemFeedbackComponent implements OnInit {
       this.rating.set(cached.rating);
       this.comment.set(cached.comment || '');
       this.isPublic.set(cached.is_public ?? true);
-      
+
       // Professional Logic: Set status regardless of publicity to prevent badge flickering
       this.moderationStatus.set(cached.moderation_status || 'Pending');
       this.initialState.set({
@@ -195,7 +195,7 @@ export class SystemFeedbackComponent implements OnInit {
               this.rating.set(systemRef.rating);
               this.comment.set(systemRef.comment || '');
               this.isPublic.set(systemRef.is_public ?? true);
-              
+
               // Professional Logic: Set status regardless of publicity to prevent badge flickering
               this.moderationStatus.set(systemRef.moderation_status || 'Pending');
               this.initialState.set({
@@ -241,10 +241,10 @@ export class SystemFeedbackComponent implements OnInit {
                 this.rating.set(systemRef.rating);
                 this.comment.set(systemRef.comment || '');
                 this.isPublic.set(systemRef.is_public ?? true);
-                
+
                 // Professional Logic: Set status regardless of publicity to prevent badge flickering
                 this.moderationStatus.set(systemRef.moderation_status || 'Pending');
-                
+
                 this.existingId.set(systemRef.id);
                 this.hasSubmittedBefore.set(true);
                 this.initialState.set({
@@ -263,28 +263,27 @@ export class SystemFeedbackComponent implements OnInit {
   }
 
   closeModal() {
-    if (this.hasChanges()) {
-      this.toastService.confirm(
-        'Discard Changes?',
-        'You have unsaved changes. Are you sure you want to exit?',
-        () => this.forceClose(),
-        {
-          confirmLabel: 'Discard',
-          cancelLabel: 'Keep Editing',
-          type: 'warning',
-          icon: 'warning'
-        }
-      );
-    } else {
-      this.forceClose();
-    }
+    this.forceClose();
   }
 
   private forceClose() {
     this.uiService.close();
     this.showRatingError.set(false);
     this.showCommentError.set(false);
-    this.hasFetchedHistory = false; // Reset to allow fresh fetch next time
+
+    // Revert to initial state to discard unsaved changes
+    const init = this.initialState();
+    if (init) {
+      this.rating.set(init.rating);
+      this.comment.set(init.comment);
+      this.isPublic.set(init.isPublic);
+    } else if (!this.hasSubmittedBefore()) {
+      this.rating.set(0);
+      this.comment.set('');
+      this.isPublic.set(true);
+    }
+
+    this.hasFetchedHistory = false; // Allow fresh fetch on next open
   }
 
   submit() {
@@ -327,14 +326,14 @@ export class SystemFeedbackComponent implements OnInit {
               comment: response.data.comment || '',
               isPublic: response.data.is_public ?? true
             });
-            
+
             // Professional Logic: Update status from server response immediately
             this.moderationStatus.set(response.data.moderation_status || 'Pending');
             this.feedbackService.cacheSystemFeedback(response.data);
-            
+
             // Notify other components (like History list) for INSTANT UI update
             this.uiService.notifyUpdate(response.data);
-            
+
             this.closeModal();
           }
         },
