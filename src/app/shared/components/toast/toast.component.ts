@@ -84,12 +84,12 @@ export class ToastComponent {
   isConfirmDisabled(toast: any): boolean {
     if (!toast.requireInput) return false;
     const val = this.confirmInputs()[toast.id] || '';
-    
+
     // If expectedValue is provided, require exact match
     if (toast.expectedValue) {
       return val.trim() !== toast.expectedValue;
     }
-    
+
     // Otherwise just require non-empty
     return val.trim().length === 0;
   }
