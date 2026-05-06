@@ -6,7 +6,7 @@ import { ModelDocSectionComponent } from '../../../shared/components/model-docs/
 import { PythonCodeBlockComponent } from '../../../shared/components/model-docs/python-code-block/python-code-block.component';
 import { EmotionIconComponent } from '../../../shared/components/emotion-icon/emotion-icon.component';
 import { ModelDocScrollspyBase } from '../../../shared/components/model-docs/model-doc-scrollspy.base';
-import { SeoService } from '../../../core/services/seo.service';
+
 
 @Component({
   selector: 'app-text-model',
@@ -23,15 +23,10 @@ import { SeoService } from '../../../core/services/seo.service';
   styleUrl: './text-model.component.css'
 })
 export class TextModelComponent extends ModelDocScrollspyBase implements OnInit {
-  private seoService = inject(SeoService);
+
 
   override ngOnInit() {
     super.ngOnInit();
-    this.seoService.updateMeta({
-      title: 'Text Emotion Detection Model — Emotra',
-      description: 'Emotra\'s text emotion model analyzes written content and detects 7 emotions with per-sentence timeline tracking powered by DistilRoBERTa.',
-      url: 'https://graduation-project-website-eight.vercel.app/models/text'
-    });
   }
 
   tocItems: TocItem[] = [

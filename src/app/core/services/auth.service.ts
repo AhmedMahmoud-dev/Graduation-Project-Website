@@ -40,6 +40,7 @@ export class AuthService {
   resetEmailInitiated = signal<string | null>(null);
 
   isAppInitialized = signal(false);
+  private isUnloading = false;
 
   private logout$ = new Subject<void>();
 
@@ -58,6 +59,12 @@ export class AuthService {
           this.storeBanDetails(banDetails);
         }
         this.logout(true);
+      });
+
+      // Track window unloading to distinguish between refresh-induced cancellations (status 0)
+      // and genuine network/CORS failures (potential bans).
+      window.addEventListener('beforeunload', () => {
+        this.isUnloading = true;
       });
 
       const user = this.getCurrentUser();
@@ -311,12 +318,12 @@ export class AuthService {
         // blocks the response and Angular sees status === 0.
         // We must treat status 0 (when online) as a potential ban to prevent access.
         if (error?.status === 0) {
-          if (this.isBrowser && navigator.onLine) {
+          if (this.isBrowser && navigator.onLine && !this.isUnloading) {
             this.clearAllAuth();
             window.location.href = '/auth/login';
             return new Observable(); // Halt bootstrap
           }
-          // If genuinely offline, we might allow optimistic load, but usually, we just stop.
+          // If genuinely offline, or if it's a refresh cancellation, we might allow optimistic load.
           this.isAppInitialized.set(true);
           return of(null);
         }
@@ -515,6 +522,13 @@ export class AuthService {
       },
       error: () => {}
     });
+  }
+
+  /**
+   * Returns whether the window is currently unloading (refreshing/navigating away)
+   */
+  getIsUnloading(): boolean {
+    return this.isUnloading;
   }
 
   /**

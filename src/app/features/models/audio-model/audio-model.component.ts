@@ -5,7 +5,7 @@ import { FooterSectionComponent } from '../../../shared/components/footer/footer
 import { AudioModelV1Component } from './v1/audio-model-v1.component';
 import { AudioModelV2Component } from './v2/audio-model-v2.component';
 import { SegmentedNavComponent } from '../../../shared/components/segmented-nav/segmented-nav.component';
-import { SeoService } from '../../../core/services/seo.service';
+
 
 @Component({
   selector: 'app-audio-model',
@@ -22,7 +22,7 @@ import { SeoService } from '../../../core/services/seo.service';
 })
 export class AudioModelComponent implements OnInit {
   private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  private seoService = inject(SeoService);
+
 
 
   selectedVersion = signal<'v1' | 'v2'>('v2');
@@ -34,12 +34,6 @@ export class AudioModelComponent implements OnInit {
 
 
   ngOnInit(): void {
-    this.seoService.updateMeta({
-      title: 'Audio Emotion Detection Model — Emotra',
-      description: 'Emotra\'s audio emotion model detects emotions from voice recordings and live audio with real-time waveform visualization.',
-      url: 'https://graduation-project-website-eight.vercel.app/models/audio'
-    });
-
     if (this.isBrowser) {
       window.scrollTo(0, 0);
     }

@@ -20,6 +20,7 @@ import { DropdownMenuComponent, DropdownOption } from '../../../shared/component
 import { AnalysisSectionHeaderComponent } from '../../../shared/components/analysis-section-header/analysis-section-header.component';
 import { AdminChartService } from '../../../core/services/admin-chart.service';
 
+
 const CACHE_KEY = 'emotra_admin_stats';
 
 @Component({
@@ -47,6 +48,7 @@ export class AdminDashboardComponent implements OnInit {
   protected format = inject(FormattingService);
   private destroyRef = inject(DestroyRef);
   private chartService = inject(AdminChartService);
+
 
   stats = signal<PlatformStats | null>(null);
   isLoading = signal<boolean>(true);

@@ -5,7 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FormFieldErrorComponent } from '../../../shared/components/form/form-field-error/form-field-error.component';
-import { SeoService } from '../../../core/services/seo.service';
+
 
 @Component({
   selector: 'app-forgot-password',
@@ -19,14 +19,9 @@ export class ForgotPasswordComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private toastService = inject(ToastService);
-  private seoService = inject(SeoService);
+
 
   ngOnInit() {
-    this.seoService.updateMeta({
-      title: 'Reset Password — Emotra',
-      description: 'Reset your Emotra account password.',
-      url: 'https://graduation-project-website-eight.vercel.app/auth/forgot-password'
-    });
   }
 
   forgotForm = this.fb.nonNullable.group({

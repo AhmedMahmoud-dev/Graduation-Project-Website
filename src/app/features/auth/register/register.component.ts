@@ -6,7 +6,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FormFieldErrorComponent } from '../../../shared/components/form/form-field-error/form-field-error.component';
 import { PasswordInputComponent } from '../../../shared/components/form/password-input/password-input.component';
-import { SeoService } from '../../../core/services/seo.service';
+
 
 function passwordMatchValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -39,14 +39,9 @@ export class RegisterComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private toastService = inject(ToastService);
-  private seoService = inject(SeoService);
+
 
   ngOnInit() {
-    this.seoService.updateMeta({
-      title: 'Create Account — Emotra',
-      description: 'Sign up for Emotra and start analyzing emotions from text, audio, image, and video with AI-powered timeline tracking.',
-      url: 'https://graduation-project-website-eight.vercel.app/auth/register'
-    });
   }
 
   registerForm = this.fb.nonNullable.group({

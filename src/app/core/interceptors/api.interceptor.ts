@@ -37,7 +37,7 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
       // 3. Handle 401, 403, and 0 (CORS/Ban short-circuits)
-      if (error.status === 401 || error.status === 403 || (error.status === 0 && navigator.onLine)) {
+      if (error.status === 401 || error.status === 403 || (error.status === 0 && navigator.onLine && !authService.getIsUnloading())) {
         if (error.status === 403 && error.error?.data?.ban_reason) {
           authService.storeBanDetails(error.error.data);
         }

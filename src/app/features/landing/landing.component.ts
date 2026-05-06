@@ -11,7 +11,7 @@ import { TestimonialsSectionComponent } from './testimonials-section/testimonial
 import { FAQSectionComponent } from './faq-section/faq-section.component';
 import { FooterSectionComponent } from '../../shared/components/footer/footer.component';
 import { SystemFeedbackComponent } from '../../shared/components/system-feedback/system-feedback.component';
-import { SeoService } from '../../core/services/seo.service';
+
 
 @Component({
   selector: 'app-landing',
@@ -33,15 +33,9 @@ import { SeoService } from '../../core/services/seo.service';
 export class LandingComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private viewportScroller = inject(ViewportScroller);
-  private seoService = inject(SeoService);
+
 
   ngOnInit() {
-    this.seoService.updateMeta({
-      title: 'Emotra — AI Emotion Detection Platform',
-      description: 'Emotra analyzes human emotions from text, audio, image, and video using advanced AI models. Track how emotions evolve over time with interactive timelines.',
-      url: 'https://graduation-project-website-eight.vercel.app/'
-    });
-
     this.route.fragment.subscribe(fragment => {
       if (fragment) {
         // Small delay to allow components to render
