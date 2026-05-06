@@ -59,6 +59,7 @@ type InputTab = 'upload' | 'record';
   styleUrls: ['./audio-analysis.component.css']
 })
 export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisResponse> implements OnDestroy {
+  readonly MAX_FILE_SIZE_MB = 25;
   private audioService = inject(AudioAnalysisService);
   private sanitizer = inject(DomSanitizer);
   private themeService = inject(ThemeService);
@@ -225,6 +226,7 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
       untracked(() => {
         this.isPlaying.set(false);
         this.audioElement?.nativeElement?.pause();
+        this.error.set(null);
       });
 
       const currentPeaks = _tab === 'upload' ? this.uploadedPeaks : this.recordedPeaks;
@@ -373,14 +375,18 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
   private processFile(file?: File) {
     if (!file) return;
 
-    if (file.size > 25 * 1024 * 1024) {
-      this.error.set('File size exceeds 25MB limit.');
+    if (file.size > this.MAX_FILE_SIZE_MB * 1024 * 1024) {
+      const msg = `File size exceeds ${this.MAX_FILE_SIZE_MB}MB limit.`;
+      this.error.set(msg);
+      this.toastService.show('File Too Large', msg, 'error', 'error');
       return;
     }
 
     const acceptedTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm', 'audio/x-m4a'];
     if (!acceptedTypes.includes(file.type) && !file.name.endsWith('.m4a')) {
-      this.error.set('Unsupported file format. Please use MP3, WAV, OGG, or M4A.');
+      const msg = 'Unsupported file format. Please use MP3, WAV, OGG, or M4A.';
+      this.error.set(msg);
+      this.toastService.show('Format Error', msg, 'error', 'error');
       return;
     }
 
@@ -542,6 +548,7 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
 
         const file = new File([blob], `recording_${Date.now()}.webm`, { type: 'audio/webm' });
         this.recordedFile.set(file);
+        this.duration.set(this.recordingDuration());
         setTimeout(() => this.generateStaticWaveform(file, 'record'), 150);
       };
 
@@ -634,8 +641,17 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
     const audio = this.audioElement?.nativeElement;
     if (audio) {
       this.currentTime.set(audio.currentTime);
-      this.duration.set(audio.duration || 0);
+      if (isFinite(audio.duration) && audio.duration > 0) {
+        this.duration.set(audio.duration);
+      }
       this.drawWaveform();
+    }
+  }
+
+  onAudioLoadedMetadata() {
+    const audio = this.audioElement?.nativeElement;
+    if (audio && isFinite(audio.duration) && audio.duration > 0) {
+      this.duration.set(audio.duration);
     }
   }
 
@@ -747,7 +763,10 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
       this.recordedFile.set(null);
       this.recordedUrl.set(null);
       this.recordedPeaks = [];
+      this.recordingDuration.set(0);
     }
+    this.duration.set(0);
+    this.currentTime.set(0);
   }
 
   resetToInput() {
@@ -764,6 +783,9 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
     this.recordedFile.set(null);
     this.recordedPeaks = [];
     this.recordedUrl.set(null);
+    this.duration.set(0);
+    this.currentTime.set(0);
+    this.recordingDuration.set(0);
     this.error.set(null);
     this.router.navigate(['/analysis/audio']);
   }

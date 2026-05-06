@@ -17,7 +17,22 @@
 
         <!-- Hidden Audio Element -->
         <audio #audioElement [src]="currentAudioUrl()" (timeupdate)="onAudioTimeUpdate()" (play)="onAudioPlay()"
-          (pause)="onAudioPause()" (ended)="onAudioEnded()" class="hidden"></audio>
+          (pause)="onAudioPause()" (ended)="onAudioEnded()" (loadedmetadata)="onAudioLoadedMetadata()" class="hidden"></audio>
+
+        <!-- Error Message -->
+        @if (error()) {
+        <div class="px-4 sm:px-8 py-3.5 bg-red-500/10 border-b border-red-500/20 flex items-center gap-3 text-red-500 text-xs sm:text-sm font-semibold animate-fade-in">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span class="flex-1">{{ error() }}</span>
+          <button (click)="error.set(null)" class="ml-auto opacity-60 hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-red-500/10">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        }
 
         <!-- ─── Tab Switcher ─── -->
         <div class="px-4 py-4 sm:px-8 sm:py-5 flex justify-center border-b border-[color:var(--border-color)]"
@@ -119,7 +134,7 @@
               <span class="format-badge">WAV</span>
               <span class="format-badge">OGG</span>
               <span class="format-badge">M4A</span>
-              <span class="format-badge">≤ 25 MB</span>
+              <span class="format-badge">≤ {{ MAX_FILE_SIZE_MB }} MB</span>
             </div>
             <button class="btn-browse">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
