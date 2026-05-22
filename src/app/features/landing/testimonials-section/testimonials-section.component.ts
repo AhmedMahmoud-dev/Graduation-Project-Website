@@ -18,8 +18,11 @@ export class TestimonialsSectionComponent implements OnInit {
   private uiService = inject(SystemFeedbackUIService);
   private cache = inject(AppCacheService);
 
-
   private readonly CACHE_KEY = 'emotra_public_testimonials';
+
+  openFeedbackModal() {
+    this.uiService.open();
+  }
 
   // Carousel state
   activeIndex = signal(0);
@@ -51,28 +54,6 @@ export class TestimonialsSectionComponent implements OnInit {
     });
   }
 
-  // Fallback data if API fails or returns empty
-  fallbackTestimonials: TestimonialItem[] = [
-    {
-      comment: "Emotra helped our research team identify emotional patterns in interview responses we would have missed entirely.",
-      user_name: "Dr. Sarah Mitchell",
-      rating: 5,
-      created_at: new Date().toISOString()
-    },
-    {
-      comment: "The audio emotion timeline is unlike anything I've seen. It changed how we approach customer feedback analysis.",
-      user_name: "James Okafor",
-      rating: 5,
-      created_at: new Date().toISOString()
-    },
-    {
-      comment: "Finally a tool that doesn't just give you a label — it shows you the emotional journey. Incredibly powerful.",
-      user_name: "Lena Hoffmann",
-      rating: 5,
-      created_at: new Date().toISOString()
-    }
-  ];
-
   ngOnInit() {
     this.loadTestimonials();
   }
@@ -97,23 +78,17 @@ export class TestimonialsSectionComponent implements OnInit {
               stats: response.data.stats
             });
           } else {
-            this.useFallback();
+            this.testimonials.set([]);
+            this.stats.set(null);
           }
         },
         error: () => {
           if (this.testimonials().length === 0) {
-            this.useFallback();
+            this.testimonials.set([]);
+            this.stats.set(null);
           }
         }
       });
-  }
-
-  private useFallback() {
-    this.testimonials.set(this.fallbackTestimonials);
-    this.stats.set({
-      average_rating: 4.9,
-      total_reviews: 1240
-    });
   }
 
   getInitials(name: string): string {
@@ -126,15 +101,20 @@ export class TestimonialsSectionComponent implements OnInit {
   goTo(index: number) {
     const total = this.testimonials().length;
     if (total === 0) return;
-    this.activeIndex.set(((index % total) + total) % total);
+    const boundedIndex = Math.max(0, Math.min(index, total - 1));
+    this.activeIndex.set(boundedIndex);
   }
 
   next() {
-    this.goTo(this.activeIndex() + 1);
+    if (this.activeIndex() < this.testimonials().length - 1) {
+      this.goTo(this.activeIndex() + 1);
+    }
   }
 
   prev() {
-    this.goTo(this.activeIndex() - 1);
+    if (this.activeIndex() > 0) {
+      this.goTo(this.activeIndex() - 1);
+    }
   }
 
 

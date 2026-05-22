@@ -76,9 +76,89 @@
       </div>
     </div>
     } @else {
-    <div class="w-full max-w-3xl mx-auto flex flex-col items-center">
+      @if (testimonials().length === 0) {
+      <div class="w-full max-w-3xl mx-auto px-4 xs:px-6">
+        <div class="p-8 sm:p-10 md:p-12 rounded-3xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] shadow-sm flex flex-col items-center text-center">
+          <!-- Chat Bubble/Quote Icon -->
+          <div class="w-16 h-16 rounded-2xl bg-[color:color-mix(in_srgb,var(--brand-primary),transparent_92%)] border border-[color:color-mix(in_srgb,var(--brand-primary),transparent_80%)] flex items-center justify-center text-[color:var(--brand-primary)] mb-6">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+            </svg>
+          </div>
 
-      <!-- Card area with arrows -->
+          <h3 class="text-xl sm:text-2xl font-black text-[color:var(--color-text)] mb-3">
+            Be the First to Share Your Experience
+          </h3>
+          <p class="text-sm sm:text-base text-[color:var(--color-text-muted)] max-w-md mb-8 leading-relaxed font-medium">
+            We value your feedback. Tell us how Emotra has helped you understand emotional patterns and intelligence.
+          </p>
+
+          <!-- CTA Button to open modal -->
+          <button
+            (click)="openFeedbackModal()"
+            class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[color:var(--brand-primary)] text-white font-bold rounded-xl hover:bg-[color:color-mix(in_srgb,var(--brand-primary),white_10%)] transition-colors duration-200 shadow-sm text-sm">
+            <span>Share Your Feedback</span>
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      } @else {
+      <div class="w-full max-w-3xl mx-auto flex flex-col">
+
+      <!-- Controls Bar above the card -->
+      @if (testimonials().length > 1) {
+      <div class="flex items-center justify-between mb-6 px-1">
+        <!-- Number Indicator (Top-Left) -->
+        <div class="font-mono text-sm font-semibold tracking-wider text-[color:var(--color-text-muted)] select-none">
+          <span class="text-[color:var(--color-text)] font-bold">{{ activeIndex() + 1 < 10 ? '0' + (activeIndex() + 1) : activeIndex() + 1 }}</span>
+          <span class="mx-1 opacity-40">/</span>
+          <span>{{ testimonials().length < 10 ? '0' + testimonials().length : testimonials().length }}</span>
+        </div>
+
+        <!-- Navigation Buttons & Dots (Top-Right) -->
+        <div class="flex items-center gap-3">
+          <!-- Prev Button -->
+          <button
+            id="testimonials-prev"
+            (click)="prev()"
+            [disabled]="activeIndex() === 0"
+            class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] flex items-center justify-center text-[color:var(--color-text-muted)] hover:enabled:text-[color:var(--brand-primary)] hover:enabled:border-[color:var(--brand-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm active:enabled:bg-[color:var(--color-bg)]">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          <!-- Dot Indicators -->
+          <div class="flex items-center gap-1.5 mx-1">
+            @for (item of testimonials(); track item.user_name; let i = $index) {
+            <button
+              [id]="'testimonial-dot-' + i"
+              (click)="goTo(i)"
+              class="testimonial-dot"
+              [style.width]="activeIndex() === i ? '20px' : '6px'"
+              [class.testimonial-dot-active]="activeIndex() === i"
+              [attr.aria-label]="'Go to slide ' + (i + 1)">
+            </button>
+            }
+          </div>
+
+          <!-- Next Button -->
+          <button
+            id="testimonials-next"
+            (click)="next()"
+            [disabled]="activeIndex() === testimonials().length - 1"
+            class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] flex items-center justify-center text-[color:var(--color-text-muted)] hover:enabled:text-[color:var(--brand-primary)] hover:enabled:border-[color:var(--brand-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm active:enabled:bg-[color:var(--color-bg)]">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      }
+
+      <!-- Card area -->
       <div class="relative w-full">
         <!-- Crossfade container: only active card is in flow -->
         <div
@@ -127,45 +207,9 @@
           </div>
           }
         </div>
-
-        <!-- Arrows at bottom-right of the card -->
-        @if (testimonials().length > 1) {
-        <div class="flex items-center justify-end gap-3 mt-6">
-          <button
-            id="testimonials-prev"
-            (click)="prev()"
-            class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[color:var(--color-surface)] border border-[color:var(--color-border)] flex items-center justify-center text-[color:var(--color-text-muted)] hover:text-[color:var(--brand-primary)] hover:border-[color:var(--brand-primary)] transition-colors shadow-sm">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-
-          <!-- Dot Indicators inline with arrows -->
-          <div class="flex items-center gap-2">
-            @for (item of testimonials(); track item.user_name; let i = $index) {
-            <button
-              [id]="'testimonial-dot-' + i"
-              (click)="goTo(i)"
-              class="w-2 h-2 rounded-full transition-colors"
-              [class.bg-[color:var(--brand-primary)]]="activeIndex() === i"
-              [class.bg-[color:var(--color-border)]]="activeIndex() !== i">
-            </button>
-            }
-          </div>
-
-          <button
-            id="testimonials-next"
-            (click)="next()"
-            class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[color:var(--color-surface)] border border-[color:var(--color-border)] flex items-center justify-center text-[color:var(--color-text-muted)] hover:text-[color:var(--brand-primary)] hover:border-[color:var(--brand-primary)] transition-colors shadow-sm">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-        }
       </div>
-
     </div>
     }
+  }
   </div>
 </section>
