@@ -1,11 +1,9 @@
-import { Component, signal, inject, computed } from '@angular/core';
+import { Component, signal, inject, computed, OnInit, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Observable } from 'rxjs';
 
-import { TextAnalysisService } from '../../../../core/services/text-analysis.service';
 import { TextAnalysisResult } from '../../../../core/models/text-analysis.model';
-import { ApiResponse } from '../../../../core/models/api-response.model';
+import { TextAnalysisStore } from '../../../../core/stores/text-analysis.store';
 
 import { EmotionIconComponent } from '../../../../shared/components/emotion-icon/emotion-icon.component';
 import { FooterSectionComponent } from '../../../../shared/components/footer/footer.component';
@@ -21,8 +19,6 @@ import { LoadingStateComponent } from '../../../../shared/components/loading-sta
 import { PageHeaderComponent } from '../../../../shared/components/layout/page-header/page-header.component';
 import { AnalysisFeedbackComponent } from '../../../../shared/components/analysis-feedback/analysis-feedback.component';
 import { AnalysisSectionHeaderComponent } from '../../../../shared/components/analysis-section-header/analysis-section-header.component';
-
-import { BaseAnalysisComponent } from '../../../../shared/base/base-analysis.component';
 
 const SAMPLE_TEXTS = [
   // Pure sad
@@ -98,29 +94,33 @@ const SAMPLE_TEXTS = [
     PageHeaderComponent,
     AnalysisFeedbackComponent,
     AnalysisSectionHeaderComponent
-
   ],
+  providers: [TextAnalysisStore],
   templateUrl: './app-text-analysis.html',
   styleUrl: './app-text-analysis.css'
 })
-export class TextAnalysisComponent extends BaseAnalysisComponent<TextAnalysisResult> {
-  private analysisService = inject(TextAnalysisService);
+export class TextAnalysisComponent implements OnInit {
+  private store = inject(TextAnalysisStore);
 
-  // ─── Base Contract ────────────────────────────────────────────────
-  protected readonly analysisType = 'text' as const;
-  protected readonly analysisRoute = '/analysis/text';
-  protected readonly expectedApiType = 'Text';
+  // Expose store state / signals directly for the template
+  state = this.store.state;
+  error = this.store.error;
+  result = this.store.result;
+  sessionId = this.store.sessionId;
+  timelineData = this.store.timelineData;
+  distributionData = this.store.distributionData;
+  inputText = this.store.inputText;
 
-  // ─── Text-Specific State ──────────────────────────────────────────
-  inputText = signal<string>('');
+  charCount = this.store.charCount;
+  tokenEstimate = this.store.tokenEstimate;
+  sentenceCount = this.store.sentenceCount;
+  modelChips = this.store.modelChips;
+  emotionalInsights = this.store.emotionalInsights;
 
-  charCount = computed(() => this.inputText().length);
-  tokenEstimate = computed(() => Math.round(this.inputText().length / 4));
-  sentenceCount = computed(() => {
-    const t = this.inputText().trim();
-    if (!t) return 0;
-    return (t.match(/[.!?]+/g) || []).length + 1;
-  });
+  colorService = this.store.colorService;
+
+  shuffledTexts = [...SAMPLE_TEXTS];
+  currentIndex = 0;
 
   loadingTips = [
     'Humans use over 3000 words just to describe emotions across all languages',
@@ -133,98 +133,36 @@ export class TextAnalysisComponent extends BaseAnalysisComponent<TextAnalysisRes
     'Context from earlier sentences influences how later sentences are interpreted'
   ];
 
-  modelChips = computed(() => {
-    const r = this.result();
-    if (!r) return [];
-    return [
-      { label: 'Model', value: r.model_info.name, mono: true },
-      { label: 'Processing Time', value: `${r.processing_time_ms.toFixed(0)}ms`, mono: false },
-      { label: 'Token Count', value: `${r.input_info.token_count}`, mono: false },
-      { label: 'Device', value: r.model_info.device_used.toUpperCase(), mono: false },
-    ];
-  });
-
-  shuffledTexts = [...SAMPLE_TEXTS];
-  currentIndex = 0;
-
-  // ─── Base Hooks ───────────────────────────────────────────────────
-
-  protected override onInit(): void {
-    this.shuffleArray(this.shuffledTexts);
+  constructor() {
+    // Reactive scroll-to-feedback handling
+    effect(() => {
+      if (this.store.shouldScrollToFeedback()) {
+        untracked(() => {
+          this.store.shouldScrollToFeedback.set(false);
+        });
+        setTimeout(() => this.scrollToFeedback(), 150);
+      }
+    });
   }
 
-  protected override onNoRouteId(): void {
-    if (this.state() === 'results') {
-      this.resetToInput(false);
+  ngOnInit() {
+    this.shuffleArray(this.shuffledTexts);
+    this.store.subscribeToRouteParams();
+  }
+
+  scrollToFeedback(): void {
+    const el = document.getElementById('feedback-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
-
-  // ─── Base Abstract Implementations ────────────────────────────────
-
-  protected findLocalSession(id: string): any | null {
-    return this.storageService.getSessionById(id)
-      || this.storageService.getSessions().find(s => s.cloudId === Number(id))
-      || null;
-  }
-
-  protected applySession(session: any): void {
-    this.sessionId.set(session.id);
-    this.inputText.set(session.input);
-    this.result.set(session.result);
-    this.state.set('results');
-    this.buildChartData(this.chartThemeService.getChartTheme());
-  }
-
-  protected saveLocalSession(session: any): void {
-    this.storageService.saveSession(session);
-  }
-
-  protected buildChartData(theme: any): void {
-    const res = this.result();
-    if (!res) return;
-
-    this.timelineData.set(res.sentences_analysis.map((s, i) => ({
-      label: `S${i + 1}`,
-      probabilities: s.probabilities as any,
-      tooltipTitle: `Sentence ${i + 1}`,
-      tooltipDetail: s.sentence
-    })));
-
-    this.distributionData.set(res.combined_results.map(r => ({
-      label: r.label,
-      value: r.confidence_percent
-    })));
-  }
-
-  protected buildSessionPayload(sid: string, result: TextAnalysisResult): any {
-    return {
-      id: sid,
-      type: 'text',
-      timestamp: new Date().toISOString(),
-      input: this.inputText(),
-      result: result
-    };
-  }
-
-  protected syncToCloud(sid: string, result: TextAnalysisResult): Observable<ApiResponse<number>> {
-    return this.analysisV2Service.saveTextAnalysis(sid, result);
-  }
-
-  // ─── Text-Specific Methods ────────────────────────────────────────
 
   startAnalysis() {
-    this.executeAnalysisFlow(
-      this.analysisService.analyze(this.inputText())
-    );
+    this.store.startAnalysis();
   }
 
-  resetToInput(navigate = true) {
-    this.state.set('input');
-    this.result.set(null);
-    // this.showEditHint.set(false);
-    if (navigate) {
-      this.router.navigate(['/analysis/text']);
-    }
+  resetToInput() {
+    this.store.resetToInput();
   }
 
   shuffleArray(array: string[]) {
@@ -244,45 +182,9 @@ export class TextAnalysisComponent extends BaseAnalysisComponent<TextAnalysisRes
   }
 
   onTextChange() {
-    if (this.error()) this.error.set(null);
-  }
-
-  emotionalInsights = computed(() => {
-    const res = this.result();
-    if (!res) return null;
-
-    const sorted = [...res.combined_results].sort((a, b) => b.confidence_percent - a.confidence_percent);
-    const primary = sorted[0];
-    const diversity = res.combined_results.filter(r => r.confidence_percent > 5).length;
-
-    const posKeys = ['joy', 'surprise'];
-    const negKeys = ['anger', 'disgust', 'fear', 'sadness'];
-
-    let posScore = 0;
-    let negScore = 0;
-    res.combined_results.forEach(r => {
-      const label = r.label.toLowerCase();
-      if (posKeys.includes(label)) posScore += r.confidence_percent;
-      else if (negKeys.includes(label)) negScore += r.confidence_percent;
-    });
-
-    let polarity = 'Neutral';
-    let polarityColor = '#778ca3';
-
-    if (posScore > negScore + 15) {
-      polarity = 'Positive';
-      polarityColor = '#ffd32a';
-    } else if (negScore > posScore + 15) {
-      polarity = 'Negative';
-      polarityColor = '#ff4757';
+    if (this.error()) {
+      this.error.set(null);
     }
-
-    return {
-      primary: primary.label,
-      diversity,
-      polarity,
-      polarityColor,
-      complexity: diversity > 3 ? 'Complex' : (diversity > 1 ? 'Balanced' : 'Direct')
-    };
-  });
+  }
 }
+

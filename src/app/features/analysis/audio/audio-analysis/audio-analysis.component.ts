@@ -1,14 +1,11 @@
-import { Component, signal, inject, computed, effect, OnDestroy, ViewChild, ElementRef, untracked, HostListener, PLATFORM_ID } from '@angular/core';
+import { Component, signal, inject, computed, effect, OnInit, OnDestroy, ViewChild, ElementRef, untracked, HostListener, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
 import { FormsModule } from '@angular/forms';
-import { Observable } from 'rxjs';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 import { ThemeService } from '../../../../core/services/theme.service';
-import { AudioAnalysisService } from '../../../../core/services/audio-analysis.service';
 import { AudioAnalysisResponse, AudioSegment } from '../../../../core/models/audio-analysis.model';
-import { ApiResponse } from '../../../../core/models/api-response.model';
 import { AudioWaveformComponent } from '../../../../shared/components/audio-waveform/app-audio-waveform';
 import { EmotionIconComponent } from '../../../../shared/components/emotion-icon/emotion-icon.component';
 import { FooterSectionComponent } from '../../../../shared/components/footer/footer.component';
@@ -27,8 +24,8 @@ import { SegmentedNavComponent, SegmentedNavOption } from '../../../../shared/co
 import { AnalysisSectionHeaderComponent } from '../../../../shared/components/analysis-section-header/analysis-section-header.component';
 import { TimelineDataPoint, DistributionDataPoint } from '../../../../core/models/chart-data.model';
 
-import { BaseAnalysisComponent } from '../../../../shared/base/base-analysis.component';
-import { AnalysisBgService } from '../../../../core/services/analysis-bg.service';
+import { AudioAnalysisStore } from '../../../../core/stores/audio-analysis.store';
+import { ToastService } from '../../../../core/services/toast.service';
 
 type InputTab = 'upload' | 'record';
 
@@ -53,23 +50,31 @@ type InputTab = 'upload' | 'record';
     AnalysisFeedbackComponent,
     SegmentedNavComponent,
     AnalysisSectionHeaderComponent
-
   ],
+  providers: [AudioAnalysisStore],
   templateUrl: './audio-analysis.component.html',
   styleUrls: ['./audio-analysis.component.css']
 })
-export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisResponse> implements OnDestroy {
+export class AudioAnalysisComponent implements OnInit, OnDestroy {
   readonly MAX_FILE_SIZE_MB = 25;
-  private audioService = inject(AudioAnalysisService);
   private sanitizer = inject(DomSanitizer);
   private themeService = inject(ThemeService);
   private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  private analysisBgService = inject(AnalysisBgService);
+  private toastService = inject(ToastService);
+  private store = inject(AudioAnalysisStore);
 
-  // ─── Base Contract ────────────────────────────────────────────────
-  protected readonly analysisType = 'audio' as const;
-  protected readonly analysisRoute = '/analysis/audio';
-  protected readonly expectedApiType = 'Audio';
+  // Delegated to Store
+  state = this.store.state;
+  error = this.store.error;
+  result = this.store.result;
+  sessionId = this.store.sessionId;
+  timelineData = this.store.timelineData;
+  distributionData = this.store.distributionData;
+  textDistributionData = this.store.textDistributionData;
+  modelChips = this.store.modelChips;
+  colorService = this.store.colorService;
+  showBrowseOption = this.store.showBrowseOption;
+  userChoseToBrowse = this.store.userChoseToBrowse;
 
   @ViewChild('previewCanvas') previewCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('audioElement') audioElement?: ElementRef<HTMLAudioElement>;
@@ -80,9 +85,6 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
   isMobile = signal<boolean>(false);
   isDragging = signal<boolean>(false);
   isDraggingInvalid = signal<boolean>(false);
-  
-  showBrowseOption = signal<boolean>(false);
-  userChoseToBrowse = signal<boolean>(false);
 
   // File Upload State
   uploadedFile = signal<File | null>(null);
@@ -202,23 +204,8 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
 
   // Results State
   showTextAnalysis = signal<boolean>(false);
-  textDistributionData = signal<DistributionDataPoint[]>([]);
-
-  modelChips = computed(() => {
-    const res = this.result();
-    if (!res) return [];
-    return [
-      { label: 'Audio Model', value: res.model_info.audio_model, mono: false },
-      { label: 'Whisper', value: `v${res.model_info.whisper_model}`, mono: false },
-      { label: 'Fusion Engine', value: res.model_info.fusion_version, mono: false },
-      { label: 'Duration', value: `${res.audio_emotion.duration_seconds}s`, mono: false },
-      { label: 'Processing', value: `${res.processing_time_ms}ms`, mono: true },
-    ];
-  });
 
   constructor() {
-    super();
-
     // On tab switch: pause playback, redraw waveform without re-decoding
     effect(() => {
       const _tab = this.activeTab(); // track this signal
@@ -247,30 +234,13 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
       });
     });
 
-    // Background Job Results Effect
+    // Reactive scroll-to-feedback handling
     effect(() => {
-      const jobResult = this.analysisBgService.jobResult();
-      if (jobResult && this.state() === 'loading' && !this.userChoseToBrowse()) {
-         untracked(() => {
-            const sid = jobResult.id;
-            const res = jobResult.result as AudioAnalysisResponse;
-            this.result.set(res);
-            this.sessionId.set(sid);
-            this.buildChartData(this.chartThemeService.getChartTheme());
-            this.state.set('results');
-            this.router.navigate([this.analysisRoute, sid], { replaceUrl: true });
-         });
-      }
-    });
-
-    // Background Job Error Effect
-    effect(() => {
-      const jobError = this.analysisBgService.jobError();
-      if (jobError && this.state() === 'loading' && !this.userChoseToBrowse()) {
-         untracked(() => {
-             this.error.set('Something went wrong. Please try again later.');
-             this.state.set('input');
-         });
+      if (this.store.shouldScrollToFeedback()) {
+        untracked(() => {
+          this.store.shouldScrollToFeedback.set(false);
+        });
+        setTimeout(() => this.scrollToFeedback(), 150);
       }
     });
   }
@@ -282,46 +252,10 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
     this.drawWaveform(true);
   }
 
-  // ─── Base Hooks ───────────────────────────────────────────────────
-
-  protected override onInit(): void {
+  ngOnInit() {
     this.isMobile.set(window.innerWidth < 640);
     this.setupPermissionListener();
-  }
-
-  // ─── Base Abstract Implementations ────────────────────────────────
-
-  protected findLocalSession(id: string): any | null {
-    return this.storageService.getAudioSessionById(id)
-      || this.storageService.getAudioSessions().find(s => s.cloudId === Number(id))
-      || null;
-  }
-
-  protected applySession(session: any): void {
-    this.sessionId.set(session.id);
-    this.result.set(session.result);
-    this.state.set('results');
-  }
-
-  protected saveLocalSession(session: any): void {
-    this.storageService.saveAudioSession(session);
-  }
-
-  protected buildSessionPayload(sid: string, result: AudioAnalysisResponse): any {
-    const file = this.selectedFile();
-    return {
-      id: sid,
-      type: 'audio',
-      timestamp: new Date().toISOString(),
-      inputFileName: file?.name || 'Audio File',
-      durationSeconds: result.audio_emotion.duration_seconds,
-      result: result
-    };
-  }
-
-  protected syncToCloud(sid: string, result: AudioAnalysisResponse): Observable<ApiResponse<number>> {
-    const file = this.selectedFile();
-    return this.analysisV2Service.saveAudioAnalysis(sid, result, file!);
+    this.store.subscribeToRouteParams();
   }
 
   ngOnDestroy() {
@@ -698,53 +632,14 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
 
   startAnalysis() {
     const file = this.selectedFile();
-    if (!file) return;
-    
-    this.state.set('loading');
-    this.error.set(null);
-    this.showBrowseOption.set(false);
-    this.userChoseToBrowse.set(false);
-    
-    this.analysisBgService.startBackgroundJob({
-      label: file.name,
-      type: 'audio',
-      resultRoute: this.analysisRoute,
-      analysis$: this.audioService.analyze(file),
-      onSuccess: (result: AudioAnalysisResponse, jobId: string) => {
-        const session = this.buildSessionPayload(jobId, result);
-        this.saveLocalSession(session);
-        this.onAnalysisSuccess(jobId, result);
-
-        this.orchestrationService.syncSessionToCloud(
-          jobId,
-          result,
-          this.analysisType,
-          (sid, res) => this.syncToCloud(sid, res)
-        );
-      }
-    });
-    
-    setTimeout(() => {
-      if (this.state() === 'loading') {
-        this.showBrowseOption.set(true);
-      }
-    }, 3000);
+    if (file) {
+      this.store.startAnalysis(file);
+    }
   }
 
   continueBrowsing() {
-    this.userChoseToBrowse.set(true);
-    this.router.navigate(['/dashboard']);
+    this.store.continueBrowsing();
   }
-
-  protected override onAnalysisSuccess(sid: string, _result: AudioAnalysisResponse): void {
-    // DEBUG: Temporary logs for checking the save flow request
-    const file = this.selectedFile();
-    console.log('--- Audio Save Debug ---');
-    console.log('File:', file ? { name: file.name, size: file.size, type: file.type } : 'NULL');
-    console.log('SID:', sid);
-    console.log('Res Keys:', Object.keys(_result));
-  }
-
 
   // ─── RESULTS ──────────────────────────────────────────────────────────────
 
@@ -774,8 +669,7 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
     if (this.audioElement?.nativeElement) {
       this.audioElement.nativeElement.pause();
     }
-    this.state.set('input');
-    this.result.set(null);
+    this.store.resetToInput();
     this.showEditHint.set(false);
     this.uploadedFile.set(null);
     this.uploadUrl.set(null);
@@ -786,45 +680,17 @@ export class AudioAnalysisComponent extends BaseAnalysisComponent<AudioAnalysisR
     this.duration.set(0);
     this.currentTime.set(0);
     this.recordingDuration.set(0);
-    this.error.set(null);
-    this.router.navigate(['/analysis/audio']);
-  }
-
-
-  protected buildChartData(theme: any): void {
-    const res = this.result();
-    if (!res) return;
-
-    // Timeline Data
-    this.timelineData.set(res.audio_emotion.timeline.map((segment: any) => ({
-      label: `${segment.timestamp_offset.toFixed(1)}s`,
-      probabilities: segment.probabilities,
-      tooltipTitle: `Timestamp: ${segment.timestamp_offset.toFixed(1)}s`
-    })));
-
-    // Final Distribution Data
-    this.distributionData.set(res.final_multimodal_results.map(r => ({
-      label: r.label,
-      value: r.confidence * 100
-    })));
-
-    // Text Track Distribution Data
-    this.textDistributionData.set(res.text_emotion.combined_results.map(r => ({
-      label: r.label,
-      value: r.confidence * 100
-    })));
   }
 
   getMostFrequentDominant() {
-    const res = this.result();
-    if (!res) return 'Neutral';
-    const counts: Record<string, number> = {};
-    res.audio_emotion.timeline.forEach((s: AudioSegment) => {
-      const label = s.dominant.label;
-      counts[label] = (counts[label] || 0) + 1;
-    });
-    const winner = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-    return winner ? winner[0] : 'Neutral';
+    return this.store.getMostFrequentDominant();
+  }
+
+  scrollToFeedback(): void {
+    const el = document.getElementById('feedback-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
 }

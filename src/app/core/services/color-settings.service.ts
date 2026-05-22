@@ -127,6 +127,39 @@ export const PRESET_THEMES = [
       'surprise': '#f97316',
     }
   },
+  {
+    id: 'vscode',
+    name: 'Midnight',
+    description: 'Sleek direct black and white theme with rose accents',
+    preview: '#db2777',
+    light: {
+      '--color-bg': '#ffffff',
+      '--color-surface': '#f9f9f9',
+      '--color-border': '#e5e5e5',
+      '--color-text': '#0d0d0d',
+      '--color-text-muted': '#676767',
+      '--color-primary': '#db2777',
+      '--color-accent': '#f59e0b',
+    },
+    dark: {
+      '--color-bg': '#000000',
+      '--color-surface': '#0d0d0d',
+      '--color-border': '#212121',
+      '--color-text': '#ffffff',
+      '--color-text-muted': '#b4b4b4',
+      '--color-primary': '#f472b6',
+      '--color-accent': '#fbbf24',
+    },
+    emotions: {
+      'anger': '#ef4444',
+      'disgust': '#10b981',
+      'fear': '#f97316',
+      'joy': '#f59e0b',
+      'neutral': '#8c8c8c',
+      'sadness': '#3b82f6',
+      'surprise': '#ec4899',
+    }
+  },
 ];
 
 @Injectable({ providedIn: 'root' })
