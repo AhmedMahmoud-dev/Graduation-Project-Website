@@ -59,10 +59,10 @@
 
       <!-- Theme Toggle Segmented Control -->
       <div
-        class="flex flex-row flex-wrap items-center bg-[color:var(--bg-primary)] p-1 rounded-2xl sm:rounded-full border border-[color:var(--border-color)] shadow-sm w-full sm:w-auto justify-center sm:justify-start">
+        class="flex flex-row items-center bg-[color:var(--bg-primary)] p-1 rounded-full border border-[color:var(--border-color)] shadow-sm w-auto mx-auto sm:mx-0 justify-start">
 
         <button (click)="setTheme('light')"
-          class="px-3 py-2 sm:py-1.5 rounded-full text-xs font-semibold flex items-center justify-center gap-2 transition-all duration-200 flex-1 sm:flex-none"
+          class="px-3 py-2 sm:py-1.5 rounded-full text-xs font-semibold flex items-center justify-center gap-2 transition-all duration-200 shrink-0"
           [class.bg-[color:var(--bg-surface)]]="currentTheme() === 'light'"
           [class.text-[color:var(--text-primary)]]="currentTheme() === 'light'"
           [class.shadow-sm]="currentTheme() === 'light'"
@@ -76,7 +76,7 @@
         </button>
 
         <button (click)="setTheme('system')"
-          class="px-3 py-2 sm:py-1.5 rounded-full text-xs font-semibold flex items-center justify-center gap-2 transition-all duration-200 flex-1 sm:flex-none"
+          class="px-3 py-2 sm:py-1.5 rounded-full text-xs font-semibold flex items-center justify-center gap-2 transition-all duration-200 shrink-0"
           [class.bg-[color:var(--bg-surface)]]="currentTheme() === 'system'"
           [class.text-[color:var(--text-primary)]]="currentTheme() === 'system'"
           [class.shadow-sm]="currentTheme() === 'system'"
@@ -91,7 +91,7 @@
         </button>
 
         <button (click)="setTheme('dark')"
-          class="px-3 py-2 sm:py-1.5 rounded-full text-xs font-semibold flex items-center justify-center gap-2 transition-all duration-200 flex-1 sm:flex-none"
+          class="px-3 py-2 sm:py-1.5 rounded-full text-xs font-semibold flex items-center justify-center gap-2 transition-all duration-200 shrink-0"
           [class.bg-[color:var(--bg-surface)]]="currentTheme() === 'dark'"
           [class.text-[color:var(--text-primary)]]="currentTheme() === 'dark'"
           [class.shadow-sm]="currentTheme() === 'dark'"

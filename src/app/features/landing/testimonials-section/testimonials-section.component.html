@@ -1,4 +1,4 @@
-<section id="testimonials" class="py-16 md:py-24 lg:py-32 px-4 xs:px-6 lg:px-12 bg-[color:var(--color-bg)] text-[color:var(--color-text)]">
+<section id="testimonials" class="py-16 md:py-24 lg:py-32 px-4 xs:px-6 lg:px-12 bg-[color:var(--color-bg)] text-[color:var(--color-text)] overflow-hidden">
   <div class="max-w-7xl mx-auto flex flex-col">
     <!-- Section Header & Stats -->
     <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-12 sm:mb-16 px-2">
@@ -78,7 +78,7 @@
     } @else {
       @if (testimonials().length === 0) {
       <div class="w-full max-w-3xl mx-auto px-4 xs:px-6">
-        <div class="p-8 sm:p-10 md:p-12 rounded-3xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] shadow-sm flex flex-col items-center text-center">
+        <div class="p-6 xs:p-8 sm:p-10 md:p-12 rounded-3xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] shadow-sm flex flex-col items-center text-center">
           <!-- Chat Bubble/Quote Icon -->
           <div class="w-16 h-16 rounded-2xl bg-[color:color-mix(in_srgb,var(--brand-primary),transparent_92%)] border border-[color:color-mix(in_srgb,var(--brand-primary),transparent_80%)] flex items-center justify-center text-[color:var(--brand-primary)] mb-6">
             <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -109,15 +109,15 @@
 
       <!-- Controls Bar above the card -->
       @if (testimonials().length > 1) {
-      <div class="flex items-center justify-between mb-6 px-1">
-        <!-- Number Indicator (Top-Left) -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 px-2 w-full">
+        <!-- Number Indicator (Top-Left on desktop, centered on mobile) -->
         <div class="font-mono text-sm font-semibold tracking-wider text-[color:var(--color-text-muted)] select-none">
           <span class="text-[color:var(--color-text)] font-bold">{{ activeIndex() + 1 < 10 ? '0' + (activeIndex() + 1) : activeIndex() + 1 }}</span>
           <span class="mx-1 opacity-40">/</span>
           <span>{{ testimonials().length < 10 ? '0' + testimonials().length : testimonials().length }}</span>
         </div>
 
-        <!-- Navigation Buttons & Dots (Top-Right) -->
+        <!-- Navigation Buttons & Dots (Top-Right on desktop, centered on mobile) -->
         <div class="flex items-center gap-3">
           <!-- Prev Button -->
           <button
@@ -159,7 +159,7 @@
       }
 
       <!-- Card area -->
-      <div class="relative w-full">
+      <div class="relative w-full overflow-hidden">
         <!-- Crossfade container: only active card is in flow -->
         <div
           class="relative w-full"
@@ -174,7 +174,7 @@
             [class.carousel-slide-hidden]="activeIndex() !== i">
             <div
               [id]="'testimonial-' + item.user_name.toLowerCase().replace(' ', '-')"
-              class="testimonial-card p-8 sm:p-10 md:p-12 rounded-3xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] shadow-sm relative">
+              class="testimonial-card p-6 xs:p-8 sm:p-10 md:p-12 rounded-3xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] shadow-sm relative">
 
               <!-- Stars -->
               <div class="flex gap-1 mb-6">
