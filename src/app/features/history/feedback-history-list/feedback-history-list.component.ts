@@ -10,7 +10,6 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 import { SystemFeedbackUIService } from '../../../core/services/system-feedback-ui.service';
 import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.component';
-import { TooltipComponent } from '../../../shared/components/tooltip/tooltip.component';
 import { FormattingService } from '../../../core/services/formatting.service';
 import { AppCacheService } from '../../../core/services/app-cache.service';
 import { finalize } from 'rxjs';
@@ -33,7 +32,7 @@ export interface FeedbackListItem {
 @Component({
   selector: 'app-feedback-history-list',
   standalone: true,
-  imports: [CommonModule, EmptyStateComponent, LoadingStateComponent, AppIconComponent, TooltipComponent],
+  imports: [CommonModule, EmptyStateComponent, LoadingStateComponent, AppIconComponent],
   templateUrl: './feedback-history-list.component.html',
   styleUrl: './feedback-history-list.component.css'
 })
@@ -92,17 +91,6 @@ export class FeedbackHistoryListComponent implements OnInit {
 
   filteredCount = computed(() => this.visibleItems().length);
 
-  hoveredTooltipId = signal<string | null>(null);
-
-  getTooltipText(status: string | null): string {
-    if (!status) return '';
-    switch (status.toLowerCase()) {
-      case 'approved': return 'Your system feedback is approved and now appears in the public testimonials.';
-      case 'rejected': return 'Your feedback may have violations or needs a better explanation. Please review our guidelines.';
-      case 'pending': return 'An admin is currently reviewing your feedback.';
-      default: return '';
-    }
-  }
 
   constructor() {
     // 1. Refresh list in background when feedback modal is closed 
