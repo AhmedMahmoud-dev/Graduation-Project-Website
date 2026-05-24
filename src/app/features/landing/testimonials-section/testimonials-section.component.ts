@@ -69,12 +69,14 @@ export class TestimonialsSectionComponent implements OnInit {
       .subscribe({
         next: (response) => {
           if (response.is_success && response.data) {
-            this.testimonials.set(response.data.items);
+            const items = response.data.items || [];
+            const sliced = items.slice(0, 15);
+            this.testimonials.set(sliced);
             this.stats.set(response.data.stats);
 
             // Update cache
             this.cache.setItem(this.CACHE_KEY, {
-              testimonials: response.data.items,
+              testimonials: sliced,
               stats: response.data.stats
             });
           } else {

@@ -130,19 +130,27 @@
             </svg>
           </button>
 
-          <!-- Dot Indicators -->
-          <div class="flex items-center gap-1.5 mx-1">
-            @for (item of testimonials(); track item.user_name; let i = $index) {
-            <button
-              [id]="'testimonial-dot-' + i"
-              (click)="goTo(i)"
-              class="testimonial-dot"
-              [style.width]="activeIndex() === i ? '20px' : '6px'"
-              [class.testimonial-dot-active]="activeIndex() === i"
-              [attr.aria-label]="'Go to slide ' + (i + 1)">
-            </button>
-            }
-          </div>
+          <!-- Indicators (Dots or Progress Line) -->
+          @if (testimonials().length <= 7) {
+            <div class="flex items-center gap-1.5 mx-1">
+              @for (item of testimonials(); track item.user_name; let i = $index) {
+              <button
+                [id]="'testimonial-dot-' + i"
+                (click)="goTo(i)"
+                class="testimonial-dot"
+                [style.width]="activeIndex() === i ? '20px' : '6px'"
+                [class.testimonial-dot-active]="activeIndex() === i"
+                [attr.aria-label]="'Go to slide ' + (i + 1)">
+              </button>
+              }
+            </div>
+          } @else {
+            <div class="w-16 h-[3px] rounded-full bg-[color:var(--color-border)] relative overflow-hidden mx-3 select-none">
+              <div class="absolute left-0 top-0 h-full bg-[color:var(--brand-primary)] transition-all duration-300"
+                [style.width]="((activeIndex() + 1) / testimonials().length) * 100 + '%'">
+              </div>
+            </div>
+          }
 
           <!-- Next Button -->
           <button
