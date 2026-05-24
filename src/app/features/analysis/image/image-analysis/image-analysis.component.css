@@ -308,7 +308,7 @@
 .face-box:hover {
   border-width: 3px;
   transform: scale(1.015);
-  box-shadow: 0 0 24px var(--face-color) !important;
+  box-shadow: 0 0 12px var(--face-color) !important;
   z-index: 20;
 }
 

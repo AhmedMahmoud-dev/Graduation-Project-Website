@@ -102,6 +102,12 @@ export class ImageAnalysisComponent implements OnInit, OnDestroy {
 
   isBlurred = computed(() => this.clearFace() !== null);
 
+  clearFaceColor = computed(() => {
+    const face = this.clearFace();
+    if (!face) return 'transparent';
+    return this.colorService.getColor(face.combined_final_emotion.label);
+  });
+
   clearFaceClipPath = computed(() => {
     const face = this.clearFace();
     const res = this.result();
@@ -380,7 +386,7 @@ export class ImageAnalysisComponent implements OnInit, OnDestroy {
       height: `${height}%`,
       '--face-color': color,
       'border-color': color,
-      'box-shadow': isSelected ? `0 0 20px ${color}` : '0 0 10px rgba(0,0,0,0.3)'
+      'box-shadow': isSelected ? `0 0 10px ${color}` : '0 0 8px rgba(0,0,0,0.25)'
     };
   }
 
