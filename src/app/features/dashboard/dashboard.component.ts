@@ -36,6 +36,8 @@ export interface DashboardUiStats {
   total: number;
   textCount: number;
   audioCount: number;
+  imageCount?: number;
+  videoCount?: number;
   avgConfidence: string;
   mostCommonLabel: string;
   mostCommonIcon: string;
@@ -99,9 +101,11 @@ export class DashboardComponent implements OnInit {
       total: metrics.total_analyses,
       textCount: metrics.text_count || 0,
       audioCount: metrics.audio_count || 0,
+      imageCount: metrics.image_count || 0,
+      videoCount: metrics.video_count || 0,
       avgConfidence: this.format.formatConfidence(metrics.avg_confidence),
-      mostCommonLabel: apiStats.most_frequent?.label || 'neutral',
-      mostCommonIcon: apiStats.most_frequent?.label || 'neutral',
+      mostCommonLabel: (apiStats.most_frequent?.label || 'neutral').toLowerCase() === 'happiness' ? 'joy' : (apiStats.most_frequent?.label || 'neutral'),
+      mostCommonIcon: (apiStats.most_frequent?.label || 'neutral').toLowerCase() === 'happiness' ? 'joy' : (apiStats.most_frequent?.label || 'neutral'),
       categoryShare: {
         positive: (apiStats.emotion_distribution?.categories as any)?.['Positive'] || (apiStats.emotion_distribution?.categories as any)?.['positive'] || 0,
         neutral: (apiStats.emotion_distribution?.categories as any)?.['Neutral'] || (apiStats.emotion_distribution?.categories as any)?.['neutral'] || 0,
@@ -110,23 +114,34 @@ export class DashboardComponent implements OnInit {
       totalTokens: metrics.total_tokens || 0,
       totalDurationMinutes: Math.floor((metrics.total_audio_duration_seconds || 0) / 60),
       totalDurationSeconds: Math.floor((metrics.total_audio_duration_seconds || 0) % 60),
-      recentActivity: (apiStats.recent_activity || []).map(a => ({
-        id: a.id,
-        clientId: a.client_id,
-        type: (a.type || 'text').toLowerCase(),
-        date: a.timestamp,
-        label: a.label || 'neutral',
-        confidence: a.confidence || 0,
-        snippet: this.format.truncate(a.snippet, 55) || 'Processing data'
-      }))
+      recentActivity: (apiStats.recent_activity || []).map(a => {
+        let label = a.label || 'neutral';
+        if (label.toLowerCase() === 'happiness') {
+          label = 'joy';
+        }
+        return {
+          id: a.id,
+          clientId: a.client_id,
+          type: (a.type || 'text').toLowerCase(),
+          date: a.timestamp,
+          label: label,
+          confidence: a.confidence || 0,
+          snippet: this.format.truncate(a.snippet, 55) || 'Processing data'
+        };
+      })
     };
 
     this.stats.set(uiStats);
 
     const labels = apiStats.emotion_distribution?.labels || {};
-    this.distributionData.set(Object.entries(labels).map(([label, value]) => ({
+    const mappedLabels: { [key: string]: number } = {};
+    for (const [label, value] of Object.entries(labels)) {
+      const normalizedLabel = label.toLowerCase() === 'happiness' ? 'joy' : label;
+      mappedLabels[normalizedLabel] = (mappedLabels[normalizedLabel] || 0) + (value as number);
+    }
+    this.distributionData.set(Object.entries(mappedLabels).map(([label, value]) => ({
       label,
-      value: value as number
+      value
     })));
 
     const trend = apiStats.activity_trend || [];

@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 export const apiInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
@@ -15,9 +16,13 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
 
   let authReq = req;
 
-  // 2. Attach JWT token from signal if exists
+  // 2. Attach JWT token ONLY for the main .NET API, not for ML backend microservices.
+  //    ML backends (text/audio/image/video) are standalone Python services that don't
+  //    use JWT auth. Sending Authorization headers to them triggers CORS preflight
+  //    failures since they don't include Authorization in Access-Control-Allow-Headers.
+  const isMainApi = req.url.startsWith(environment.apiUrl);
   const user = authService.currentUser();
-  if (!isAuthEndpoint && user?.token) {
+  if (isMainApi && !isAuthEndpoint && user?.token) {
     authReq = req.clone({
       setHeaders: {
         Authorization: `Bearer ${user.token}`
@@ -36,8 +41,8 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      // 3. Handle 401, 403, and 0 (CORS/Ban short-circuits)
-      if (error.status === 401 || error.status === 403 || (error.status === 0 && navigator.onLine && !authService.getIsUnloading())) {
+      // 4. Handle 401, 403, and 0 (CORS/Ban short-circuits) ONLY for the main API
+      if (isMainApi && (error.status === 401 || error.status === 403 || (error.status === 0 && navigator.onLine && !authService.getIsUnloading()))) {
         if (error.status === 403 && error.error?.data?.ban_reason) {
           authService.storeBanDetails(error.error.data);
         }

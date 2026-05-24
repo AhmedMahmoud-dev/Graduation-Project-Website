@@ -40,7 +40,7 @@
           <span class="text-3xl sm:text-4xl font-black text-[color:var(--text-primary)] tracking-tighter">{{ s.total
             }}</span>
           <p class="mt-3 text-[10px] font-bold text-[color:var(--text-muted)] uppercase tracking-wide">
-            {{ s.textCount }} Text, {{ s.audioCount }} Audio
+            {{ s.textCount }} Text, {{ s.audioCount }} Audio@if (s.imageCount) {, {{ s.imageCount }} Image}@if (s.videoCount) {, {{ s.videoCount }} Video}
           </p>
         </div>
       </div>
@@ -133,7 +133,7 @@
               </span>
               <span class="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest"
                 style="background: var(--bg-secondary); color: var(--text-muted);">
-                {{ activity.type === 'text' ? 'Text' : 'Audio' }}
+                {{ activity.type === 'text' ? 'Text' : (activity.type === 'audio' ? 'Audio' : (activity.type === 'image' ? 'Image' : 'Video')) }}
               </span>
             </div>
             <p class="text-sm font-medium italic truncate" style="color: var(--text-primary)">
@@ -243,6 +243,8 @@
         <a routerLink="/analysis/text" class="w-full sm:w-auto btn-primary px-8 py-4 text-sm text-center">New Text
           Analysis</a>
         <a routerLink="/analysis/audio" class="w-full sm:w-auto btn-secondary px-8 py-4 text-sm text-center">New Audio
+          Analysis</a>
+        <a routerLink="/analysis/image" class="w-full sm:w-auto btn-secondary px-8 py-4 text-sm text-center">New Image
           Analysis</a>
       </div>
     </app-empty-state>

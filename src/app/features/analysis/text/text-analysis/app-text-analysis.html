@@ -48,8 +48,7 @@
         </p>
         <div class="flex flex-col min-[821px]:flex-row items-center gap-3 w-full min-[821px]:w-auto order-1 min-[821px]:order-2">
           <button (click)="useSample()"
-            class="w-full min-[821px]:w-auto px-6 py-4 rounded-full font-bold text-sm transition-all flex items-center justify-center gap-2"
-            style="border: 1px solid var(--border-color); color: var(--text-primary); background: transparent">
+            class="btn-action btn-outline-action btn-action-sm w-full min-[821px]:w-auto">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -57,9 +56,11 @@
             Try a Sample
           </button>
           <button [disabled]="inputText().trim().length === 0" (click)="startAnalysis()"
-            class="w-full min-[821px]:w-auto px-10 py-4 rounded-full font-bold text-sm text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            style="background: var(--brand-primary); box-shadow: var(--shadow)">
-            Run Analysis
+            class="btn-action btn-primary-action btn-action-sm w-full min-[821px]:w-auto disabled:opacity-40 disabled:cursor-not-allowed">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            Analyze Emotion
           </button>
         </div>
       </div>

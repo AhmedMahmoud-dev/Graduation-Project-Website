@@ -25,7 +25,7 @@ export interface FeedbackListItem {
   createdAt: string;
   formattedDate: string;
   // Resolved from local sessions or history
-  analysisType: 'text' | 'audio' | null;
+  analysisType: 'text' | 'audio' | 'image' | null;
   title: string;
 }
 
@@ -59,6 +59,9 @@ export class FeedbackHistoryListComponent implements OnInit {
   hasError = signal(false);
   allItems = signal<FeedbackListItem[]>(this.initialCache?.data || []);
   totalCount = signal(this.initialCache?.total || this.initialCache?.data?.length || 0);
+  isLoadingMore = signal<boolean>(false);
+  currentPage = signal<number>(1);
+  readonly pageSize = 10;
 
   // Inputs from parent history page
   searchQuery = input<string>('');
@@ -131,16 +134,28 @@ export class FeedbackHistoryListComponent implements OnInit {
     this.loadFeedback();
   }
 
-  loadFeedback(isSilent: boolean = false) {
+  loadFeedback(isSilent: boolean = false, page: number = 1) {
     this.hasError.set(false);
+    const isFirstPage = page === 1;
 
-    // If we don't even have cache items, we must show a primary loader
-    if (!this.allItems().length && !isSilent) {
+    if (isFirstPage && !this.allItems().length && !isSilent) {
       this.isLoading.set(true);
+    } else if (!isFirstPage) {
+      this.isLoadingMore.set(true);
     }
 
-    this.feedbackService.getMyFeedbackHistory(1, 50)
-      .pipe(finalize(() => !isSilent && this.isLoading.set(false)))
+    // If silent refresh, we refresh all currently loaded pages at once to keep state in sync
+    const limit = isSilent ? this.currentPage() * this.pageSize : this.pageSize;
+    const pageToRequest = isSilent ? 1 : page;
+
+    this.feedbackService.getMyFeedbackHistory(pageToRequest, limit)
+      .pipe(finalize(() => {
+        if (isFirstPage || isSilent) {
+          if (!isSilent) this.isLoading.set(false);
+        } else {
+          this.isLoadingMore.set(false);
+        }
+      }))
       .subscribe({
         next: (response: any) => {
           if (response.is_success && response.data) {
@@ -148,13 +163,25 @@ export class FeedbackHistoryListComponent implements OnInit {
             const mappedItems = this.mapToListItems(items);
 
             this.totalCount.set(response.total || mappedItems.length);
-            this.allItems.set(mappedItems);
 
-            // Update cache
-            this.cache.setItem(this.CACHE_KEY, {
-              data: mappedItems,
-              total: response.total
-            });
+            if (isFirstPage || isSilent) {
+              this.allItems.set(mappedItems);
+              if (isFirstPage) {
+                this.currentPage.set(1);
+              }
+            } else {
+              this.allItems.update(current => [...current, ...mappedItems]);
+              this.currentPage.set(page);
+            }
+
+            // Update cache (only cache page 1 for initial rehydration)
+            if (isFirstPage || isSilent) {
+              const cacheLimitItems = mappedItems.slice(0, this.pageSize);
+              this.cache.setItem(this.CACHE_KEY, {
+                data: cacheLimitItems,
+                total: response.total
+              });
+            }
 
             // Update individual caches for context consistency
             items.filter(f => f.feedback_type === 'analysis' && f.analysis_id).forEach(f => {
@@ -186,6 +213,11 @@ export class FeedbackHistoryListComponent implements OnInit {
           }
         }
       });
+  }
+
+  loadMore() {
+    const nextPage = this.currentPage() + 1;
+    this.loadFeedback(false, nextPage);
   }
 
   retry() {
@@ -255,17 +287,18 @@ export class FeedbackHistoryListComponent implements OnInit {
 
     return entries.map(f => {
       let title = f.feedback_type === 'system' ? 'Platform Experience' : 'Analysis Review';
-      let analysisType: 'text' | 'audio' | null = f.analysis_type || null;
+      let analysisType: 'text' | 'audio' | 'image' | null = f.analysis_type || null;
 
       if (f.feedback_type === 'analysis' && f.analysis_id) {
         // Search in all session types for a match to get metadata like titles
         const textSession = this.storageService.getSessions().find(s => s.id === f.analysis_id || s.cloudId === Number(f.analysis_id));
         const audioSession = this.storageService.getAudioSessions().find(s => s.id === f.analysis_id || s.cloudId === Number(f.analysis_id));
+        const imageSession = this.storageService.getImageSessions().find(s => s.id === f.analysis_id || s.cloudId === Number(f.analysis_id));
 
         // Also search in passed history list
         const historyItem = this.analysisHistory().find(h => h.client_id === f.analysis_id || h.id === Number(f.analysis_id));
 
-        const session = textSession || audioSession;
+        const session = textSession || audioSession || imageSession;
 
         // If we don't have analysisType from server yet, fall back to resolved type
         if (!analysisType && (session || historyItem)) {

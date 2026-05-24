@@ -9,6 +9,7 @@ const EMOTION_COLORS: Record<string, string> = {
   neutral: 'var(--emotion-neutral)',
   sadness: 'var(--emotion-sadness)',
   surprise: 'var(--emotion-surprise)',
+  contempt: 'var(--emotion-contempt)',
   positive: 'var(--color-success)',
   negative: 'var(--color-danger)',
   brain: 'var(--color-brain)',
@@ -24,7 +25,11 @@ const EMOTION_COLORS: Record<string, string> = {
 export class EmotionIconComponent {
   /** The emotion label (e.g. 'joy', 'sadness', 'positive', 'negative') */
   @Input({ required: true }) set emotion(val: string | undefined | null) {
-    this._emotionLabel.set(val || 'neutral');
+    let cleanVal = val || 'neutral';
+    if (cleanVal.toLowerCase() === 'happiness') {
+      cleanVal = 'joy';
+    }
+    this._emotionLabel.set(cleanVal);
   }
 
   /** The size of the icon (number for px, or string like '2rem') */

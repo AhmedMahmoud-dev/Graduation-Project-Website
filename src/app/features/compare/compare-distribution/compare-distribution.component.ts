@@ -22,7 +22,7 @@ export class CompareDistributionComponent {
   analysisB = input.required<AnalysisSession | AudioAnalysisSession | null>();
 
   // Fixed order for comparison
-  readonly FIXED_ORDER = ['fear', 'sadness', 'anger', 'disgust', 'neutral', 'surprise', 'joy'];
+  readonly FIXED_ORDER = ['fear', 'sadness', 'anger', 'disgust', 'contempt', 'neutral', 'surprise', 'joy'];
 
   distributionA = computed<DistributionDataPoint[]>(() => {
     const a = this.analysisA();
@@ -41,7 +41,7 @@ export class CompareDistributionComponent {
     const probsA = this.getProbabilities(this.analysisA());
     const probsB = this.getProbabilities(this.analysisB());
 
-    const negativeEmotions = ['fear', 'sadness', 'anger', 'disgust'];
+    const negativeEmotions = ['fear', 'sadness', 'anger', 'disgust', 'contempt'];
     const positiveEmotions = ['joy'];
 
     return this.FIXED_ORDER.map(emotion => {

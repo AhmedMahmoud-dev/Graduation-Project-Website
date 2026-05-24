@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { TextAnalysisResult, AnalysisSession } from '../models/text-analysis.model';
 import { AudioAnalysisResponse, AudioAnalysisSession } from '../models/audio-analysis.model';
+import { ImageAnalysisResponse, ImageAnalysisSession } from '../models/image-analysis.model';
+import { VideoAnalysisResponse, VideoAnalysisSession } from '../models/video-analysis.model';
 import { AuthService } from './auth.service';
 import { ApiResponse } from '../models/api-response.model';
 import {
@@ -11,6 +13,8 @@ import {
   AnalysisStats,
   SaveTextAnalysisRequest,
   SaveAudioAnalysisRequest,
+  SaveImageAnalysisRequest,
+  SaveVideoAnalysisRequest,
   AnalysisDetails,
   AnalysisType
 } from '../models/analysis-v2.model';
@@ -50,6 +54,48 @@ export class AnalysisV2Service {
     formData.append('AudioFile', audioFile, audioFile.name);
 
     const requestMetadata: SaveAudioAnalysisRequest = {
+      client_id: clientId,
+      result: result
+    };
+    formData.append('Request', JSON.stringify(requestMetadata));
+
+    return this.http.post<ApiResponse<number>>(url, formData);
+  }
+
+  /**
+   * Persists image analysis results to the .NET backend API v2.
+   * @param clientId The unique ID for this analysis session (UUID)
+   * @param result The analysis result object
+   * @param imageFile The original image file
+   */
+  saveImageAnalysis(clientId: string, result: ImageAnalysisResponse, imageFile: File): Observable<ApiResponse<number>> {
+    const url = `${environment.apiUrl}/api/analysis/image`;
+    const formData = new FormData();
+
+    formData.append('ImageFile', imageFile, imageFile.name);
+
+    const requestMetadata: SaveImageAnalysisRequest = {
+      client_id: clientId,
+      result: result
+    };
+    formData.append('Request', JSON.stringify(requestMetadata));
+
+    return this.http.post<ApiResponse<number>>(url, formData);
+  }
+
+  /**
+   * Persists video analysis results to the .NET backend API v2.
+   * @param clientId The unique ID for this analysis session (UUID)
+   * @param result The analysis result object
+   * @param videoFile The original video file
+   */
+  saveVideoAnalysis(clientId: string, result: VideoAnalysisResponse, videoFile: File): Observable<ApiResponse<number>> {
+    const url = `${environment.apiUrl}/api/analysis/video`;
+    const formData = new FormData();
+
+    formData.append('VideoFile', videoFile, videoFile.name);
+
+    const requestMetadata: SaveVideoAnalysisRequest = {
       client_id: clientId,
       result: result
     };
@@ -113,12 +159,10 @@ export class AnalysisV2Service {
   }
 
   /**
-   * Maps backend AnalysisDetails to frontend session models (Text or Audio).
+   * Maps backend AnalysisDetails to frontend session models (Text, Audio, Image, or Video).
    */
-  mapDetailsToSession(details: AnalysisDetails): AnalysisSession | AudioAnalysisSession {
-    const isText = details.type === 'Text';
-
-    if (isText) {
+  mapDetailsToSession(details: AnalysisDetails): AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession {
+    if (details.type === 'Text') {
       const result = details.result as TextAnalysisResult;
       return {
         id: details.client_id,
@@ -129,7 +173,7 @@ export class AnalysisV2Service {
         isSynced: true,
         cloudId: details.id
       };
-    } else {
+    } else if (details.type === 'Audio') {
       const result = details.result as AudioAnalysisResponse;
       return {
         id: details.client_id,
@@ -141,6 +185,30 @@ export class AnalysisV2Service {
         isSynced: true,
         cloudId: details.id
       };
+    } else if (details.type === 'Image') {
+      const result = details.result as ImageAnalysisResponse;
+      return {
+        id: details.client_id,
+        type: 'image',
+        timestamp: details.timestamp,
+        inputFileName: result.image_filename || 'Image File',
+        result: result,
+        isSynced: true,
+        cloudId: details.id
+      };
+    } else if (details.type === 'Video') {
+      const result = details.result as VideoAnalysisResponse;
+      return {
+        id: details.client_id,
+        type: 'video',
+        timestamp: details.timestamp,
+        inputFileName: result.video_filename || 'Video File',
+        result: result,
+        isSynced: true,
+        cloudId: details.id
+      };
+    } else {
+      throw new Error(`Unsupported analysis type: ${details.type}`);
     }
   }
 }

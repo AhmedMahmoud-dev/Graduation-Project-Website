@@ -183,12 +183,12 @@ export class SystemFeedbackComponent implements OnInit {
 
     // 2. Fetch from API only if authenticated
     if (this.authService.isAuthenticated()) {
-      this.feedbackService.getMyFeedbackHistory(1, 10).subscribe({
+      this.feedbackService.getCurrentSystemFeedback().subscribe({
         next: (response: any) => {
           this.hasFetchedHistory = true;
 
-          if (response.is_success && response.data) {
-            const systemRef = response.data.find((f: any) => f.feedback_type === 'system');
+          if (response.is_success) {
+            const systemRef = response.data;
             if (systemRef) {
               this.hasSubmittedBefore.set(true);
               this.existingId.set(systemRef.id);
@@ -228,15 +228,15 @@ export class SystemFeedbackComponent implements OnInit {
         this.isLoadingData.set(true);
       }
 
-      this.feedbackService.getMyFeedbackHistory(1, 10)
+      this.feedbackService.getCurrentSystemFeedback()
         .pipe(finalize(() => {
           this.isLoadingData.set(false);
           this.hasFetchedHistory = true;
         }))
         .subscribe({
           next: (response: any) => {
-            if (response.is_success && response.data) {
-              const systemRef = response.data.find((f: any) => f.feedback_type === 'system');
+            if (response.is_success) {
+              const systemRef = response.data;
               if (systemRef) {
                 this.rating.set(systemRef.rating);
                 this.comment.set(systemRef.comment || '');
@@ -253,6 +253,9 @@ export class SystemFeedbackComponent implements OnInit {
                   isPublic: systemRef.is_public ?? true
                 });
                 this.feedbackService.cacheSystemFeedback(systemRef);
+              } else {
+                this.hasSubmittedBefore.set(false);
+                this.feedbackService.removeCachedSystemFeedback();
               }
             }
           }

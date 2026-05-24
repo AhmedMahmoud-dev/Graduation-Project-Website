@@ -1,8 +1,10 @@
 import { ApiResponse } from './api-response.model';
 import { TextAnalysisResult } from './text-analysis.model';
 import { AudioAnalysisResponse } from './audio-analysis.model';
+import { ImageAnalysisResponse } from './image-analysis.model';
+import { VideoAnalysisResponse } from './video-analysis.model';
 
-export type AnalysisType = 'Text' | 'Audio';
+export type AnalysisType = 'Text' | 'Audio' | 'Image' | 'Video';
 
 export interface AnalysisRecentActivity {
   id: number;
@@ -32,6 +34,8 @@ export interface UsageMetrics {
   total_analyses: number;
   text_count: number;
   audio_count: number;
+  image_count?: number;
+  video_count?: number;
   total_tokens: number;
   total_audio_duration_seconds: number;
   avg_confidence: number;
@@ -80,11 +84,21 @@ export interface SaveAudioAnalysisRequest {
   result: AudioAnalysisResponse;
 }
 
+export interface SaveImageAnalysisRequest {
+  client_id: string;
+  result: ImageAnalysisResponse;
+}
+
+export interface SaveVideoAnalysisRequest {
+  client_id: string;
+  result: VideoAnalysisResponse;
+}
+
 export interface AnalysisDetails {
   id: number;
   client_id: string;
   type: AnalysisType;
   timestamp: string;
   note: string | null;
-  result: TextAnalysisResult | AudioAnalysisResponse;
+  result: TextAnalysisResult | AudioAnalysisResponse | ImageAnalysisResponse | VideoAnalysisResponse;
 }

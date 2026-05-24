@@ -51,11 +51,11 @@
           </span>
         </a>
 
-        <!-- Image Analysis (Coming Soon) -->
-        <a routerLink="/models/image"
+        <!-- Image Analysis (Active) -->
+        <a routerLink="/analysis/image"
           class="group p-6 xs:p-8 lg:p-8 rounded-3xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] shadow-sm transition-all duration-300 flex flex-col items-center text-center hover:border-emerald-500/50 relative overflow-hidden h-full">
           <div
-            class="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6 transition-transform">
+            class="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6 transition-transform duration-300">
             <svg class="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 16l4.586-4.586a1 1 0 011.414 0L14 15.586m2.207-2.207l3.947-3.947a1 1 0 111.414 1.414L13.414 20.586a1 1 0 01-1.414 0L10 18.121l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 16z" />
@@ -63,11 +63,12 @@
           </div>
           <h3 class="text-xl font-bold mb-2 text-[color:var(--color-text)]">Image Analysis</h3>
           <p class="text-sm text-[color:var(--color-text-muted)] mb-6 flex-1 font-medium leading-relaxed">Facial expressions and scene context detection.</p>
-          <div class="flex items-center gap-3">
-            <span
-              class="px-3 py-1 bg-emerald-500/10 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-wider">Coming Soon</span>
-            <span class="text-xs font-bold text-[color:var(--color-primary)] group-hover:underline">Explore →</span>
-          </div>
+          <span
+            class="text-sm font-semibold text-emerald-500 group-hover:underline inline-flex items-center">
+            Get Started <svg class="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </span>
         </a>
 
         <!-- Video Analysis (Coming Soon) -->

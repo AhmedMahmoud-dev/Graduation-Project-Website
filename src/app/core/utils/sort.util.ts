@@ -44,22 +44,12 @@ export function useTableSort<T>(dataSignal: Signal<T[]>): SortState<T> {
       // might be equal (both true), but their 'is_online' states might differ.
       if (col === 'status' || col === 'is_active') {
         const getStatusScore = (item: any) => {
-          // User Status (derived from is_active + is_online + heartbeat)
+          // User Status (derived from is_active + is_online)
           if (col === 'is_active') {
             if (!item.is_active) return 1; // Banned
 
-            // Sync with UI logic: Online = is_online OR last seen < 60s
-            let isOnline = !!item.is_online;
-            if (!isOnline && item.last_seen_at) {
-              const dateStr = String(item.last_seen_at).endsWith('Z') ? String(item.last_seen_at) : String(item.last_seen_at) + 'Z';
-              const lastSeen = new Date(dateStr).getTime();
-              if ((Date.now() - lastSeen) < 60 * 1000) {
-                isOnline = true;
-              }
-            }
-
-            if (isOnline) return 3;  // Online
-            return 2;                // Offline
+            if (item.is_online) return 3;  // Online
+            return 2;                      // Offline
           }
 
           // Bug/Support Status

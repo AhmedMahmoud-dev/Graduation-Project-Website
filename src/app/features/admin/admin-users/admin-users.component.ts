@@ -424,15 +424,7 @@ export class AdminUsersComponent implements OnInit {
 
   isUserOnline(user: AdminUser): boolean {
     // A user is online if their account is active AND the server reports them as online
-    if (!user.is_active) return false;
-    if (user.is_online) return true;
-
-    // Fallback: If not explicitly online but seen in the last 60 seconds (heartbeat delay)
-    if (!user.last_seen_at) return false;
-    const dateStr = user.last_seen_at.endsWith('Z') ? user.last_seen_at : user.last_seen_at + 'Z';
-    const lastSeen = new Date(dateStr).getTime();
-    const now = Date.now();
-    return (now - lastSeen) < 60 * 1000;
+    return user.is_active && user.is_online;
   }
 
 }

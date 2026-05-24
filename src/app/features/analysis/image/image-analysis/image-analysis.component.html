@@ -1,0 +1,453 @@
+<div class="min-h-screen flex flex-col bg-[color:var(--color-bg)] text-[color:var(--color-text)] w-full max-w-[100vw] overflow-x-hidden">
+
+  <!-- ===================== STATE: INPUT ===================== -->
+  @if (state() === 'input') {
+    <app-page-header title="Image Emotion Analysis" subtitle="Facial Intelligence"
+      description="Upload an image or capture a live photo with your webcam to scan facial landmarks, verify expression confidence, and extract scene context mood.">
+    </app-page-header>
+
+    <section class="flex-1 py-8 sm:py-12 md:py-16 px-4 sm:px-6 md:px-12" style="background: var(--bg-secondary)">
+      <div class="max-w-3xl mx-auto w-full min-w-0">
+
+        <!-- Input Card -->
+        <div class="rounded-[28px] overflow-hidden border border-[color:var(--border-color)] shadow-md"
+          style="background: var(--bg-card)">
+
+          <!-- Error Message -->
+          @if (error()) {
+            <div class="px-4 sm:px-8 py-3.5 bg-red-500/10 border-b border-red-500/20 flex items-center gap-3 text-red-500 text-xs sm:text-sm font-semibold animate-fade-in">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span class="flex-1">{{ error() }}</span>
+              <button (click)="error.set(null)" class="ml-auto opacity-60 hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-red-500/10">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          }
+
+          <!-- Tab Switcher -->
+          <div class="px-4 py-4 sm:px-8 sm:py-5 flex justify-center border-b border-[color:var(--border-color)]"
+            style="background: var(--bg-card)">
+            <div class="w-full flex justify-center min-w-0">
+              <app-segmented-nav [options]="tabOptions" [selectedValue]="activeTab()"
+                (selectedValueChange)="activeTab.set($event !== 'upload' && $event !== 'capture' ? 'upload' : $event); stopCamera();">
+              </app-segmented-nav>
+            </div>
+          </div>
+
+          <!-- Preview Workspace (After file selected or photo captured) -->
+          @if (previewUrl()) {
+            <div class="p-4 sm:p-6 md:p-8">
+              <!-- File Info Card -->
+              <div class="file-info-row">
+                <div class="file-info-meta min-w-0 flex-1">
+                  <div class="file-info-title">
+                    <h4 class="truncate border-none">{{ activeTab() === 'upload' ? (uploadedFile()?.name || 'Image File') : 'Webcam Capture' }}</h4>
+                    <span class="info-badge shrink-0">{{ activeTab() === 'upload' ? 'Uploaded' : 'Captured' }}</span>
+                  </div>
+                  <p class="file-info-detail">
+                    @if (uploadedFile()) {
+                      {{ (uploadedFile()!.size / 1024 / 1024) | number:'1.2-2' }} MB · {{ uploadedFile()!.type }}
+                    } @else {
+                      Captured Image
+                    }
+                  </p>
+                </div>
+                <button (click)="clearFile()" class="btn-remove">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Visual Preview -->
+              <div class="image-preview-container mb-6 flex justify-center items-center bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] rounded-2xl overflow-hidden p-2">
+                <img [src]="previewUrl()" class="max-h-[360px] w-auto max-w-full rounded-xl object-contain shadow-sm animate-fade-in" />
+              </div>
+
+              <!-- Actions -->
+              <div class="action-row">
+                @if (activeTab() === 'capture') {
+                  <button (click)="startCamera()" class="btn-action btn-outline-action btn-action-sm w-full sm:w-48">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Retake Photo
+                  </button>
+                }
+                <button (click)="startAnalysis()" class="btn-action btn-primary-action btn-action-sm w-full sm:w-auto sm:ml-auto">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Analyze Emotion
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- TAB: UPLOAD -->
+          @if (activeTab() === 'upload' && !previewUrl()) {
+            <div class="p-4 sm:p-6 md:p-8">
+              <div class="drop-zone" [class.dragging]="isDragging() && !isDraggingInvalid()"
+                [class.dragging-invalid]="isDraggingInvalid()" (dragover)="onDragOver($event)"
+                (dragenter)="onDragOver($event)" (dragleave)="onDragLeave()" (drop)="onFileDrop($event)">
+                <input type="file" (change)="onFileSelected($event)" class="absolute inset-0 opacity-0 cursor-pointer"
+                  accept="image/png,image/jpeg,image/jpg,image/webp" #fileInput>
+                <div class="drop-zone-icon">
+                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h4 class="text-lg sm:text-xl font-extrabold mb-1.5 tracking-tight" style="color: var(--text-primary)">
+                  @if (isDraggingInvalid()) {
+                    Unsupported file format
+                  } @else if (isDragging()) {
+                    Release to upload
+                  } @else {
+                    Upload Image
+                  }
+                </h4>
+                <p class="text-xs sm:text-sm mb-5 font-medium" style="color: var(--text-muted)">Drag & drop or click to browse</p>
+                <div class="flex flex-wrap items-center justify-center gap-1.5 mb-5">
+                  <span class="format-badge">PNG</span>
+                  <span class="format-badge">JPG</span>
+                  <span class="format-badge">JPEG</span>
+                  <span class="format-badge">WEBP</span>
+                  <span class="format-badge">≤ {{ MAX_FILE_SIZE_MB }} MB</span>
+                </div>
+                <button class="btn-browse">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  </svg>
+                  Browse Files
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- TAB: CAMERA / CAPTURE -->
+          @if (activeTab() === 'capture' && !previewUrl()) {
+            <div class="p-4 sm:p-6 md:p-8 flex flex-col items-center">
+              @if (isCapturing()) {
+                <div class="video-container relative w-full aspect-video rounded-2xl overflow-hidden border border-[color:var(--border-color)] bg-black mb-6 shadow-md">
+                  <video #videoElement class="w-full h-full object-cover scale-x-[-1]"></video>
+                  <div class="live-tag absolute top-4 left-4 bg-red-500 text-white text-[10px] font-black tracking-widest px-2.5 py-1 rounded-md flex items-center gap-1.5 uppercase shadow-sm">
+                    <span class="live-dot-webcam bg-white rounded-full"></span>
+                    Live
+                  </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3 w-full justify-center">
+                  <button (click)="stopCamera()" class="btn-action btn-outline-action w-full sm:w-48">
+                    Cancel
+                  </button>
+                  <button (click)="capturePhoto()" class="btn-action btn-primary-action w-full sm:w-48">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Capture Photo
+                  </button>
+                </div>
+              } @else {
+                <!-- Camera Idle State -->
+                <div class="idle-empty-state">
+                  <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl flex items-center justify-center mb-4 border border-[color:var(--border-color)]"
+                    style="background: var(--bg-secondary)">
+                    <svg class="w-9 h-9 sm:w-11 sm:h-11" style="color: var(--brand-primary); opacity: 0.6" fill="none"
+                      stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <p class="text-base sm:text-lg font-bold tracking-tight" style="color: var(--text-primary)">Webcam Capture</p>
+                  <p class="text-xs sm:text-sm font-medium" style="color: var(--text-muted)">Take a live picture to detect emotions instantly</p>
+                </div>
+                
+                @if (cameraError()) {
+                  <p class="text-red-500 text-xs font-semibold mb-4 text-center">{{ cameraError() }}</p>
+                }
+
+                <button (click)="startCamera()" class="btn-action btn-primary-action w-full sm:w-72 mt-5">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Start Webcam
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- ===================== STATE: LOADING ===================== -->
+  @if (state() === 'loading') {
+    <app-loading-tips [tips]="loadingTips"></app-loading-tips>
+  }
+
+  <!-- ===================== STATE: FETCHING (REPORT) ===================== -->
+  @if (state() === 'fetching') {
+    <div class="flex-1 flex flex-col items-center justify-center p-12 min-h-[60vh]">
+      <app-loading-state message="Retrieving analysis report..." subtitle="Parsing visual structures and landmarks from your image"></app-loading-state>
+    </div>
+  }
+
+  <!-- ===================== STATE: RESULTS ===================== -->
+  @if (state() === 'results' && result()) {
+    <!-- 3.1 Top Bar -->
+    <app-session-top-bar [sessionId]="sessionId()" (newAnalysis)="resetToInput()">
+    </app-session-top-bar>
+
+    <!-- Alternating sections layout: sibling sections with full-width backgrounds -->
+
+    <!-- 3.2 Dominant Emotion Hero -->
+    @if (activeEmotionData()) {
+      <section class="px-4 sm:px-8 md:px-12 py-12"
+        style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <app-dominant-emotion-hero 
+            [emotionLabel]="activeEmotionData()!.label"
+            [confidencePercent]="activeEmotionData()!.confidence_percent"
+            [category]="activeEmotionData()!.category" 
+            [sectionTitle]="selectedFaceId() === null ? 'Scene Context Emotion' : 'Face #' + selectedFaceId() + ' Emotion'"
+            [showConfidenceBar]="true">
+          </app-dominant-emotion-hero>
+        </div>
+      </section>
+    }
+
+    <!-- 3.3 Visual Mapping & Breakdown -->
+    <section class="px-4 sm:px-8 md:px-12 py-12"
+      style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color)">
+      <div class="max-w-7xl mx-auto w-full min-w-0">
+        <app-analysis-section-header 
+          title="Visual Emotion Mapping" 
+          subtitle="Spatial Analysis" 
+          description="Hover and select detected faces on the image to view their individual expressions and comparison metrics.">
+        </app-analysis-section-header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mt-8">
+          <!-- Left Side: Image with bounding box overlays -->
+          <div class="lg:col-span-7 flex flex-col gap-4">
+            <div class="relative w-full overflow-hidden bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-2xl flex justify-center items-center p-2 min-h-[300px]">
+              @if (imageLoading() || !previewUrl()) {
+                <app-loading-state message="Loading Image..." subtitle="Retrieving visual frame from storage" [fullPage]="false" size="md"></app-loading-state>
+              }
+              
+              <div class="relative max-w-full" [style.display]="(imageLoading() || !previewUrl()) ? 'none' : 'block'">
+                <img [src]="previewUrl()" (load)="imageLoading.set(false)" class="max-w-full max-h-[500px] object-contain rounded-xl select-none" />
+                
+                <!-- Face boxes -->
+                @for (face of result()!.faces; track face.face_id) {
+                  <div class="face-box" [ngStyle]="getFaceStyle(face)" (click)="selectFace(face.face_id)">
+                    <span class="face-tag" [style.background]="colorService.getColor(face.combined_final_emotion.label)">
+                      Face #{{ face.face_id }}
+                    </span>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Frame Quality Info -->
+            <div class="rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs"
+              style="background: var(--bg-card); border: 1px solid var(--border-color)">
+              <span style="color: var(--text-secondary)">Original Resolution:</span>
+              <strong style="color: var(--text-primary)">
+                {{ result()!.frame_quality.original_width }}x{{ result()!.frame_quality.original_height }}
+              </strong>
+              @if (result()!.frame_quality.was_downscaled) {
+                <span class="px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px] bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                  Downscaled to {{ result()!.frame_quality.downscaled_to[0] }}x{{ result()!.frame_quality.downscaled_to[1] }}
+                </span>
+              }
+            </div>
+          </div>
+
+          <!-- Right Side: Focus controls, Charts, Insights -->
+          <div class="lg:col-span-5 flex flex-col gap-6">
+            <!-- Focus Selector -->
+            <div class="rounded-2xl p-6" style="background: var(--bg-card); border: 1px solid var(--border-color)">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--text-muted)">Focus Selection</p>
+              <div class="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1">
+                
+                <!-- Scene Context Option -->
+                <button (click)="selectFace(null)"
+                  class="flex items-center justify-between p-3.5 rounded-xl border text-sm font-bold transition-all text-left"
+                  [class.active-focus]="selectedFaceId() === null"
+                  [style.borderColor]="selectedFaceId() === null ? 'var(--brand-primary)' : 'var(--border-color)'">
+                  <span class="flex items-center gap-3">
+                    <svg class="w-5 h-5 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Scene Context (Overall)
+                  </span>
+                  <span class="capitalize px-2.5 py-1 rounded-lg text-xs"
+                    [style.background]="colorService.getBadgeBg(result()!.scene_emotion.label)"
+                    [style.color]="colorService.getColor(result()!.scene_emotion.label)">
+                    {{ result()!.scene_emotion.label }}
+                  </span>
+                </button>
+
+                <!-- List of Detected Faces -->
+                @for (face of result()!.faces; track face.face_id) {
+                  <button (click)="selectFace(face.face_id)"
+                    class="flex items-center justify-between p-3.5 rounded-xl border text-sm font-bold transition-all text-left"
+                    [class.active-focus]="selectedFaceId() === face.face_id"
+                    [style.borderColor]="selectedFaceId() === face.face_id ? 'var(--brand-primary)' : 'var(--border-color)'">
+                    <span class="flex items-center gap-3">
+                      <span class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0"
+                        [style.background]="colorService.getColor(face.combined_final_emotion.label)">
+                        {{ face.face_id }}
+                      </span>
+                      Face #{{ face.face_id }}
+                    </span>
+                    <span class="capitalize px-2.5 py-1 rounded-lg text-xs"
+                      [style.background]="colorService.getBadgeBg(face.combined_final_emotion.label)"
+                      [style.color]="colorService.getColor(face.combined_final_emotion.label)">
+                      {{ face.combined_final_emotion.label }} ({{ face.combined_final_emotion.confidence_percent | number:'1.0-0' }}%)
+                    </span>
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Confidence Distribution -->
+            <div class="rounded-2xl p-6" style="background: var(--bg-card); border: 1px solid var(--border-color)">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--text-muted)">Emotion Distribution</p>
+              <div class="mt-4">
+                <app-emotion-distribution [data]="distributionData()" viewType="bar" class="block w-full h-[220px]">
+                </app-emotion-distribution>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3.4 Focus Insights & Focus Details -->
+    <section class="px-4 sm:px-8 md:px-12 py-12"
+      style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color)">
+      <div class="max-w-7xl mx-auto w-full min-w-0">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Insights Card -->
+          @if (emotionalInsights(); as insights) {
+            <div class="rounded-3xl p-6 sm:p-10 flex flex-col items-center justify-center text-center gap-6 shadow-xl"
+              style="background: var(--bg-card); border: 1px solid var(--border-color);">
+              <div class="mb-2">
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--text-muted)">Focus Insights</p>
+                <div class="w-20 h-20 rounded-3xl flex items-center justify-center mb-4 mx-auto"
+                  [style.background]="'color-mix(in srgb, ' + insights.polarityColor + ', transparent 92%)'"
+                  [style.border]="'1px solid color-mix(in srgb, ' + insights.polarityColor + ', transparent 80%)'">
+                  <app-emotion-icon [emotion]="insights.polarity" [size]="40"></app-emotion-icon>
+                </div>
+                <h4 class="text-2xl font-black uppercase tracking-tight" [style.color]="insights.polarityColor">{{ insights.polarity }} Profile</h4>
+              </div>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                <div class="p-4 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] w-full">
+                  <p class="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Focus Type</p>
+                  <p class="text-sm font-extrabold" style="color: var(--text-primary)">
+                    {{ selectedFaceId() === null ? 'Scene Context' : 'Face #' + selectedFaceId() }}
+                  </p>
+                </div>
+                <div class="p-4 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] w-full">
+                  <p class="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Complexity</p>
+                  <p class="text-sm font-extrabold" style="color: var(--text-primary)">{{ insights.complexity }}</p>
+                </div>
+              </div>
+
+              <p class="text-xs leading-relaxed italic" style="color: var(--text-secondary)">
+                The selected focus predominantly reflects a <strong [style.color]="colorService.getColor(insights.primary)">{{ insights.primary | titlecase }}</strong> tone.
+              </p>
+            </div>
+          }
+
+          <!-- Face Detail Metadata -->
+          <div class="rounded-3xl p-6 sm:p-10 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] shadow-xl flex flex-col justify-between">
+            <div>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4" style="color: var(--text-muted)">Focus Details</p>
+              @if (selectedFaceId() !== null) {
+                @for (face of result()!.faces; track face.face_id) {
+                  @if (face.face_id === selectedFaceId()) {
+                    <div class="space-y-4 animate-fade-in">
+                      <div class="flex items-center justify-between pb-3 border-b border-[color:var(--border-color)]">
+                        <span class="text-xs font-medium text-[color:var(--text-muted)]">Face ID</span>
+                        <strong class="text-sm text-[color:var(--text-primary)]">#{{ face.face_id }}</strong>
+                      </div>
+                      <div class="flex items-center justify-between pb-3 border-b border-[color:var(--border-color)]">
+                        <span class="text-xs font-medium text-[color:var(--text-muted)]">Detection Confidence</span>
+                        <strong class="text-sm text-[color:var(--text-primary)]">{{ (face.detect_score * 100) | number:'1.1-1' }}%</strong>
+                      </div>
+                      <div class="flex items-center justify-between pb-3 border-b border-[color:var(--border-color)]">
+                        <span class="text-xs font-medium text-[color:var(--text-muted)]">Bounding Box</span>
+                        <strong class="text-[10px] font-mono text-[color:var(--text-muted)]">[{{ face.bbox.join(', ') }}]</strong>
+                      </div>
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-[color:var(--text-muted)]">Confidence Gated</span>
+                        <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider"
+                          [style.background]="face.confidence_gated ? 'rgba(74,222,128,0.12)' : 'rgba(239,68,68,0.12)'"
+                          [style.color]="face.confidence_gated ? 'rgb(74,222,128)' : 'rgb(239,68,68)'">
+                          {{ face.confidence_gated ? 'Pass' : 'Low Confidence' }}
+                        </span>
+                      </div>
+                    </div>
+                  }
+                }
+              } @else {
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between pb-3 border-b border-[color:var(--border-color)]">
+                    <span class="text-xs font-medium text-[color:var(--text-muted)]">Mode</span>
+                    <strong class="text-sm text-[color:var(--text-primary)]">Scene Mood Inference</strong>
+                  </div>
+                  <div class="flex items-center justify-between pb-3 border-b border-[color:var(--border-color)]">
+                    <span class="text-xs font-medium text-[color:var(--text-muted)]">Total Faces Detected</span>
+                    <strong class="text-sm text-[color:var(--text-primary)]">{{ result()!.faces_detected }}</strong>
+                  </div>
+                  <p class="text-xs leading-relaxed text-[color:var(--text-muted)]">
+                    Scene context analysis evaluates the global color palette, background semantics, and overall layout to infer the overarching visual sentiment.
+                  </p>
+                </div>
+              }
+            </div>
+
+            <div class="mt-6 pt-6 border-t border-[color:var(--border-color)] text-xs text-[color:var(--text-muted)]">
+              Analysis ran on <strong style="color: var(--text-secondary)">{{ result()!.timestamp | date:'medium' }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3.5 Model Info Grid -->
+    <section class="px-6 md:px-12 py-12"
+      style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color)">
+      <div class="max-w-7xl mx-auto w-full min-w-0">
+        <app-model-info-grid [chips]="modelChips()"></app-model-info-grid>
+      </div>
+    </section>
+
+    <!-- 3.6 Raw JSON -->
+    <section class="px-6 md:px-12 py-12" style="background: var(--bg-secondary)">
+      <div class="max-w-7xl mx-auto w-full min-w-0">
+        <app-raw-json-section [data]="result()"></app-raw-json-section>
+      </div>
+    </section>
+
+    <!-- 3.7 Feedback Section -->
+    <section id="feedback-section" class="px-6 md:px-12 py-12" style="background: var(--bg-primary)">
+      <div class="max-w-7xl mx-auto w-full min-w-0">
+        <app-analysis-feedback [analysisId]="sessionId()"></app-analysis-feedback>
+      </div>
+    </section>
+  }
+
+  <app-footer-section></app-footer-section>
+</div>

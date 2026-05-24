@@ -36,7 +36,10 @@ export class FormattingService {
    * Maps an emotion label or severity to its corresponding CSS variable.
    */
   getEmotionColor(label: string | undefined | null): string {
-    const l = label?.toLowerCase() || 'neutral';
+    let l = label?.toLowerCase() || 'neutral';
+    if (l === 'happiness') {
+      l = 'joy';
+    }
 
     // Special semantic overrides
     if (l === 'positive' || l === 'success') return 'var(--color-success)';

@@ -19,7 +19,7 @@ import { AppCacheService } from '../../core/services/app-cache.service';
 import { AnalysisHistoryItem, AnalysisType } from '../../core/models/analysis-v2.model';
 import { AlertsService } from '../../core/services/alerts.service';
 
-type FilterType = 'all' | 'text' | 'audio' | 'feedback';
+type FilterType = 'all' | 'text' | 'audio' | 'image' | 'feedback';
 type SortOrder = 'newest' | 'oldest';
 
 const HISTORY_STATE_KEY = 'emotra_history_state';
@@ -51,6 +51,7 @@ export class HistoryComponent implements OnInit {
     { label: 'All Tracks', value: 'all' },
     { label: 'Text', value: 'text' },
     { label: 'Audio', value: 'audio' },
+    { label: 'Image', value: 'image' },
     { label: 'Feedback', value: 'feedback' }
   ];
   filterType = signal<FilterType>('all');
@@ -144,10 +145,10 @@ export class HistoryComponent implements OnInit {
         type: s.type.toLowerCase(),
         timestamp: s.timestamp,
         metadata: {
-          dominantLabel: s.dominant_emotion,
+          dominantLabel: s.dominant_emotion?.toLowerCase() === 'happiness' ? 'joy' : s.dominant_emotion,
           dominantCategory: safeCategory,
-          emotionColor: this.format.getEmotionColor(s.dominant_emotion),
-          icon: s.type.toLowerCase() === 'text' ? 'document-text' : 'microphone',
+          emotionColor: this.format.getEmotionColor(s.dominant_emotion?.toLowerCase() === 'happiness' ? 'joy' : s.dominant_emotion),
+          icon: s.type.toLowerCase() === 'text' ? 'document-text' : (s.type.toLowerCase() === 'image' ? 'image' : 'microphone'),
           formattedDate: this.format.formatDate(s.timestamp),
           title: s.summary_text || 'Analysis Result',
           confidence: s.confidence_percent
@@ -380,6 +381,7 @@ export class HistoryComponent implements OnInit {
     this.cache.removeItem('emotra_history_meta_all');
     this.cache.removeItem('emotra_history_meta_text');
     this.cache.removeItem('emotra_history_meta_audio');
+    this.cache.removeItem('emotra_history_meta_image');
     this.cache.removeItem('emotra_stats');
     this.cache.removeItem(`emotra_analysis_detail_${cloudId}`);
 
@@ -423,9 +425,11 @@ export class HistoryComponent implements OnInit {
       'emotra_history_meta_all',
       'emotra_history_meta_text',
       'emotra_history_meta_audio',
+      'emotra_history_meta_image',
       'emotra_stats',
       'emotra_text_sessions',
       'emotra_audio_sessions',
+      'emotra_image_sessions',
       'emotra_feedback',
       'emotra_feedback_history',
       'emotra_system_feedback',

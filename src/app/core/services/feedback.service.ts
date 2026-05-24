@@ -145,6 +145,22 @@ export class FeedbackService {
   }
 
   /**
+   * Retrieves the current user's system feedback (testimonial) if one exists.
+   * Handles 404 cleanly by returning null.
+   */
+  getCurrentSystemFeedback(): Observable<ApiResponse<SystemFeedbackResponse | null>> {
+    const url = `${this.baseUrl}/api/system-feedback/current`;
+    return this.http.get<ApiResponse<SystemFeedbackResponse | null>>(url).pipe(
+      catchError(err => {
+        if (err.status === 404) {
+          return of({ is_success: true, data: null, message: 'No system feedback found' } as any);
+        }
+        throw err;
+      })
+    );
+  }
+
+  /**
    * Retrieves the unified history of ALL feedback submitted by the current user.
    * Includes both Analysis and System feedback with pagination.
    */

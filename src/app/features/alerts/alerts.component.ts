@@ -270,6 +270,12 @@ export class AlertsComponent implements OnInit {
         return;
       }
 
+      const imageSession = this.storageService.getImageSessions().find((s: any) => s.id === client_id || s.cloudId === analysis_id);
+      if (imageSession) {
+        this.router.navigate(['/analysis', 'image', client_id]);
+        return;
+      }
+
       // 2. API fallback (using UUID)
       this.analysisV2Service.getAnalysisDetails(client_id)
         .pipe(takeUntilDestroyed(this.destroyRef))
@@ -281,6 +287,8 @@ export class AlertsComponent implements OnInit {
 
               if (type === 'text') {
                 this.storageService.saveSession(session as AnalysisSession);
+              } else if (type === 'image') {
+                this.storageService.saveImageSession(session as any);
               } else {
                 this.storageService.saveAudioSession(session as AudioAnalysisSession);
               }

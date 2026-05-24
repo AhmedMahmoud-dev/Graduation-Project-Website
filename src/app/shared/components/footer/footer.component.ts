@@ -49,15 +49,16 @@ export class FooterSectionComponent implements OnInit {
     }
 
     // 2. Background sync with API
-    this.feedbackService.getMyFeedbackHistory(1, 10).subscribe({
+    this.feedbackService.getCurrentSystemFeedback().subscribe({
       next: (response: any) => {
-        if (response.is_success && response.data) {
-          const systemRef = response.data.find((f: any) => f.feedback_type === 'system');
-          this.hasFeedback.set(!!systemRef);
+        if (response.is_success) {
+          const systemRef = response.data;
 
           if (systemRef) {
+            this.hasFeedback.set(true);
             this.feedbackService.cacheSystemFeedback(systemRef);
           } else {
+            this.hasFeedback.set(false);
             this.feedbackService.removeCachedSystemFeedback();
           }
         }

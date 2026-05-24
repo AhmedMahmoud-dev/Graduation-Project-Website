@@ -33,6 +33,7 @@ export const DEFAULT_EMOTION_COLORS: Record<string, string> = {
   'neutral': '#778ca3',
   'sadness': '#4a90d9',
   'surprise': '#00d4aa',
+  'contempt': '#e84393',
 };
 
 export const PRESET_THEMES = [
@@ -92,6 +93,7 @@ export const PRESET_THEMES = [
       'neutral': '#94a3b8',
       'sadness': '#1e3a8a',
       'surprise': '#2dd4bf',
+      'contempt': '#ec4899',
     }
   },
   {
@@ -125,6 +127,7 @@ export const PRESET_THEMES = [
       'neutral': '#64748b',
       'sadness': '#334155',
       'surprise': '#f97316',
+      'contempt': '#a21caf',
     }
   },
   {
@@ -158,6 +161,7 @@ export const PRESET_THEMES = [
       'neutral': '#8c8c8c',
       'sadness': '#3b82f6',
       'surprise': '#ec4899',
+      'contempt': '#a855f7',
     }
   },
 ];

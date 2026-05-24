@@ -1,5 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { AnalysisSession, AudioAnalysisSession } from '../models/text-analysis.model';
+import { ImageAnalysisSession } from '../models/image-analysis.model';
 
 /**
  * AnalysisStorageService — localStorage-backed session persistence with Signal-based reactivity.
@@ -8,16 +9,34 @@ import { AnalysisSession, AudioAnalysisSession } from '../models/text-analysis.m
 export class AnalysisStorageService {
   private readonly TEXT_STORAGE_KEY = 'emotra_text_sessions';
   private readonly AUDIO_STORAGE_KEY = 'emotra_audio_sessions';
+  private readonly IMAGE_STORAGE_KEY = 'emotra_image_sessions';
+
+  // In-memory cache for image blobs to survive component recreation on navigation
+  private imageBlobCache = new Map<string, Blob>();
+
+  cacheImageBlob(id: string, blob: Blob): void {
+    this.imageBlobCache.set(id, blob);
+  }
+
+  getCachedImageBlob(id: string): Blob | null {
+    return this.imageBlobCache.get(id) ?? null;
+  }
 
   // State signals
   private textSessionsSignal = signal<AnalysisSession[]>([]);
   private audioSessionsSignal = signal<AudioAnalysisSession[]>([]);
+  private imageSessionsSignal = signal<ImageAnalysisSession[]>([]);
 
   // Public readonly signals
   textSessions = this.textSessionsSignal.asReadonly();
   audioSessions = this.audioSessionsSignal.asReadonly();
+  imageSessions = this.imageSessionsSignal.asReadonly();
 
-  allSessions = computed(() => [...this.textSessionsSignal(), ...this.audioSessionsSignal()]);
+  allSessions = computed(() => [
+    ...this.textSessionsSignal(),
+    ...this.audioSessionsSignal(),
+    ...this.imageSessionsSignal()
+  ]);
 
   constructor() {
     this.migrateLegacyData();
@@ -31,6 +50,9 @@ export class AnalysisStorageService {
 
       const rawAudio = localStorage.getItem(this.AUDIO_STORAGE_KEY);
       this.audioSessionsSignal.set(rawAudio ? JSON.parse(rawAudio) : []);
+
+      const rawImage = localStorage.getItem(this.IMAGE_STORAGE_KEY);
+      this.imageSessionsSignal.set(rawImage ? JSON.parse(rawImage) : []);
     } catch (e) {
       console.error('Failed to load sessions from storage:', e);
     }
@@ -140,35 +162,69 @@ export class AnalysisStorageService {
     return this.audioSessionsSignal().find(s => s.id === id) ?? null;
   }
 
+  // --- IMAGE SESSIONS ---
+
+  saveImageSession(session: ImageAnalysisSession): void {
+    this.imageSessionsSignal.update(sessions => {
+      // Prevent duplicate entries by client_id
+      if (sessions.some(s => s.id === session.id)) return sessions;
+      const newSessions = [session, ...sessions];
+      try {
+        localStorage.setItem(this.IMAGE_STORAGE_KEY, JSON.stringify(newSessions));
+      } catch (e) { }
+      return newSessions;
+    });
+  }
+
+  getImageSessions(): ImageAnalysisSession[] {
+    return this.imageSessionsSignal();
+  }
+
+  getImageSessionById(id: string): ImageAnalysisSession | null {
+    return this.imageSessionsSignal().find(s => s.id === id) ?? null;
+  }
+
   // --- GENERAL ---
 
-  deleteSession(id: string, type: 'text' | 'audio' = 'text'): void {
+  deleteSession(id: string, type: 'text' | 'audio' | 'image' = 'text'): void {
     if (type === 'text') {
       this.textSessionsSignal.update(sessions => {
         const filtered = sessions.filter(s => s.id !== id);
         localStorage.setItem(this.TEXT_STORAGE_KEY, JSON.stringify(filtered));
         return filtered;
       });
-    } else {
+    } else if (type === 'audio') {
       this.audioSessionsSignal.update(sessions => {
         const filtered = sessions.filter(s => s.id !== id);
         localStorage.setItem(this.AUDIO_STORAGE_KEY, JSON.stringify(filtered));
         return filtered;
       });
+    } else if (type === 'image') {
+      this.imageSessionsSignal.update(sessions => {
+        const filtered = sessions.filter(s => s.id !== id);
+        localStorage.setItem(this.IMAGE_STORAGE_KEY, JSON.stringify(filtered));
+        return filtered;
+      });
     }
   }
 
-  markAsSynced(clientId: string, cloudId: number, type: 'text' | 'audio' = 'text'): void {
+  markAsSynced(clientId: string, cloudId: number, type: 'text' | 'audio' | 'image' = 'text'): void {
     if (type === 'text') {
       this.textSessionsSignal.update(sessions => {
         const updated = sessions.map(s => s.id === clientId ? { ...s, isSynced: true, cloudId } : s);
         localStorage.setItem(this.TEXT_STORAGE_KEY, JSON.stringify(updated));
         return updated;
       });
-    } else {
+    } else if (type === 'audio') {
       this.audioSessionsSignal.update(sessions => {
         const updated = sessions.map(s => s.id === clientId ? { ...s, isSynced: true, cloudId } : s);
         localStorage.setItem(this.AUDIO_STORAGE_KEY, JSON.stringify(updated));
+        return updated;
+      });
+    } else if (type === 'image') {
+      this.imageSessionsSignal.update(sessions => {
+        const updated = sessions.map(s => s.id === clientId ? { ...s, isSynced: true, cloudId } : s);
+        localStorage.setItem(this.IMAGE_STORAGE_KEY, JSON.stringify(updated));
         return updated;
       });
     }
@@ -177,7 +233,9 @@ export class AnalysisStorageService {
   clearAll(): void {
     localStorage.removeItem(this.TEXT_STORAGE_KEY);
     localStorage.removeItem(this.AUDIO_STORAGE_KEY);
+    localStorage.removeItem(this.IMAGE_STORAGE_KEY);
     this.textSessionsSignal.set([]);
     this.audioSessionsSignal.set([]);
+    this.imageSessionsSignal.set([]);
   }
 }

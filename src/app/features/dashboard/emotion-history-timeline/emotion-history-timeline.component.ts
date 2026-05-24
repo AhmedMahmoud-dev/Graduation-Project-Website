@@ -18,7 +18,7 @@ interface FilterTab {
   label: string;
 }
 
-type TypeFilter = 'all' | 'text' | 'audio';
+type TypeFilter = 'all' | 'text' | 'audio' | 'image';
 type RangeFilter = '7d' | '30d' | 'all';
 
 /** Flat view model for each history entry. */
@@ -33,13 +33,14 @@ interface JourneyEntry {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-export const EMOTIONS = ['anger', 'disgust', 'fear', 'joy', 'neutral', 'sadness', 'surprise'] as const;
+export const EMOTIONS = ['anger', 'disgust', 'fear', 'joy', 'neutral', 'sadness', 'surprise', 'contempt'] as const;
 type EmotionKey = typeof EMOTIONS[number];
 
 const TYPE_TABS: FilterTab[] = [
   { value: 'all', label: 'All Tracks' },
   { value: 'text', label: 'Text' },
   { value: 'audio', label: 'Audio' },
+  { value: 'image', label: 'Image' },
 ];
 
 const RANGE_TABS: FilterTab[] = [
@@ -88,26 +89,36 @@ export class EmotionHistoryTimelineComponent {
     const localItems = this.storage.allSessions();
 
     // Map cloud items to normalized JourneyEntry
-    const cloudMapped = cloudItems.map(item => ({
-      id: item.client_id || `cloud_${item.id}`,
-      type: item.type.toLowerCase(),
-      timestamp: new Date(item.timestamp).getTime(),
-      dateLabel: new Date(item.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-      emotion: (item.dominant_emotion || 'neutral').toLowerCase(),
-      confidence: item.confidence_percent || (item.confidence * 100) || 0
-    }));
+    const cloudMapped = cloudItems.map(item => {
+      let emotion = (item.dominant_emotion || 'neutral').toLowerCase();
+      if (emotion === 'happiness') {
+        emotion = 'joy';
+      }
+      return {
+        id: item.client_id || `cloud_${item.id}`,
+        type: item.type.toLowerCase(),
+        timestamp: new Date(item.timestamp).getTime(),
+        dateLabel: new Date(item.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        emotion: emotion,
+        confidence: item.confidence_percent || (item.confidence * 100) || 0
+      };
+    });
 
     // Map local items that aren't synced yet (optional, for offline support)
     const localUnsynced = localItems
       .filter(s => !s.isSynced)
       .map((s, index) => {
         const tsMs = s.timestamp ? new Date(s.timestamp).getTime() : Date.now();
+        let emotion = this.getDominantLabel(s).toLowerCase();
+        if (emotion === 'happiness') {
+          emotion = 'joy';
+        }
         return {
           id: `local_${s.id || 'new'}_${index}`,
           type: (s.type || 'text').toLowerCase(),
           timestamp: tsMs,
           dateLabel: new Date(tsMs).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-          emotion: this.getDominantLabel(s).toLowerCase(),
+          emotion: emotion,
           confidence: this.getDominantConfidence(s)
         };
       });
@@ -393,17 +404,25 @@ export class EmotionHistoryTimelineComponent {
 
   // ── Private helpers ───────────────────────────────────────────────────────
   private getDominantLabel(s: any): string {
-    const isText = (s.type || '').toLowerCase() === 'text';
-    if (isText) {
+    const type = (s.type || '').toLowerCase();
+    if (type === 'text') {
       return s.result?.combined_final_emotion?.label || 'neutral';
     }
-    return s.result?.final_multimodal_emotion?.label || s.result?.combined_final_emotion?.label || 'neutral';
+    if (type === 'image') {
+      const label = s.result?.scene_emotion?.label || 'neutral';
+      return label.toLowerCase() === 'happiness' ? 'joy' : label;
+    }
+    const label = s.result?.final_multimodal_emotion?.label || s.result?.combined_final_emotion?.label || 'neutral';
+    return label.toLowerCase() === 'happiness' ? 'joy' : label;
   }
 
   private getDominantConfidence(s: any): number {
-    const isText = (s.type || '').toLowerCase() === 'text';
-    if (isText) {
+    const type = (s.type || '').toLowerCase();
+    if (type === 'text') {
       return s.result?.combined_final_emotion?.confidence_percent || 0;
+    }
+    if (type === 'image') {
+      return s.result?.scene_emotion?.confidence_percent || 0;
     }
     return s.result?.final_multimodal_emotion?.confidence_percent || s.result?.combined_final_emotion?.confidence_percent || 0;
   }

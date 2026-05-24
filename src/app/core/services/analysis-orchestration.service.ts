@@ -36,7 +36,7 @@ export class AnalysisOrchestrationService {
   syncSessionToCloud<TResult>(
     sid: string,
     result: TResult,
-    analysisType: 'text' | 'audio',
+    analysisType: 'text' | 'audio' | 'image',
     syncCallback: (sid: string, res: TResult) => Observable<ApiResponse<number>>
   ): void {
     if (!this.auth.isAuthenticated()) return;

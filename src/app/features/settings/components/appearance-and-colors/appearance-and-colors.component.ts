@@ -40,7 +40,7 @@ export class AppearanceAndColorsComponent {
     { label: 'Accent', variable: '--color-accent' }
   ];
 
-  emotions = ['anger', 'disgust', 'fear', 'joy', 'neutral', 'sadness', 'surprise'];
+  emotions = ['anger', 'disgust', 'fear', 'joy', 'neutral', 'sadness', 'surprise', 'contempt'];
   activeThemeTab = signal<'light' | 'dark'>('light');
   modeOptions = [
     { label: 'Light', value: 'light' },
