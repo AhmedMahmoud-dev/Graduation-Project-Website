@@ -36,20 +36,12 @@ export class FeaturesSectionComponent {
       category: 'Acoustic'
     },
     {
-      title: 'Image Analysis',
-      description: 'Detect facial expressions and emotional cues in static images with computer vision.',
-      icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z',
-      status: 'coming-soon',
-      link: '/models/image',
-      category: 'Visual'
-    },
-    {
-      title: 'Video Analysis',
-      description: 'Real-time emotion tracking across video frames for dynamic sentiment mapping.',
-      icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z',
-      status: 'coming-soon',
-      link: '/models/video',
-      category: 'Multimodal'
+      title: 'Image & Video Analysis',
+      description: 'Analyze facial expressions in static images and track emotional transitions across video timelines.',
+      icon: 'M3 21h18a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z M10 8.5l5.5 3.5l-5.5 3.5z',
+      status: 'available',
+      link: '/models/image-video',
+      category: 'Visual & Multimodal'
     }
   ];
 

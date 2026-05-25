@@ -85,48 +85,7 @@ export class ImageAnalysisComponent implements OnInit, OnDestroy {
   previewUrl = signal<SafeUrl | null>(null);
   imageLoading = signal<boolean>(true);
 
-  // Focus Hover/Active Blur State
-  hoveredFaceId = signal<number | null>(null);
 
-  clearFace = computed(() => {
-    const hovered = this.hoveredFaceId();
-    if (hovered !== null) {
-      return this.result()?.faces.find(f => f.face_id === hovered) || null;
-    }
-    const selected = this.selectedFaceId();
-    if (selected !== null) {
-      return this.result()?.faces.find(f => f.face_id === selected) || null;
-    }
-    return null;
-  });
-
-  isBlurred = computed(() => this.clearFace() !== null);
-
-  clearFaceColor = computed(() => {
-    const face = this.clearFace();
-    if (!face) return 'transparent';
-    return this.colorService.getColor(face.combined_final_emotion.label);
-  });
-
-  clearFaceClipPath = computed(() => {
-    const face = this.clearFace();
-    const res = this.result();
-    if (!face || !res) return 'inset(0)';
-    
-    const baseW = res.frame_quality.was_downscaled ? res.frame_quality.downscaled_to[0] : res.frame_quality.original_width;
-    const baseH = res.frame_quality.was_downscaled ? res.frame_quality.downscaled_to[1] : res.frame_quality.original_height;
-    
-    const [xMin, yMin, xMax, yMax] = face.bbox;
-    const left = (xMin / baseW) * 100;
-    const top = (yMin / baseH) * 100;
-    const width = ((xMax - xMin) / baseW) * 100;
-    const height = ((yMax - yMin) / baseH) * 100;
-    
-    const right = 100 - (left + width);
-    const bottom = 100 - (top + height);
-    
-    return `inset(${top}% ${right}% ${bottom}% ${left}%)`;
-  });
 
   // Webcam State
   isCapturing = signal<boolean>(false);
@@ -386,7 +345,7 @@ export class ImageAnalysisComponent implements OnInit, OnDestroy {
       height: `${height}%`,
       '--face-color': color,
       'border-color': color,
-      'box-shadow': isSelected ? `0 0 10px ${color}` : '0 0 8px rgba(0,0,0,0.25)'
+      'box-shadow': isSelected ? `0 0 20px ${color}` : '0 0 10px rgba(0,0,0,0.3)'
     };
   }
 

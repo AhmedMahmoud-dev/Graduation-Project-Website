@@ -14,7 +14,7 @@
     </div>
 
     <!-- Features Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 sm:gap-8 w-full">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 w-full">
       @for (item of features; track item.title) {
       <div [id]="'feature-' + item.title.toLowerCase().replace(' ', '-')"
         class="p-6 xs:p-8 lg:p-8 bg-[color:var(--color-surface)] border border-[color:var(--color-border)] rounded-3xl flex flex-col h-full relative w-full min-w-0 overflow-hidden group transition-colors hover:border-[color:var(--color-primary)]">

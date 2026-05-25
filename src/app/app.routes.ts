@@ -30,8 +30,9 @@ export const routes: Routes = [
     children: [
       { path: 'text', component: TextModelComponent },
       { path: 'audio', component: AudioModelComponent },
-      { path: 'image', component: ImageModelComponent },
-      { path: 'video', component: VideoModelComponent }
+      { path: 'image-video', component: ImageModelComponent },
+      { path: 'image', redirectTo: 'image-video', pathMatch: 'full' },
+      { path: 'video', redirectTo: 'image-video', pathMatch: 'full' }
     ]
   },
 

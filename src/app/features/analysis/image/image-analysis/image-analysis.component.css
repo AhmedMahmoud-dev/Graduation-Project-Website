@@ -274,11 +274,11 @@
 @keyframes webcam-live-pulse {
   0%, 100% {
     opacity: 1;
-    transform: scale(1);
+    /* transform: scale(1); */
   }
   50% {
     opacity: 0.3;
-    transform: scale(1.2);
+    /* transform: scale(1.2); */
   }
 }
 
@@ -307,8 +307,7 @@
 
 .face-box:hover {
   border-width: 3px;
-  transform: scale(1.015);
-  box-shadow: 0 0 12px var(--face-color) !important;
+  box-shadow: 0 0 24px var(--face-color) !important;
   z-index: 20;
 }
 
@@ -334,7 +333,7 @@
 
 .face-box:hover .face-tag {
   opacity: 1;
-  transform: scale(1.05);
+  /* transform: scale(1.05); */
 }
 
 /* ═══════════════════════════════════════════════════════════════

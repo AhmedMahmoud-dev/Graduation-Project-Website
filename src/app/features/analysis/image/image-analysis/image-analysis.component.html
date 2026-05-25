@@ -243,28 +243,11 @@
               }
               
               <div class="relative max-w-full" [style.display]="(imageLoading() || !previewUrl()) ? 'none' : 'block'">
-                <img [src]="previewUrl()" (load)="imageLoading.set(false)" 
-                  class="max-w-full max-h-[500px] object-contain rounded-xl select-none transition-all duration-300"
-                  [class.blur-[6px]]="isBlurred()"
-                  [class.brightness-[0.95]]="isBlurred()" />
-                
-                @if (clearFace()) {
-                  <!-- Dynamic background tint matching the dominant emotion color -->
-                  <div class="absolute inset-0 rounded-xl pointer-events-none transition-all duration-300 z-[5]"
-                    [style.backgroundColor]="clearFaceColor()"
-                    [style.opacity]="0.12"></div>
-
-                  <img [src]="previewUrl()" 
-                    [style.clip-path]="clearFaceClipPath()"
-                    class="absolute top-0 left-0 w-full h-full object-contain rounded-xl select-none pointer-events-none z-10 transition-all duration-300" />
-                }
+                <img [src]="previewUrl()" (load)="imageLoading.set(false)" class="max-w-full max-h-[500px] object-contain rounded-xl select-none" />
                 
                 <!-- Face boxes -->
                 @for (face of result()!.faces; track face.face_id) {
-                  <div class="face-box z-20" [ngStyle]="getFaceStyle(face)" 
-                    (click)="selectFace(face.face_id)"
-                    (mouseenter)="hoveredFaceId.set(face.face_id)"
-                    (mouseleave)="hoveredFaceId.set(null)">
+                  <div class="face-box" [ngStyle]="getFaceStyle(face)" (click)="selectFace(face.face_id)">
                     <span class="face-tag" [style.background]="colorService.getColor(face.combined_final_emotion.label)">
                       Face #{{ face.face_id }}
                     </span>
@@ -316,8 +299,6 @@
                 <!-- List of Detected Faces -->
                 @for (face of result()!.faces; track face.face_id) {
                   <button (click)="selectFace(face.face_id)"
-                    (mouseenter)="hoveredFaceId.set(face.face_id)"
-                    (mouseleave)="hoveredFaceId.set(null)"
                     class="flex items-center justify-between p-3.5 rounded-xl border text-sm font-bold transition-all text-left"
                     [class.active-focus]="selectedFaceId() === face.face_id"
                     [style.borderColor]="selectedFaceId() === face.face_id ? 'var(--brand-primary)' : 'var(--border-color)'">
@@ -329,8 +310,8 @@
                       Face #{{ face.face_id }}
                     </span>
                     <span class="capitalize px-2.5 py-1 rounded-lg text-xs"
-                       [style.background]="colorService.getBadgeBg(face.combined_final_emotion.label)"
-                       [style.color]="colorService.getColor(face.combined_final_emotion.label)">
+                      [style.background]="colorService.getBadgeBg(face.combined_final_emotion.label)"
+                      [style.color]="colorService.getColor(face.combined_final_emotion.label)">
                       {{ face.combined_final_emotion.label }} ({{ face.combined_final_emotion.confidence_percent | number:'1.0-0' }}%)
                     </span>
                   </button>
