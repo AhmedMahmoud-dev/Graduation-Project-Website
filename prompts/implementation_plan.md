@@ -1,126 +1,49 @@
-# Implement V2 Settings Appearance Endpoints
+# Implementation Plan - Fix Admin Users Pagination and Filtering
 
-Build `GET/PUT/DELETE /api/settings/appearance` as defined in `settings_endpoints.md`.
+This plan addresses the issue where search queries and status filters on the Admin Users page return empty states or miss users located on different pages. 
 
-## Key Design Decision
+## The Problem
+Currently, the Admin Users page fetches a single page (e.g., 10 users) from the server. The search and status filters are applied client-side using `computed` properties, but they only filter the users of the *current page*. Consequently:
+- If a user search or status filter is applied and no matching users exist on the first page, the page displays an empty state, even if matching users exist on page 2 or page 3.
+- Sorting is limited to the current page's users rather than the full list.
+- Pagination is computed based on the total unfiltered user count, resulting in empty/misaligned pages when filters are active.
 
-> [!IMPORTANT]
-> **The old `UserSettings` model stores completely different data** (alert thresholds, notification prefs, language). The new spec is about **appearance/theme colors** — a totally different domain.
->
-> **Approach:** Add a `AppearanceSettingsJson` column to the existing `UserSettings` table (as a JSON string). This avoids creating an entirely new table while keeping the data cleanly separated. The V2 service reads/writes only this column.
->
-> **Alternative:** Create a brand new `AppearanceSettings` table. This is cleaner but requires a migration. Let me know if you prefer this.
+## Proposed Solution
+Since the backend API does not currently support server-side search or filtering (taking only `page` and `pageSize` parameters), we will implement client-side pagination, filtering, and sorting over the **entire user dataset**.
+
+1. **Load All Users**: We will fetch all users from the server on page load (and on Refresh click). We'll make an initial request with a large page size (e.g., `1000`). If the server caps the page size (e.g., to 50), we will dynamically detect this and fetch the remaining pages in parallel using `forkJoin`.
+2. **Client-Side Filtering & Sorting**: Filter and sort the entire dataset of users reactively using the existing `filteredUsers` and `sortedUsers` signals.
+3. **Client-Side Slicing (Pagination)**: Add a new `paginatedUsers` computed signal to slice the sorted and filtered list for the current page.
+4. **Auto-Reset Page**: Reset the pagination page to `1` whenever search queries or status filters change to avoid empty views.
+
+---
 
 ## Proposed Changes
 
-### 1. Domain Model
+### [Admin Users Component]
 
-#### [MODIFY] [UserSettings.cs](file:///c:/Graduation%20Project/Backend/EmotionDetectionSolution/Core/DomainLayer/Models/UserSettings.cs)
+#### [MODIFY] [admin-users.component.ts](file:///c:/Users/Ahmed%20Mahmoud/Desktop/Graduation%20Project/Project%20Website/src/app/features/admin/admin-users/admin-users.component.ts)
+- Import `forkJoin` from `'rxjs'`.
+- Modify `fetchUsers()` to query all pages in parallel if the server enforces a smaller page size limit.
+- Add `updateSearchQuery(q)` and `updateStatusFilter(status)` methods to reset `currentPage` to `1` when filters change.
+- Modify `totalPages` to compute page count based on `filteredUsers().length`.
+- Add `paginatedUsers` computed signal to slice the list for the current page.
+- Modify `goToPage(page)` to simply set the `currentPage` signal without triggerring a server request.
 
-Add one new property:
-
-```csharp
-public string? AppearanceSettingsJson { get; set; }
-```
-
-This stores the entire appearance payload (light_theme, dark_theme, emotion_colors, active_theme) as a serialized JSON string.
-
----
-
-### 2. New V2 DTOs
-
-#### [NEW] `Shared/DTOs/SettingsV2/AppearanceSettingsDto.cs`
-
-```csharp
-public class AppearanceSettingsDto
-{
-    public ThemeColorsDto? LightTheme { get; set; }
-    public ThemeColorsDto? DarkTheme { get; set; }
-    public Dictionary<string, string>? EmotionColors { get; set; }
-    public string? ActiveTheme { get; set; }  // "light", "dark", "system"
-}
-
-public class ThemeColorsDto
-{
-    public string? ColorBg { get; set; }
-    public string? ColorSurface { get; set; }
-    public string? ColorBorder { get; set; }
-    public string? ColorText { get; set; }
-    public string? ColorTextMuted { get; set; }
-    public string? ColorPrimary { get; set; }
-    public string? ColorAccent { get; set; }
-}
-```
-
-> The global `snake_case` JSON serializer in `Program.cs` will automatically produce `color_bg`, `light_theme`, etc. — exactly matching the spec.
+#### [MODIFY] [admin-users.component.html](file:///c:/Users/Ahmed%20Mahmoud/Desktop/Graduation%20Project/Project%20Website/src/app/features/admin/admin-users/admin-users.component.html)
+- Change `<app-search-input>` to bind `(valueChange)` to `updateSearchQuery($event)`.
+- Change `<app-dropdown-menu>` (status filter) to bind `(selectedValueChange)` to `updateStatusFilter($event)`.
+- Update desktop and mobile list iterators (`@for`) to loop over `paginatedUsers()` instead of `sortedUsers()`.
 
 ---
-
-### 3. Service Layer
-
-#### [NEW] `Core/ServiceAbstraction/ISettingsV2Service.cs`
-
-```csharp
-public interface ISettingsV2Service
-{
-    Task<ApiResponse<AppearanceSettingsDto>> GetAppearanceAsync(string userId);
-    Task<ApiResponse<bool>> UpdateAppearanceAsync(string userId, AppearanceSettingsDto dto);
-    Task<ApiResponse<bool>> ResetAppearanceAsync(string userId);
-}
-```
-
-#### [NEW] `Core/Service/SettingsV2Service.cs`
-
-- **GET**: Load `UserSettings` row → deserialize `AppearanceSettingsJson` → return. If null/empty, return `null` data so frontend falls back to defaults.
-- **PUT**: Serialize the DTO → save to `AppearanceSettingsJson` column. Create the `UserSettings` row if it doesn't exist.
-- **DELETE**: Set `AppearanceSettingsJson = null` → save.
-
----
-
-### 4. Controller
-
-#### [NEW] `EmotionDetection/Controllers/V2/SettingsV2Controller.cs`
-
-- Route: `api/settings`
-- `GET appearance` → calls `GetAppearanceAsync`
-- `PUT appearance` → calls `UpdateAppearanceAsync`
-- `DELETE appearance` → calls `ResetAppearanceAsync`
-
----
-
-### 5. Wiring
-
-#### [MODIFY] [Program.cs](file:///c:/Graduation%20Project/Backend/EmotionDetectionSolution/EmotionDetection/Program.cs)
-
-Add DI registration:
-
-```csharp
-builder.Services.AddScoped<ISettingsV2Service, SettingsV2Service>();
-```
-
----
-
-## Files Summary
-
-| Action     | File                                                      |
-| ---------- | --------------------------------------------------------- |
-| **MODIFY** | `UserSettings.cs` — add `AppearanceSettingsJson` property |
-| **NEW**    | `Shared/DTOs/SettingsV2/AppearanceSettingsDto.cs`         |
-| **NEW**    | `Core/ServiceAbstraction/ISettingsV2Service.cs`           |
-| **NEW**    | `Core/Service/SettingsV2Service.cs`                       |
-| **NEW**    | `EmotionDetection/Controllers/V2/SettingsV2Controller.cs` |
-| **MODIFY** | `Program.cs` — add DI registration                        |
-
-## Open Questions
-
-> [!IMPORTANT]
->
-> 1. **Do you also want to remove the old `/api/UserSettings` endpoints** (the same way we removed the old Analysis)? Or keep them for now since they handle alert/notification settings that are separate from appearance?
-> 2. **Database migration**: Adding a column requires `dotnet ef migrations add`. Since you're using `EnsureCreatedAsync()` in dev, should I just add the property and let EF handle it, or do you want a formal migration?
 
 ## Verification Plan
 
-### Automated Tests
+### Automated/Build Verification
+- Run `npm run build` or `ng build` to ensure there are no compilation or TypeScript errors.
 
-- `dotnet build` — zero errors
-- Manual Swagger test of all 3 endpoints
+### Manual Verification
+- Apply the **Online** status filter: verify that online users from any page are gathered onto the first page, and that pagination dynamically scales.
+- Search for a specific user known to be on page 2 or 3: verify they appear instantly on page 1.
+- Verify sorting (e.g., by Name, Joined) works across the entire filtered list.
+- Click the **Refresh** button to verify the complete user list syncs in the background.
