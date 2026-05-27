@@ -16,20 +16,35 @@
     @if (isComparisonReady()) {
     <div class="flex flex-col gap-12 sm:gap-16">
 
-      <!-- SECTION 2: HERO ROW -->
-      <app-compare-hero [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-hero>
+      <!-- SECTION 1.5: TARGET SELECTOR (Common for sections) -->
+      @if (targetOptions().length > 1) {
+        <div class="flex justify-center -mb-4">
+          <div class="w-full lg:w-max px-4">
+            <app-segmented-nav 
+              [options]="targetOptions()" 
+              [selectedValue]="compareTarget()"
+              (selectedValueChange)="compareTarget.set($event.toString())">
+            </app-segmented-nav>
+          </div>
+        </div>
+      }
 
-      <!-- SECTION 3: TIMELINE OVERLAY -->
-      <app-compare-timeline [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-timeline>
+      <!-- SECTION 2: HERO ROW -->
+      <app-compare-hero [analysisA]="analysisA()" [analysisB]="analysisB()" [target]="compareTarget()"></app-compare-hero>
+
+      <!-- SECTION 3: TIMELINE OVERLAY (Hidden for Images) -->
+      @if (compareType() !== 'image') {
+        <app-compare-timeline [analysisA]="analysisA()" [analysisB]="analysisB()" [target]="compareTarget()"></app-compare-timeline>
+      }
 
       <!-- SECTION 4: DISTRIBUTION -->
-      <app-compare-distribution [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-distribution>
+      <app-compare-distribution [analysisA]="analysisA()" [analysisB]="analysisB()" [target]="compareTarget()"></app-compare-distribution>
 
       <!-- SECTION 5: SENTENCE DIFF -->
-      <app-compare-diff [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-diff>
+      <app-compare-diff [analysisA]="analysisA()" [analysisB]="analysisB()" [target]="compareTarget()"></app-compare-diff>
 
       <!-- SECTION 6: STATS BOX -->
-      <app-compare-stats [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-stats>
+      <app-compare-stats [analysisA]="analysisA()" [analysisB]="analysisB()" [target]="compareTarget()"></app-compare-stats>
 
     </div>
     }

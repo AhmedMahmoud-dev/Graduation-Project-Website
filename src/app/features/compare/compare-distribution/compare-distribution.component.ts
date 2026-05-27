@@ -22,6 +22,7 @@ export class CompareDistributionComponent {
 
   analysisA = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
   analysisB = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
+  target = input<string>('overall');
 
   // Fixed order for comparison
   readonly FIXED_ORDER = ['fear', 'sadness', 'anger', 'disgust', 'contempt', 'neutral', 'surprise', 'joy'];
@@ -83,26 +84,32 @@ export class CompareDistributionComponent {
   }
 
   private getProbabilities(session: any): any {
+    const target = this.target();
+
     if (session.type === 'text') {
       return (session.result as TextAnalysisResult).full_text_analysis.probabilities;
     } else if (session.type === 'audio') {
       return session.result.audio_emotion?.combined_probs_obj || this.mapFloatArrayToObj(session.result.audio_emotion.combined_probs);
     } else {
-      // Image or Video: Use first face track combined_results if available
-      const results = session.result.faces?.[0]?.combined_results;
-      if (results && Array.isArray(results)) {
-        const probs: any = {};
-        results.forEach((r: any) => {
-          probs[r.label.toLowerCase()] = r.confidence;
-        });
-        return probs;
+      // Image or Video: Use target
+      if (target === 'overall') {
+        const scene = session.result.scene_emotion;
+        if (scene) {
+          return { [scene.label.toLowerCase()]: scene.confidence };
+        }
+        return {};
+      } else {
+        const faceIdx = parseInt(target.split('_')[1]);
+        const face = session.result.faces?.[faceIdx];
+        if (face && face.combined_results && Array.isArray(face.combined_results)) {
+          const probs: any = {};
+          face.combined_results.forEach((r: any) => {
+            probs[r.label.toLowerCase()] = r.confidence;
+          });
+          return probs;
+        }
+        return {};
       }
-      // Fallback to scene_emotion dominant only
-      const scene = session.result.scene_emotion;
-      if (scene) {
-        return { [scene.label.toLowerCase()]: scene.confidence };
-      }
-      return {};
     }
   }
 

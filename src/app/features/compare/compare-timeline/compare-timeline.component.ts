@@ -14,7 +14,7 @@ import { SegmentedNavComponent } from '../../../shared/components/segmented-nav/
 @Component({
   selector: 'app-compare-timeline',
   standalone: true,
-  imports: [CommonModule, EmotionTimelineComponent, AnalysisSectionHeaderComponent, SegmentedNavComponent],
+  imports: [CommonModule, EmotionTimelineComponent, AnalysisSectionHeaderComponent],
 
   templateUrl: './compare-timeline.component.html',
   styleUrls: ['./compare-timeline.component.css']
@@ -25,61 +25,7 @@ export class CompareTimelineComponent {
 
   analysisA = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
   analysisB = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
-
-  // Target Selection (Overall vs Face X)
-  compareTarget = signal<string>('overall');
-
-  targetOptions = computed(() => {
-    const a = this.analysisA();
-    const b = this.analysisB();
-    if (!a || !b) return [];
-
-    const isMedia = a.type === 'image' || a.type === 'video';
-    const options: {label: string, value: string}[] = [];
-    
-    const facesA = (a.type === 'image' || a.type === 'video') ? (a.result as any).faces?.length || 0 : 0;
-    const facesB = (b.type === 'image' || b.type === 'video') ? (b.result as any).faces?.length || 0 : 0;
-    const maxFaces = Math.max(facesA, facesB);
-
-    if (isMedia) {
-      // For media, only show overall/scene if no faces exist
-      if (maxFaces === 0) {
-        options.push({ label: 'Scene', value: 'overall' });
-      }
-    } else {
-      options.push({ label: 'Overall', value: 'overall' });
-    }
-    
-    for (let i = 0; i < maxFaces; i++) {
-      options.push({ label: `Face ${i + 1}`, value: `face_${i}` });
-    }
-    
-    return options;
-  });
-
-  constructor() {
-    // Auto-switch target when changing analysis types
-    effect(() => {
-      const a = this.analysisA();
-      if (!a) return;
-
-      untracked(() => {
-        const isMedia = a.type === 'image' || a.type === 'video';
-        const currentTarget = this.compareTarget();
-        const faces = (a.result as any).faces?.length || 0;
-
-        if (isMedia) {
-          if (currentTarget === 'overall' && faces > 0) {
-            this.compareTarget.set('face_0');
-          }
-        } else {
-          if (currentTarget.startsWith('face_')) {
-            this.compareTarget.set('overall');
-          }
-        }
-      });
-    });
-  }
+  target = input<string>('overall');
 
   timelineDataA = computed<TimelineDataPoint[]>(() => {
     const a = this.analysisA();
@@ -102,7 +48,7 @@ export class CompareTimelineComponent {
   });
 
   private mapToTimelineData(session: any): TimelineDataPoint[] {
-    const target = this.compareTarget();
+    const target = this.target();
     const type = session.type;
 
     if (type === 'image') {
@@ -125,10 +71,7 @@ export class CompareTimelineComponent {
         tooltip = `Face ${faceIdx + 1} Analysis`;
       }
       
-      // FIX: For static images, provide two identical points to force ECharts to draw horizontal lines
-      const p1 = { label: label + ' (Start)', probabilities: probs, tooltipDetail: tooltip };
-      const p2 = { label: label + ' (End)', probabilities: probs, tooltipDetail: tooltip };
-      return [p1, p2];
+      return [{ label, probabilities: probs, tooltipDetail: tooltip }];
     }
 
     const timeline = this.getTimelineRaw(session);
@@ -157,7 +100,7 @@ export class CompareTimelineComponent {
   }
 
   private getTimelineRaw(session: any): any[] {
-    const target = this.compareTarget();
+    const target = this.target();
     const type = session.type;
 
     if (type === 'text') {
@@ -166,7 +109,6 @@ export class CompareTimelineComponent {
       return session.result.audio_emotion?.timeline || [];
     } else if (type === 'video') {
       if (target === 'overall') {
-        // Fallback for video overall: show scene_emotion as single point
         const res = session.result;
         return [{
           timestamp_sec: 0,
@@ -183,7 +125,7 @@ export class CompareTimelineComponent {
   }
 
   private getDominantEmotion(session: any): string {
-    const target = this.compareTarget();
+    const target = this.target();
     const type = session.type;
 
     if (type === 'text') {
@@ -201,6 +143,4 @@ export class CompareTimelineComponent {
       }
     }
   }
-
-
 }

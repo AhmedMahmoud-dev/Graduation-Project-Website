@@ -1,4 +1,4 @@
-import { Component, signal, computed, effect, inject, OnInit, DestroyRef } from '@angular/core';
+import { Component, signal, computed, effect, inject, OnInit, DestroyRef, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { AnalysisSession, AudioAnalysisSession } from '../../../core/models/text-analysis.model';
@@ -13,7 +13,6 @@ import { CompareTimelineComponent } from '../compare-timeline/compare-timeline.c
 import { CompareDistributionComponent } from '../compare-distribution/compare-distribution.component';
 import { CompareDiffComponent } from '../compare-diff/compare-diff.component';
 import { CompareStatsComponent } from '../compare-stats/compare-stats.component';
-import { AppNavbarComponent } from "../../../layouts/app-layout/app-navbar/app-navbar.component";
 import { FooterSectionComponent } from "../../../shared/components/footer/footer.component";
 import { ToastService } from '../../../core/services/toast.service';
 import { PageHeaderComponent } from '../../../shared/components/layout/page-header/page-header.component';
@@ -40,8 +39,7 @@ interface ComparePersistedState {
     CompareDiffComponent,
     CompareStatsComponent,
     FooterSectionComponent,
-    PageHeaderComponent
-  ],
+    PageHeaderComponent,  ],
   templateUrl: './compare.component.html',
   styleUrls: ['./compare.component.css']
 })
@@ -54,6 +52,7 @@ export class CompareComponent implements OnInit {
 
   // Global Comparison State
   compareType = signal<'text' | 'audio' | 'image' | 'video'>('text');
+  compareTarget = signal<string>('overall');
 
   // Selected Analyses (full session objects with .result)
   analysisA = signal<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>(null);
@@ -66,6 +65,33 @@ export class CompareComponent implements OnInit {
   // Computed state
   isComparisonReady = computed(() => !!this.analysisA() && !!this.analysisB());
 
+  targetOptions = computed(() => {
+    const a = this.analysisA();
+    const b = this.analysisB();
+    if (!a || !b) return [];
+
+    const isMedia = a.type === 'image' || a.type === 'video';
+    const options: { label: string, value: string }[] = [];
+
+    const facesA = (a.type === 'image' || a.type === 'video') ? (a.result as any).faces?.length || 0 : 0;
+    const facesB = (b.type === 'image' || b.type === 'video') ? (b.result as any).faces?.length || 0 : 0;
+    const maxFaces = Math.max(facesA, facesB);
+
+    if (isMedia) {
+      if (maxFaces === 0) {
+        options.push({ label: 'Scene', value: 'overall' });
+      }
+    } else {
+      options.push({ label: 'Overall', value: 'overall' });
+    }
+
+    for (let i = 0; i < maxFaces; i++) {
+      options.push({ label: `Face ${i + 1}`, value: `face_${i}` });
+    }
+
+    return options;
+  });
+
   constructor() {
     // Notify when first ready
     effect(() => {
@@ -73,6 +99,28 @@ export class CompareComponent implements OnInit {
         this.toast.show('Comparison ready', 'Showing emotional diff between your two analyses', 'success', 'check');
         this.firstLoadDone = true;
       }
+    });
+
+    // Auto-switch target when changing analysis types
+    effect(() => {
+      const a = this.analysisA();
+      if (!a) return;
+
+      untracked(() => {
+        const isMedia = a.type === 'image' || a.type === 'video';
+        const currentTarget = this.compareTarget();
+        const faces = (a.result as any).faces?.length || 0;
+
+        if (isMedia) {
+          if (currentTarget === 'overall' && faces > 0) {
+            this.compareTarget.set('face_0');
+          }
+        } else {
+          if (currentTarget.startsWith('face_')) {
+            this.compareTarget.set('overall');
+          }
+        }
+      });
     });
   }
 

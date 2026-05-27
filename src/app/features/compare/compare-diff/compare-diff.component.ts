@@ -30,6 +30,7 @@ export class CompareDiffComponent {
 
   analysisA = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
   analysisB = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
+  target = input<string>('overall');
 
   isExpanded: Record<number, { a: boolean, b: boolean }> = {};
 
@@ -65,12 +66,23 @@ export class CompareDiffComponent {
 
   private getList(session: any): any[] {
     if (!session || !session.result) return [];
+    const target = this.target();
+
     if (session.type === 'text') {
       return (session.result as TextAnalysisResult).sentences_analysis || [];
     } else if (session.type === 'audio') {
       return session.result.audio_emotion?.timeline || [];
     } else if (session.type === 'image' || session.type === 'video') {
-      return session.result.faces || [];
+      if (target === 'overall') {
+        return session.result.faces || [];
+      } else {
+        const faceIdx = parseInt(target.split('_')[1]);
+        const face = session.result.faces?.[faceIdx];
+        if (session.type === 'video' && face) {
+          return face.timeline || [];
+        }
+        return face ? [face] : [];
+      }
     }
     return [];
   }
@@ -84,12 +96,12 @@ export class CompareDiffComponent {
         confidence: (item.dominant.confidence || 0) * 100
       };
     } else {
-      // Image/Video Face
-      const dom = item.combined_final_emotion;
+      // Image/Video Face OR Video Frame Analysis
+      const dom = item.combined_final_emotion || item.dominant;
       if (!dom) return { label: 'Neutral', confidence: 0 };
       return {
         label: dom.label || 'Neutral',
-        confidence: dom.confidence_percent || 0
+        confidence: dom.confidence_percent || (dom.confidence * 100) || 0
       };
     }
   }
@@ -115,15 +127,21 @@ export class CompareDiffComponent {
 
   getText(type: string, item: any): string {
     if (!item) return 'Unknown Segment';
+    const target = this.target();
+
     if (type === 'text') {
       return item.sentence || 'No text found';
     } else if (type === 'audio') {
       const offset = item.timestamp_offset !== undefined ? Number(item.timestamp_offset).toFixed(1) : '0.0';
       return `Audio Segment [${offset}s]`;
     } else if (type === 'image') {
-      return `Face #${item.face_id} Detected`;
+      return target === 'overall' ? `Face #${item.face_id} Detected` : `Static Face Analysis`;
     } else if (type === 'video') {
-      return `Track #${item.track_id} [${item.frames_seen} frames]`;
+      if (target === 'overall') {
+        return `Track #${item.track_id} [${item.frames_seen} frames]`;
+      } else {
+        return `Frame ${item.frame_index} [${item.timestamp_sec?.toFixed(1)}s]`;
+      }
     }
     return 'Unknown Segment';
   }
