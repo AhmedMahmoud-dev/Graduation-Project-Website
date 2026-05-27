@@ -2,6 +2,8 @@ import { Component, signal, computed, effect, inject, OnInit, DestroyRef } from 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { AnalysisSession, AudioAnalysisSession } from '../../../core/models/text-analysis.model';
+import { ImageAnalysisSession } from '../../../core/models/image-analysis.model';
+import { VideoAnalysisSession } from '../../../core/models/video-analysis.model';
 import { AnalysisHistoryItem, AnalysisDetails } from '../../../core/models/analysis-v2.model';
 import { AnalysisStorageService } from '../../../core/services/analysis-storage.service';
 import { AnalysisV2Service } from '../../../core/services/analysis-v2.service';
@@ -20,7 +22,7 @@ import { PageHeaderComponent } from '../../../shared/components/layout/page-head
 const COMPARE_STATE_KEY = 'emotra_compare_state';
 
 interface ComparePersistedState {
-  type: 'text' | 'audio';
+  type: 'text' | 'audio' | 'image' | 'video';
   idA: string | null;
   idB: string | null;
   dbIdA: number | null;
@@ -51,11 +53,11 @@ export class CompareComponent implements OnInit {
   private firstLoadDone = false;
 
   // Global Comparison State
-  compareType = signal<'text' | 'audio'>('text');
+  compareType = signal<'text' | 'audio' | 'image' | 'video'>('text');
 
   // Selected Analyses (full session objects with .result)
-  analysisA = signal<AnalysisSession | AudioAnalysisSession | null>(null);
-  analysisB = signal<AnalysisSession | AudioAnalysisSession | null>(null);
+  analysisA = signal<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>(null);
+  analysisB = signal<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>(null);
 
   // Loading states for each slot
   loadingA = signal(false);
@@ -78,7 +80,7 @@ export class CompareComponent implements OnInit {
     this.rehydrateFromSession();
   }
 
-  onTypeChange(newType: 'text' | 'audio') {
+  onTypeChange(newType: 'text' | 'audio' | 'image' | 'video') {
     if (this.compareType() !== newType) {
       this.compareType.set(newType);
       this.analysisA.set(null);
@@ -95,7 +97,7 @@ export class CompareComponent implements OnInit {
     this.resolveSession(
       meta.client_id,
       meta.id,
-      meta.type.toLowerCase() as 'text' | 'audio',
+      meta.type.toLowerCase() as 'text' | 'audio' | 'image' | 'video',
       'A',
       true
     );
@@ -106,7 +108,7 @@ export class CompareComponent implements OnInit {
     this.resolveSession(
       meta.client_id,
       meta.id,
-      meta.type.toLowerCase() as 'text' | 'audio',
+      meta.type.toLowerCase() as 'text' | 'audio' | 'image' | 'video',
       'B',
       true
     );
@@ -123,7 +125,7 @@ export class CompareComponent implements OnInit {
   private resolveSession(
     clientId: string,
     dbId: number,
-    type: 'text' | 'audio',
+    type: 'text' | 'audio' | 'image' | 'video',
     slot: 'A' | 'B',
     showToast: boolean
   ): void {
@@ -131,15 +133,23 @@ export class CompareComponent implements OnInit {
     const loadingSignal = slot === 'A' ? this.loadingA : this.loadingB;
 
     // 1. Try localStorage lookup
-    let found: AnalysisSession | AudioAnalysisSession | null = null;
+    let found: AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null = null;
 
     if (type === 'text') {
       found = this.storageService.getSessionById(clientId)
         ?? this.storageService.getSessions().find(s => s.cloudId === dbId)
         ?? null;
-    } else {
+    } else if (type === 'audio') {
       found = this.storageService.getAudioSessionById(clientId)
         ?? this.storageService.getAudioSessions().find(s => s.cloudId === dbId)
+        ?? null;
+    } else if (type === 'image') {
+      found = this.storageService.getImageSessionById(clientId)
+        ?? this.storageService.getImageSessions().find(s => s.cloudId === dbId)
+        ?? null;
+    } else if (type === 'video') {
+      found = this.storageService.getVideoSessionById(clientId)
+        ?? this.storageService.getVideoSessions().find(s => s.cloudId === dbId)
         ?? null;
     }
 
@@ -166,8 +176,12 @@ export class CompareComponent implements OnInit {
           // Save to localStorage with duplicate prevention (handled by storage service)
           if (type === 'text') {
             this.storageService.saveSession(session as AnalysisSession);
-          } else {
+          } else if (type === 'audio') {
             this.storageService.saveAudioSession(session as AudioAnalysisSession);
+          } else if (type === 'image') {
+            this.storageService.saveImageSession(session as ImageAnalysisSession);
+          } else if (type === 'video') {
+            this.storageService.saveVideoSession(session as VideoAnalysisSession);
           }
 
           const isUpdating = this.isComparisonReady();
@@ -194,35 +208,12 @@ export class CompareComponent implements OnInit {
     });
   }
 
-  /** Construct a full AnalysisSession or AudioAnalysisSession from API response */
+  /** Construct a full session from API response */
   private buildSessionFromApi(
     data: AnalysisDetails,
-    type: 'text' | 'audio'
-  ): AnalysisSession | AudioAnalysisSession {
-    const result = data.result as any;
-
-    if (type === 'text') {
-      return {
-        id: data.client_id,
-        type: 'text',
-        timestamp: data.timestamp,
-        input: result.text || '',
-        result: result,
-        isSynced: true,
-        cloudId: data.id
-      };
-    } else {
-      return {
-        id: data.client_id,
-        type: 'audio',
-        timestamp: data.timestamp,
-        inputFileName: result.audio_filename || 'Audio File',
-        durationSeconds: result.audio_emotion?.duration_seconds || 0,
-        result: result,
-        isSynced: true,
-        cloudId: data.id
-      };
-    }
+    type: 'text' | 'audio' | 'image' | 'video'
+  ): AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession {
+    return this.analysisV2Service.mapDetailsToSession(data);
   }
 
   // ─── SESSION PERSISTENCE ───────────────────────────────────────────────────

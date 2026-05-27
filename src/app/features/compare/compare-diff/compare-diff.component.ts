@@ -1,6 +1,8 @@
 import { Component, input, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AnalysisSession, AudioAnalysisSession, TextAnalysisResult } from '../../../core/models/text-analysis.model';
+import { ImageAnalysisSession } from '../../../core/models/image-analysis.model';
+import { VideoAnalysisSession } from '../../../core/models/video-analysis.model';
 import { ColorSettingsService } from '../../../core/services/color-settings.service';
 import { EmotionIconComponent } from '../../../shared/components/emotion-icon/emotion-icon.component';
 import { FormattingService } from '../../../core/services/formatting.service';
@@ -26,8 +28,8 @@ export class CompareDiffComponent {
   private colorSettings = inject(ColorSettingsService);
   protected format = inject(FormattingService);
 
-  analysisA = input.required<AnalysisSession | AudioAnalysisSession | null>();
-  analysisB = input.required<AnalysisSession | AudioAnalysisSession | null>();
+  analysisA = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
+  analysisB = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
 
   isExpanded: Record<number, { a: boolean, b: boolean }> = {};
 
@@ -65,20 +67,45 @@ export class CompareDiffComponent {
     if (!session || !session.result) return [];
     if (session.type === 'text') {
       return (session.result as TextAnalysisResult).sentences_analysis || [];
+    } else if (session.type === 'audio') {
+      return session.result.audio_emotion?.timeline || [];
+    } else if (session.type === 'image' || session.type === 'video') {
+      return session.result.faces || [];
     }
-    return session.result.audio_emotion?.timeline || [];
+    return [];
   }
 
   getDominant(type: string, item: any): { label: string, confidence: number } {
-    if (!item || !item.dominant) return { label: 'Neutral', confidence: 0 };
-    return {
-      label: item.dominant.label || 'Neutral',
-      confidence: (item.dominant.confidence || 0) * 100
-    };
+    if (!item) return { label: 'Neutral', confidence: 0 };
+    if (type === 'text' || type === 'audio') {
+      if (!item.dominant) return { label: 'Neutral', confidence: 0 };
+      return {
+        label: item.dominant.label || 'Neutral',
+        confidence: (item.dominant.confidence || 0) * 100
+      };
+    } else {
+      // Image/Video Face
+      const dom = item.combined_final_emotion;
+      if (!dom) return { label: 'Neutral', confidence: 0 };
+      return {
+        label: dom.label || 'Neutral',
+        confidence: dom.confidence_percent || 0
+      };
+    }
   }
 
   getTop3(item: any): { label: string, val: number, color: string }[] {
-    const probs = item?.probabilities || {};
+    const probsRaw = item?.probabilities || {};
+    // For Image/Video faces, probabilities are in combined_results array
+    const probs: Record<string, number> = {};
+    if (item?.combined_results && Array.isArray(item.combined_results)) {
+      item.combined_results.forEach((r: any) => {
+        probs[r.label.toLowerCase()] = r.confidence;
+      });
+    } else {
+      Object.assign(probs, probsRaw);
+    }
+
     const colors = this.colorSettings.emotionColors();
     return Object.keys(probs)
       .map(k => ({ label: k, val: (probs[k] || 0) * 100, color: colors[k] || '#fff' }))
@@ -90,9 +117,15 @@ export class CompareDiffComponent {
     if (!item) return 'Unknown Segment';
     if (type === 'text') {
       return item.sentence || 'No text found';
+    } else if (type === 'audio') {
+      const offset = item.timestamp_offset !== undefined ? Number(item.timestamp_offset).toFixed(1) : '0.0';
+      return `Audio Segment [${offset}s]`;
+    } else if (type === 'image') {
+      return `Face #${item.face_id} Detected`;
+    } else if (type === 'video') {
+      return `Track #${item.track_id} [${item.frames_seen} frames]`;
     }
-    const offset = item.timestamp_offset !== undefined ? Number(item.timestamp_offset).toFixed(1) : '0.0';
-    return `Audio Segment [${offset}s]`;
+    return 'Unknown Segment';
   }
 
   toggleExpand(index: number, side: 'a' | 'b') {

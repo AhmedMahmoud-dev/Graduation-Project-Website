@@ -5,6 +5,19 @@
     variant="pill">
   </app-analysis-section-header>
 
+  <!-- Target Selector (Only for Image/Video) -->
+  @if (targetOptions().length > 1) {
+    <div class="flex justify-center mt-6">
+      <div class="w-full lg:w-max px-4">
+        <app-segmented-nav 
+          [options]="targetOptions()" 
+          [selectedValue]="compareTarget()"
+          (selectedValueChange)="compareTarget.set($event)">
+        </app-segmented-nav>
+      </div>
+    </div>
+  }
+
 
   <div class="w-full relative mt-6">
     <app-emotion-timeline [data]="timelineDataA()" [secondaryData]="timelineDataB()" [dominant]="dominantA()"

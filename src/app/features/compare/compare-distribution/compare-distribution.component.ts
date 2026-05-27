@@ -1,6 +1,8 @@
 import { Component, input, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AnalysisSession, AudioAnalysisSession, TextAnalysisResult } from '../../../core/models/text-analysis.model';
+import { ImageAnalysisSession } from '../../../core/models/image-analysis.model';
+import { VideoAnalysisSession } from '../../../core/models/video-analysis.model';
 import { ColorSettingsService } from '../../../core/services/color-settings.service';
 import { EmotionDistributionComponent } from '../../../shared/components/emotion-charts/emotion-distribution/emotion-distribution.component';
 import { DistributionDataPoint } from '../../../core/models/chart-data.model';
@@ -18,8 +20,8 @@ import { AnalysisSectionHeaderComponent } from '../../../shared/components/analy
 export class CompareDistributionComponent {
   private colorSettings = inject(ColorSettingsService);
 
-  analysisA = input.required<AnalysisSession | AudioAnalysisSession | null>();
-  analysisB = input.required<AnalysisSession | AudioAnalysisSession | null>();
+  analysisA = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
+  analysisB = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
 
   // Fixed order for comparison
   readonly FIXED_ORDER = ['fear', 'sadness', 'anger', 'disgust', 'contempt', 'neutral', 'surprise', 'joy'];
@@ -83,8 +85,25 @@ export class CompareDistributionComponent {
   private getProbabilities(session: any): any {
     if (session.type === 'text') {
       return (session.result as TextAnalysisResult).full_text_analysis.probabilities;
+    } else if (session.type === 'audio') {
+      return session.result.audio_emotion?.combined_probs_obj || this.mapFloatArrayToObj(session.result.audio_emotion.combined_probs);
+    } else {
+      // Image or Video: Use first face track combined_results if available
+      const results = session.result.faces?.[0]?.combined_results;
+      if (results && Array.isArray(results)) {
+        const probs: any = {};
+        results.forEach((r: any) => {
+          probs[r.label.toLowerCase()] = r.confidence;
+        });
+        return probs;
+      }
+      // Fallback to scene_emotion dominant only
+      const scene = session.result.scene_emotion;
+      if (scene) {
+        return { [scene.label.toLowerCase()]: scene.confidence };
+      }
+      return {};
     }
-    return session.result.audio_emotion?.combined_probs_obj || this.mapFloatArrayToObj(session.result.audio_emotion.combined_probs);
   }
 
   private mapFloatArrayToObj(arr: number[]): any {

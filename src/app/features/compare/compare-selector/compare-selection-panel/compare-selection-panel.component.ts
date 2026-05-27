@@ -2,6 +2,8 @@ import { Component, input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EmotionIconComponent } from '../../../../shared/components/emotion-icon/emotion-icon.component';
 import { AnalysisSession, AudioAnalysisSession, TextAnalysisResult } from '../../../../core/models/text-analysis.model';
+import { ImageAnalysisSession } from '../../../../core/models/image-analysis.model';
+import { VideoAnalysisSession } from '../../../../core/models/video-analysis.model';
 import { inject } from '@angular/core';
 import { FormattingService } from '../../../../core/services/formatting.service';
 
@@ -14,7 +16,7 @@ import { FormattingService } from '../../../../core/services/formatting.service'
 export class CompareSelectionPanelComponent {
   protected format = inject(FormattingService);
   /** The full analysis session object (null = empty state) */
-  analysis = input<AnalysisSession | AudioAnalysisSession | null>(null);
+  analysis = input<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>(null);
 
   /** Whether the analysis is currently being loaded */
   loading = input<boolean>(false);
@@ -35,23 +37,27 @@ export class CompareSelectionPanelComponent {
     if (!session) return 'neutral';
     if (session.type === 'text') {
       return (session.result as TextAnalysisResult).combined_final_emotion.label;
+    } else if (session.type === 'audio') {
+      return session.result.final_multimodal_emotion.label;
     }
-    return session.result.final_multimodal_emotion.label;
+    return session.result.scene_emotion.label;
   }
 
   getConfidence(session: any): number {
     if (!session) return 0;
     if (session.type === 'text') {
       return (session.result as TextAnalysisResult).combined_final_emotion.confidence_percent;
+    } else if (session.type === 'audio') {
+      return session.result.final_multimodal_emotion.confidence_percent;
     }
-    return session.result.final_multimodal_emotion.confidence_percent;
+    return session.result.scene_emotion.confidence_percent;
   }
 
   getExcerpt(session: any): string {
     if (!session) return 'Unknown input';
-    let text = session.type === 'text' ? session.input : session.inputFileName;
+    let text = (session.type === 'text' ? session.input : session.inputFileName) || 'Unknown input';
     if (text?.length > 80) return text.substring(0, 80) + '...';
-    return text || 'Unknown input';
+    return text;
   }
 
   onPanelClick() {

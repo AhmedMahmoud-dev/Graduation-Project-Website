@@ -1,6 +1,8 @@
 import { Component, input, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AnalysisSession, AudioAnalysisSession, TextAnalysisResult } from '../../../core/models/text-analysis.model';
+import { ImageAnalysisSession } from '../../../core/models/image-analysis.model';
+import { VideoAnalysisSession } from '../../../core/models/video-analysis.model';
 import { FormattingService } from '../../../core/services/formatting.service';
 
 @Component({
@@ -12,11 +14,14 @@ import { FormattingService } from '../../../core/services/formatting.service';
 })
 export class CompareHeroComponent {
   protected format = inject(FormattingService);
-  analysisA = input.required<AnalysisSession | AudioAnalysisSession | null>();
-  analysisB = input.required<AnalysisSession | AudioAnalysisSession | null>();
+  analysisA = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
+  analysisB = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
 
   emotionA = computed(() => this.getDominantEmotion(this.analysisA()));
   emotionB = computed(() => this.getDominantEmotion(this.analysisB()));
+
+  metaA = computed(() => this.getMeta(this.analysisA()));
+  metaB = computed(() => this.getMeta(this.analysisB()));
 
   dateA = computed(() => this.analysisA() ? new Date(this.analysisA()!.timestamp) : null);
   dateB = computed(() => this.analysisB() ? new Date(this.analysisB()!.timestamp) : null);
@@ -70,6 +75,40 @@ export class CompareHeroComponent {
     };
   });
 
+  private getMeta(session: any) {
+    if (!session) return null;
+    if (session.type === 'image') {
+      return {
+        label: `${session.result.faces_detected} Faces`,
+        subLabel: `${session.result.frame_quality.original_width}x${session.result.frame_quality.original_height}`
+      };
+    } else if (session.type === 'video') {
+      return {
+        label: `${session.result.faces_tracked} Tracks`,
+        subLabel: this.formatDuration(session.result.duration_seconds)
+      };
+    } else if (session.type === 'audio') {
+      return {
+        label: 'Audio Stream',
+        subLabel: this.formatDuration(session.durationSeconds)
+      };
+    } else if (session.type === 'text') {
+      return {
+        label: 'Text Analysis',
+        subLabel: `${session.result.sentences_count} Sentences`
+      };
+    }
+    return null;
+  }
+
+  private formatDuration(seconds: number): string {
+    if (!seconds) return '0s';
+    if (seconds < 60) return `${seconds.toFixed(1)}s`;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}m ${secs.toFixed(0)}s`;
+  }
+
   private getDominantEmotion(session: any) {
     if (!session) return null;
     if (session.type === 'text') {
@@ -79,8 +118,16 @@ export class CompareHeroComponent {
         confidence: res.combined_final_emotion.confidence_percent,
         category: res.combined_final_emotion.category
       };
-    } else {
+    } else if (session.type === 'audio') {
       const res = session.result.final_multimodal_emotion;
+      return {
+        label: res.label,
+        confidence: res.confidence_percent,
+        category: res.category
+      };
+    } else {
+      // Image or Video both have scene_emotion at result root
+      const res = session.result.scene_emotion;
       return {
         label: res.label,
         confidence: res.confidence_percent,

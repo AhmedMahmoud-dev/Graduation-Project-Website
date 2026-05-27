@@ -1,6 +1,8 @@
 import { Component, input, Output, EventEmitter, signal, computed, inject, effect, untracked, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AnalysisSession, AudioAnalysisSession } from '../../../core/models/text-analysis.model';
+import { ImageAnalysisSession } from '../../../core/models/image-analysis.model';
+import { VideoAnalysisSession } from '../../../core/models/video-analysis.model';
 import { AnalysisHistoryItem, AnalysisType } from '../../../core/models/analysis-v2.model';
 import { EmotionIconComponent } from '../../../shared/components/emotion-icon/emotion-icon.component';
 import { CompareSelectionPanelComponent } from './compare-selection-panel/compare-selection-panel.component';
@@ -23,16 +25,18 @@ export class CompareSelectorComponent implements OnDestroy {
 
   navOptions = [
     { label: 'Text', value: 'text' },
-    { label: 'Audio', value: 'audio' }
+    { label: 'Audio', value: 'audio' },
+    { label: 'Image', value: 'image' },
+    { label: 'Video', value: 'video' }
   ];
 
-  type = input<'text' | 'audio'>('text');
-  analysisA = input<AnalysisSession | AudioAnalysisSession | null>(null);
-  analysisB = input<AnalysisSession | AudioAnalysisSession | null>(null);
+  type = input<'text' | 'audio' | 'image' | 'video'>('text');
+  analysisA = input<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>(null);
+  analysisB = input<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>(null);
   loadingA = input<boolean>(false);
   loadingB = input<boolean>(false);
 
-  @Output() typeChange = new EventEmitter<'text' | 'audio'>();
+  @Output() typeChange = new EventEmitter<'text' | 'audio' | 'image' | 'video'>();
   @Output() selectA = new EventEmitter<AnalysisHistoryItem>();
   @Output() selectB = new EventEmitter<AnalysisHistoryItem>();
 
@@ -64,8 +68,14 @@ export class CompareSelectorComponent implements OnDestroy {
     });
   }
 
-  private loadHistoryFromCache(type: 'text' | 'audio') {
-    const key = type === 'text' ? 'emotra_history_meta_text' : 'emotra_history_meta_audio';
+  private loadHistoryFromCache(type: 'text' | 'audio' | 'image' | 'video') {
+    const keyMap: Record<string, string> = {
+      text: 'emotra_history_meta_text',
+      audio: 'emotra_history_meta_audio',
+      image: 'emotra_history_meta_image',
+      video: 'emotra_history_meta_video'
+    };
+    const key = keyMap[type];
     const parsed = this.cache.getItem<any>(key);
     this._internalHistory.set((parsed?.data || []) as AnalysisHistoryItem[]);
 
@@ -73,7 +83,7 @@ export class CompareSelectorComponent implements OnDestroy {
     this.fetchTypeHistory(type);
   }
 
-  private fetchTypeHistory(type: 'text' | 'audio') {
+  private fetchTypeHistory(type: 'text' | 'audio' | 'image' | 'video') {
     // Avoid redundant calls if already loading
     if (this.isHistoryLoading()) return;
 
@@ -89,7 +99,13 @@ export class CompareSelectorComponent implements OnDestroy {
     this.analysisV2Service.getHistory(1, 20, capitalizedType).subscribe({
       next: (res) => {
         if (res.is_success && res.data) {
-          const key = type === 'text' ? 'emotra_history_meta_text' : 'emotra_history_meta_audio';
+          const keyMap: Record<string, string> = {
+            text: 'emotra_history_meta_text',
+            audio: 'emotra_history_meta_audio',
+            image: 'emotra_history_meta_image',
+            video: 'emotra_history_meta_video'
+          };
+          const key = keyMap[type];
           this.cache.setItem(key, { data: res.data, total: res.total });
 
           this._lastFetchTime[type] = Date.now();

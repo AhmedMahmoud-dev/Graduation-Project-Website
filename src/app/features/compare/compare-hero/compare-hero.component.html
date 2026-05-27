@@ -33,6 +33,15 @@
       </span>
     </div>
 
+    @if (metaA()) {
+    <div class="flex flex-col items-center mb-4">
+      <span class="text-[11px] font-black text-[color:var(--text-primary)] uppercase tracking-wider">{{ metaA()?.label
+        }}</span>
+      <span class="text-[10px] font-bold text-[color:var(--text-muted)] uppercase tracking-widest opacity-60">{{
+        metaA()?.subLabel }}</span>
+    </div>
+    }
+
     <div
       class="text-[11px] font-bold text-[color:var(--text-muted)] mt-auto pt-4 border-t border-[color:var(--border-color)] w-full max-w-[200px]">
       {{ dateA() | date:'medium' }}
@@ -149,6 +158,15 @@
         {{ emotionB()?.category }}
       </span>
     </div>
+
+    @if (metaB()) {
+    <div class="flex flex-col items-center mb-4">
+      <span class="text-[11px] font-black text-[color:var(--text-primary)] uppercase tracking-wider">{{ metaB()?.label
+        }}</span>
+      <span class="text-[10px] font-bold text-[color:var(--text-muted)] uppercase tracking-widest opacity-60">{{
+        metaB()?.subLabel }}</span>
+    </div>
+    }
 
     <div
       class="text-[11px] font-bold text-[color:var(--text-muted)] mt-auto pt-4 border-t border-[color:var(--border-color)] w-full max-w-[200px]">
