@@ -16,9 +16,7 @@
       <div class="rounded-[28px] overflow-hidden border border-[color:var(--border-color)] shadow-md"
         style="background: var(--bg-card)">
 
-        <!-- Hidden Audio Element -->
-        <audio #audioElement [src]="currentAudioUrl()" (timeupdate)="onAudioTimeUpdate()" (play)="onAudioPlay()"
-          (pause)="onAudioPause()" (ended)="onAudioEnded()" (loadedmetadata)="onAudioLoadedMetadata()" class="hidden"></audio>
+
 
         <!-- Error Message -->
         @if (error()) {
@@ -47,41 +45,13 @@
 
         <!-- ─── SHARED: Audio Workspace (after file selected / recorded) ─── -->
         <div [hidden]="!selectedFile()" class="p-4 sm:p-6 md:p-8">
-          <!-- File Info Card -->
-          <div class="file-info-row">
-            <button (click)="togglePlayback()" class="btn-play">
-              @if (!isPlaying()) {
-              <svg class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-              }
-              @if (isPlaying()) {
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-              </svg>
-              }
-            </button>
-            <div class="file-info-meta min-w-0 flex-1">
-              <div class="file-info-title">
-                <h4 class="truncate border-none">{{ activeTab() === 'upload' ? (selectedFile()?.name || 'Audio File') :
-                  'Live Recording' }}</h4>
-                <span class="info-badge shrink-0">{{ activeTab() === 'upload' ? 'Imported' : 'Recorded' }}</span>
-              </div>
-              <p class="file-info-detail">
-                {{ formatDuration(currentTime()) }} / {{ formatDuration(duration()) }} · {{ fileInfo()?.size }}
-              </p>
-            </div>
-            <button (click)="clearFile()" class="btn-remove">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          <!-- Waveform -->
-          <div class="waveform-container" (click)="onWaveformClick($event)" title="Click to seek">
-            <canvas #previewCanvas></canvas>
-          </div>
+          <app-audio-player 
+            [src]="currentAudioUrl()" 
+            [blob]="selectedFile()"
+            [filename]="activeTab() === 'upload' ? (selectedFile()?.name || 'Audio File') : 'Live Recording'"
+            [showRemoveButton]="true"
+            (remove)="clearFile()">
+          </app-audio-player>
 
           <!-- Actions -->
           <div class="action-row">
@@ -330,6 +300,24 @@
         </div>
       </div>
       }
+      <!-- Source Audio Player Card -->
+      <div class="rounded-3xl p-5 sm:p-8 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] shadow-xl w-full flex flex-col">
+        <p class="text-[10px] sm:text-xs font-bold uppercase tracking-[0.3em] opacity-40 mb-4"
+          style="color: var(--text-muted)">Source Audio Playback</p>
+        <div class="relative w-full overflow-hidden">
+          @if (audioLoading()) {
+            <app-loading-state message="Loading Audio..." subtitle="Retrieving audio stream" [fullPage]="false" size="md"></app-loading-state>
+          }
+          <app-audio-player 
+            [src]="currentAudioUrl()" 
+            [blob]="selectedFile()"
+            [filename]="audioFilename()"
+            [showRemoveButton]="false"
+            [style.display]="audioLoading() ? 'none' : 'block'">
+          </app-audio-player>
+        </div>
+      </div>
+
       <!-- 3.3 Transcription Card -->
       <div
         class="rounded-3xl p-5 sm:p-12 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] flex flex-col shadow-xl w-full max-w-[calc(100vw-2.5rem)] sm:max-w-full">
@@ -371,29 +359,27 @@
         </div>
       </div>
       <!-- 3.5 Distribution & Comparison -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Confidence Distribution -->
-        <div
-          class="rounded-2xl p-5 sm:p-10 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] shadow-xl w-full max-w-[calc(100vw-2.5rem)] sm:max-w-full">
-          <app-analysis-section-header title="Confidence Distribution" subtitle="Distribution"
-            description="Final confidence scores across the emotional spectrum">
-          </app-analysis-section-header>
+      <div class="w-full">
+        <app-analysis-section-header title="Confidence Distribution" subtitle="Distribution"
+          description="Final confidence scores across the emotional spectrum and methodology track intersection">
+        </app-analysis-section-header>
 
-          <div class="rounded-2xl p-4 sm:p-8 mt-6 sm:mt-8"
-            style="background: var(--bg-card); border: 1px solid var(--border-color)">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+          <!-- Confidence Distribution -->
+          <div
+            class="rounded-3xl p-5 sm:p-10 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] shadow-xl w-full max-w-[calc(100vw-2.5rem)] sm:max-w-full flex items-center justify-center">
             <app-emotion-distribution [data]="distributionData()" viewType="bar"
-              class="block w-full h-[220px] sm:h-[260px]">
+              class="block w-full h-[260px] sm:h-[300px]">
             </app-emotion-distribution>
           </div>
-        </div>
-        <!-- Three Track Comparison -->
-        <div
-          class="rounded-3xl p-5 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] shadow-xl h-full flex flex-col">
-          <div class="mb-6">
-            <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-2 opacity-40">Methodology</p>
-            <h3 class="text-xl sm:text-2xl font-black tracking-tight" style="color: var(--text-primary)">Track
-              Intersection</h3>
-          </div>
+          <!-- Three Track Comparison -->
+          <div
+            class="rounded-3xl p-5 sm:p-10 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] shadow-xl h-full flex flex-col">
+            <div class="mb-6">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-2 opacity-40">Methodology</p>
+              <h3 class="text-xl sm:text-2xl font-black tracking-tight" style="color: var(--text-primary)">Track
+                Intersection</h3>
+            </div>
           <div class="space-y-4 flex-1">
             <!-- Audio Track -->
             <div
@@ -477,6 +463,7 @@
           </div>
         </div>
       </div>
+    </div>
       <!-- 3.6 Audio Segment Breakdown -->
       <section class="px-0 py-12" style="border-top: 1px solid var(--border-color)">
         <app-analysis-section-header title="Segment Analysis" subtitle="Deep Dive"

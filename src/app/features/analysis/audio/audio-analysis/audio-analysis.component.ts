@@ -1,11 +1,8 @@
 import { Component, signal, inject, computed, effect, OnInit, OnDestroy, ViewChild, ElementRef, untracked, HostListener, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-
 import { ThemeService } from '../../../../core/services/theme.service';
-import { AudioAnalysisResponse, AudioSegment } from '../../../../core/models/audio-analysis.model';
 import { AudioWaveformComponent } from '../../../../shared/components/audio-waveform/app-audio-waveform';
 import { EmotionIconComponent } from '../../../../shared/components/emotion-icon/emotion-icon.component';
 import { FooterSectionComponent } from '../../../../shared/components/footer/footer.component';
@@ -19,15 +16,16 @@ import { ModelInfoGridComponent } from '../../../../shared/components/analysis/m
 import { LoadingTipsComponent } from '../../../../shared/components/analysis/loading-tips/loading-tips.component';
 import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
 import { PageHeaderComponent } from '../../../../shared/components/layout/page-header/page-header.component';
+import { AudioPlayerComponent } from '../../../../shared/components/audio-player/audio-player.component';
 import { AnalysisFeedbackComponent } from '../../../../shared/components/analysis-feedback/analysis-feedback.component';
 import { SegmentedNavComponent, SegmentedNavOption } from '../../../../shared/components/segmented-nav/segmented-nav.component';
 import { AnalysisSectionHeaderComponent } from '../../../../shared/components/analysis-section-header/analysis-section-header.component';
-import { TimelineDataPoint, DistributionDataPoint } from '../../../../core/models/chart-data.model';
-
 import { AudioAnalysisStore } from '../../../../core/stores/audio-analysis.store';
 import { ToastService } from '../../../../core/services/toast.service';
 import { QuotaStore } from '../../../../core/stores/quota.store';
 import { QuotaBannerComponent } from '../../../../shared/components/quota-banner/quota-banner.component';
+import { AnalysisV2Service } from '../../../../core/services/analysis-v2.service';
+import { AnalysisStorageService } from '../../../../core/services/analysis-storage.service';
 
 type InputTab = 'upload' | 'record';
 
@@ -52,7 +50,8 @@ type InputTab = 'upload' | 'record';
     AnalysisFeedbackComponent,
     SegmentedNavComponent,
     AnalysisSectionHeaderComponent,
-    QuotaBannerComponent
+    QuotaBannerComponent,
+    AudioPlayerComponent
   ],
   providers: [AudioAnalysisStore],
   templateUrl: './audio-analysis.component.html',
@@ -66,8 +65,11 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
   private toastService = inject(ToastService);
   private store = inject(AudioAnalysisStore);
   private quotaStore = inject(QuotaStore);
+  private analysisV2Service = inject(AnalysisV2Service);
+  private storageService = inject(AnalysisStorageService);
 
   isBlocked = computed(() => this.quotaStore.audio()?.is_blocked ?? false);
+  audioLoading = signal<boolean>(false);
 
   // Delegated to Store
   state = this.store.state;
@@ -81,9 +83,6 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
   colorService = this.store.colorService;
   showBrowseOption = this.store.showBrowseOption;
   userChoseToBrowse = this.store.userChoseToBrowse;
-
-  @ViewChild('previewCanvas') previewCanvas?: ElementRef<HTMLCanvasElement>;
-  @ViewChild('audioElement') audioElement?: ElementRef<HTMLAudioElement>;
 
   activeTab = signal<InputTab>('upload');
 
@@ -165,18 +164,26 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
   private mediaRecorder?: MediaRecorder;
   private audioChunks: Blob[] = [];
 
-  // Custom Audio Player State
-  isPlaying = signal<boolean>(false);
-  currentTime = signal<number>(0);
-  duration = signal<number>(0);
-  private playbackAnimationId?: number;
-
   currentAudioUrl = computed(() => {
     return this.activeTab() === 'upload' ? this.uploadUrl() : this.recordedUrl();
   });
 
   selectedFile = computed(() => {
     return this.activeTab() === 'upload' ? this.uploadedFile() : this.recordedFile();
+  });
+
+  audioFilename = computed(() => {
+    const file = this.selectedFile();
+    if (file) return file.name;
+    const res = this.result();
+    if (res) {
+      const sid = this.sessionId();
+      const localSession = this.getLocalSession(sid);
+      if (localSession?.inputFileName) {
+        return localSession.inputFileName;
+      }
+    }
+    return 'Audio Recording';
   });
 
   fileInfo = computed(() => {
@@ -212,32 +219,48 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
   showTextAnalysis = signal<boolean>(false);
 
   constructor() {
-    // On tab switch: pause playback, redraw waveform without re-decoding
+    // On tab switch: clear error
     effect(() => {
       const _tab = this.activeTab(); // track this signal
-
       untracked(() => {
-        this.isPlaying.set(false);
-        this.audioElement?.nativeElement?.pause();
         this.error.set(null);
       });
-
-      const currentPeaks = _tab === 'upload' ? this.uploadedPeaks : this.recordedPeaks;
-      if (currentPeaks.length > 0 && !this.result()) {
-        setTimeout(() => {
-          this.drawWaveform(true);
-        }, 60);
-      }
     });
 
-    // Watch for theme changes to redraw waveform
+    // Watch for result / session loading to fetch historical media streams if needed
     effect(() => {
-      this.themeService.resolvedTheme(); // track the signal
-      untracked(() => {
-        if (this.previewCanvas) {
-          this.drawWaveform(true);
-        }
-      });
+      const res = this.result();
+      const stateVal = this.state();
+      if (stateVal === 'results' && res) {
+        untracked(() => {
+          if (!this.currentAudioUrl()) {
+            const sid = this.sessionId();
+            const cachedBlob = this.storageService.getCachedAudioBlob(sid);
+            if (cachedBlob) {
+              const objectUrl = URL.createObjectURL(cachedBlob);
+              const safeUrl = this.sanitizer.bypassSecurityTrustUrl(objectUrl);
+              const filename = this.audioFilename();
+              const file = new File([cachedBlob], filename, { type: cachedBlob.type });
+              this.uploadedFile.set(file);
+              this.uploadUrl.set(safeUrl);
+              this.recordedFile.set(file);
+              this.recordedUrl.set(safeUrl);
+              this.audioLoading.set(false);
+            } else {
+              this.audioLoading.set(true);
+              const localSession = this.getLocalSession(sid);
+              const cloudId = localSession?.cloudId;
+              if (cloudId) {
+                this.fetchHistoricalAudio(cloudId);
+              } else {
+                this.audioLoading.set(false);
+              }
+            }
+          } else {
+            this.audioLoading.set(false);
+          }
+        });
+      }
     });
 
     // Reactive scroll-to-feedback handling
@@ -251,11 +274,10 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Listen for resize to re-render waveform
+  // Listen for resize to update state
   @HostListener('window:resize')
   onResize() {
     this.isMobile.set(window.innerWidth < 640);
-    this.drawWaveform(true);
   }
 
   ngOnInit() {
@@ -333,129 +355,9 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
     this.error.set(null);
     this.uploadUrl.set(this.sanitizer.bypassSecurityTrustUrl(URL.createObjectURL(file)));
     this.uploadedFile.set(file);
-    setTimeout(() => this.generateStaticWaveform(file, 'upload'), 80);
   }
 
-  // ─── WAVEFORM ─────────────────────────────────────────────────────────────
 
-  private async generateStaticWaveform(file: File, type: InputTab) {
-    if (type === 'upload') this.uploadedPeaks = [];
-    else this.recordedPeaks = [];
-    this.canvasInitialized = false;
-
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      
-      // On mobile, AudioContext often starts in 'suspended' state and needs explicit resume
-      if (audioCtx.state === 'suspended') {
-        await audioCtx.resume();
-      }
-
-      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-      audioCtx.close();
-
-      const data = audioBuffer.getChannelData(0);
-      const sampleCount = 150;
-      const samplesPerBar = Math.floor(data.length / sampleCount);
-      const peaks: number[] = [];
-
-      for (let i = 0; i < sampleCount; i++) {
-        let max = 0;
-        for (let j = 0; j < samplesPerBar; j++) {
-          const val = Math.abs(data[i * samplesPerBar + j] || 0);
-          if (val > max) max = val;
-        }
-        peaks.push(max);
-      }
-
-      if (type === 'upload') this.uploadedPeaks = peaks;
-      else this.recordedPeaks = peaks;
-
-      this.drawWaveform();
-    } catch (err) {
-      console.error('Waveform generation failed:', err);
-    }
-  }
-
-  private drawWaveform(forceResize = false) {
-    const currentPeaks = this.activeTab() === 'upload' ? this.uploadedPeaks : this.recordedPeaks;
-    if (!this.previewCanvas || !currentPeaks.length) return;
-
-    const canvas = this.previewCanvas.nativeElement;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    if (rect.width === 0) return;
-
-    if (forceResize || canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
-    }
-
-    const width = canvas.width / dpr;
-    const height = canvas.height / dpr;
-    ctx.clearRect(0, 0, width, height);
-
-    const brandColor = getComputedStyle(document.documentElement)
-      .getPropertyValue('--brand-primary').trim() || '#6c63ff';
-    const mutedColor = this.themeService.resolvedTheme() === 'dark'
-      ? 'rgba(255,255,255,0.1)'
-      : 'rgba(0,0,0,0.07)';
-
-    const progress = this.currentTime() / (this.duration() || 1);
-    const progressIndex = Math.floor(currentPeaks.length * progress);
-
-    const barCount = currentPeaks.length;
-    const spacing = width / barCount;
-    const barWidth = Math.max(1, spacing * 0.7);
-
-    currentPeaks.forEach((peak, i) => {
-      const barHeight = Math.max(3, peak * height * 0.9);
-      const x = i * spacing;
-      const y = (height - barHeight) / 2;
-      ctx.fillStyle = i < progressIndex ? brandColor : mutedColor;
-      this.fillRoundedRect(ctx, x, y, barWidth, barHeight, 1.5);
-    });
-  }
-
-  onWaveformClick(event: MouseEvent) {
-    if (!this.previewCanvas) return;
-    const canvas = this.previewCanvas.nativeElement;
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const percentage = x / rect.width;
-
-    const audio = this.audioElement?.nativeElement;
-    if (audio && audio.duration) {
-      audio.currentTime = percentage * audio.duration;
-      this.drawWaveform();
-    }
-  }
-
-  private fillRoundedRect(
-    ctx: CanvasRenderingContext2D,
-    x: number, y: number,
-    w: number, h: number,
-    r: number
-  ) {
-    if (h < r * 2) r = h / 2;
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-    ctx.fill();
-  }
 
   // ─── RECORDING ────────────────────────────────────────────────────────────
 
@@ -488,8 +390,6 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
 
         const file = new File([blob], `recording_${Date.now()}.webm`, { type: 'audio/webm' });
         this.recordedFile.set(file);
-        this.duration.set(this.recordingDuration());
-        setTimeout(() => this.generateStaticWaveform(file, 'record'), 150);
       };
 
       this.isRecording.set(true);
@@ -565,74 +465,7 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
 
-  // ─── AUDIO PLAYER ─────────────────────────────────────────────────────────
 
-  togglePlayback() {
-    const audio = this.audioElement?.nativeElement;
-    if (!audio) return;
-    if (this.isPlaying()) {
-      audio.pause();
-    } else {
-      audio.play();
-    }
-  }
-
-  onAudioTimeUpdate() {
-    const audio = this.audioElement?.nativeElement;
-    if (audio) {
-      this.currentTime.set(audio.currentTime);
-      if (isFinite(audio.duration) && audio.duration > 0) {
-        this.duration.set(audio.duration);
-      }
-      this.drawWaveform();
-    }
-  }
-
-  onAudioLoadedMetadata() {
-    const audio = this.audioElement?.nativeElement;
-    if (audio && isFinite(audio.duration) && audio.duration > 0) {
-      this.duration.set(audio.duration);
-    }
-  }
-
-  onAudioPlay() {
-    this.isPlaying.set(true);
-    this.startSmoothPlaybackLoop();
-  }
-
-  onAudioPause() {
-    this.isPlaying.set(false);
-    this.stopSmoothPlaybackLoop();
-  }
-
-  onAudioEnded() {
-    this.isPlaying.set(false);
-    this.stopSmoothPlaybackLoop();
-    this.currentTime.set(0);
-    this.drawWaveform();
-  }
-
-  private startSmoothPlaybackLoop() {
-    if (this.playbackAnimationId) cancelAnimationFrame(this.playbackAnimationId);
-
-    const loop = () => {
-      const audio = this.audioElement?.nativeElement;
-      if (audio && !audio.paused) {
-        this.currentTime.set(audio.currentTime);
-        this.duration.set(audio.duration || 0);
-        this.drawWaveform();
-        this.playbackAnimationId = requestAnimationFrame(loop);
-      }
-    };
-    this.playbackAnimationId = requestAnimationFrame(loop);
-  }
-
-  private stopSmoothPlaybackLoop() {
-    if (this.playbackAnimationId) {
-      cancelAnimationFrame(this.playbackAnimationId);
-      this.playbackAnimationId = undefined;
-    }
-  }
 
   // ─── ANALYSIS ─────────────────────────────────────────────────────────────
 
@@ -650,12 +483,6 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
   // ─── RESULTS ──────────────────────────────────────────────────────────────
 
   clearFile() {
-    this.isPlaying.set(false);
-    if (this.audioElement?.nativeElement) {
-      this.audioElement.nativeElement.pause();
-      this.audioElement.nativeElement.currentTime = 0;
-    }
-
     if (this.activeTab() === 'upload') {
       this.uploadedFile.set(null);
       this.uploadUrl.set(null);
@@ -666,15 +493,9 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
       this.recordedPeaks = [];
       this.recordingDuration.set(0);
     }
-    this.duration.set(0);
-    this.currentTime.set(0);
   }
 
   resetToInput() {
-    this.isPlaying.set(false);
-    if (this.audioElement?.nativeElement) {
-      this.audioElement.nativeElement.pause();
-    }
     this.store.resetToInput();
     this.showEditHint.set(false);
     this.uploadedFile.set(null);
@@ -683,9 +504,38 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
     this.recordedFile.set(null);
     this.recordedPeaks = [];
     this.recordedUrl.set(null);
-    this.duration.set(0);
-    this.currentTime.set(0);
     this.recordingDuration.set(0);
+    this.audioLoading.set(false);
+  }
+
+  private getLocalSession(sid: string) {
+    return this.storageService.getAudioSessionById(sid)
+      || this.storageService.getAudioSessions().find(s => s.cloudId === Number(sid))
+      || null;
+  }
+
+  private fetchHistoricalAudio(cloudId: number | string) {
+    this.analysisV2Service.getMediaStream(cloudId).subscribe({
+      next: (blob) => {
+        const objectUrl = URL.createObjectURL(blob);
+        const safeUrl = this.sanitizer.bypassSecurityTrustUrl(objectUrl);
+        const filename = this.audioFilename();
+        const file = new File([blob], filename, { type: blob.type });
+        this.uploadedFile.set(file);
+        this.uploadUrl.set(safeUrl);
+        this.recordedFile.set(file);
+        this.recordedUrl.set(safeUrl);
+        this.audioLoading.set(false);
+        const sid = this.sessionId();
+        if (sid) {
+          this.storageService.cacheAudioBlob(sid, blob);
+        }
+      },
+      error: (err) => {
+        console.error('Failed to retrieve audio stream:', err);
+        this.audioLoading.set(false);
+      }
+    });
   }
 
   getMostFrequentDominant() {

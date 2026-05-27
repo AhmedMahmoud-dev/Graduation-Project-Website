@@ -1,4 +1,4 @@
-import { Component, input, computed, inject } from '@angular/core';
+import { Component, input, computed, inject, signal, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AnalysisSession, AudioAnalysisSession, TextAnalysisResult } from '../../../core/models/text-analysis.model';
 import { ImageAnalysisSession } from '../../../core/models/image-analysis.model';
@@ -7,12 +7,13 @@ import { ColorSettingsService } from '../../../core/services/color-settings.serv
 import { EmotionDistributionComponent } from '../../../shared/components/emotion-charts/emotion-distribution/emotion-distribution.component';
 import { DistributionDataPoint } from '../../../core/models/chart-data.model';
 import { AnalysisSectionHeaderComponent } from '../../../shared/components/analysis-section-header/analysis-section-header.component';
+import { SegmentedNavComponent } from '../../../shared/components/segmented-nav/segmented-nav.component';
 
 
 @Component({
   selector: 'app-compare-distribution',
   standalone: true,
-  imports: [CommonModule, EmotionDistributionComponent, AnalysisSectionHeaderComponent],
+  imports: [CommonModule, EmotionDistributionComponent, AnalysisSectionHeaderComponent, SegmentedNavComponent],
 
   templateUrl: './compare-distribution.component.html',
   styleUrls: ['./compare-distribution.component.css']
@@ -22,6 +23,60 @@ export class CompareDistributionComponent {
 
   analysisA = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
   analysisB = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
+
+  // Target Selection (Overall vs Face X)
+  compareTarget = signal<string>('overall');
+
+  targetOptions = computed(() => {
+    const a = this.analysisA();
+    const b = this.analysisB();
+    if (!a || !b) return [];
+
+    const isMedia = a.type === 'image' || a.type === 'video';
+    const options: {label: string, value: string}[] = [];
+    
+    const facesA = (a.type === 'image' || a.type === 'video') ? (a.result as any).faces?.length || 0 : 0;
+    const facesB = (b.type === 'image' || b.type === 'video') ? (b.result as any).faces?.length || 0 : 0;
+    const maxFaces = Math.max(facesA, facesB);
+
+    if (isMedia) {
+      if (maxFaces === 0) {
+        options.push({ label: 'Scene', value: 'overall' });
+      }
+    } else {
+      options.push({ label: 'Overall', value: 'overall' });
+    }
+    
+    for (let i = 0; i < maxFaces; i++) {
+      options.push({ label: `Face ${i + 1}`, value: `face_${i}` });
+    }
+    
+    return options;
+  });
+
+  constructor() {
+    // Auto-switch target when changing analysis types
+    effect(() => {
+      const a = this.analysisA();
+      if (!a) return;
+
+      untracked(() => {
+        const isMedia = a.type === 'image' || a.type === 'video';
+        const currentTarget = this.compareTarget();
+        const faces = (a.result as any).faces?.length || 0;
+
+        if (isMedia) {
+          if (currentTarget === 'overall' && faces > 0) {
+            this.compareTarget.set('face_0');
+          }
+        } else {
+          if (currentTarget.startsWith('face_')) {
+            this.compareTarget.set('overall');
+          }
+        }
+      });
+    });
+  }
 
   // Fixed order for comparison
   readonly FIXED_ORDER = ['fear', 'sadness', 'anger', 'disgust', 'contempt', 'neutral', 'surprise', 'joy'];
@@ -83,26 +138,32 @@ export class CompareDistributionComponent {
   }
 
   private getProbabilities(session: any): any {
+    const target = this.compareTarget();
     if (session.type === 'text') {
       return (session.result as TextAnalysisResult).full_text_analysis.probabilities;
     } else if (session.type === 'audio') {
       return session.result.audio_emotion?.combined_probs_obj || this.mapFloatArrayToObj(session.result.audio_emotion.combined_probs);
     } else {
-      // Image or Video: Use first face track combined_results if available
-      const results = session.result.faces?.[0]?.combined_results;
-      if (results && Array.isArray(results)) {
-        const probs: any = {};
-        results.forEach((r: any) => {
-          probs[r.label.toLowerCase()] = r.confidence;
-        });
-        return probs;
+      // Image or Video: Use selected face track combined_results if available
+      if (target === 'overall') {
+        const scene = session.result.scene_emotion;
+        if (scene) {
+          return { [scene.label.toLowerCase()]: scene.confidence };
+        }
+        return {};
+      } else {
+        const faceIdx = parseInt(target.split('_')[1]);
+        const face = session.result.faces?.[faceIdx];
+        const results = face?.combined_results;
+        if (results && Array.isArray(results)) {
+          const probs: any = {};
+          results.forEach((r: any) => {
+            probs[r.label.toLowerCase()] = r.confidence;
+          });
+          return probs;
+        }
+        return {};
       }
-      // Fallback to scene_emotion dominant only
-      const scene = session.result.scene_emotion;
-      if (scene) {
-        return { [scene.label.toLowerCase()]: scene.confidence };
-      }
-      return {};
     }
   }
 

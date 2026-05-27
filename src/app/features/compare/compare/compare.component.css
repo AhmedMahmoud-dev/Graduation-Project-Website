@@ -2,3 +2,39 @@
   max-width: 100%;
   overflow-x: hidden;
 }
+
+/* Container wrapping the image and its absolute boxes */
+.image-compare-wrapper {
+  position: relative;
+  max-width: 100%;
+  display: inline-block;
+}
+
+/* Bounding box for faces - purely informational, no hover scale/glows */
+.face-box-compare {
+  position: absolute;
+  border-style: solid;
+  border-width: 2px;
+  border-radius: 6px;
+  pointer-events: none; /* No hover styles, no clicks */
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Small label above the face box containing face number and primary emotion color */
+.face-tag-compare {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 4px;
+  font-size: 8px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #fff;
+  padding: 2px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  opacity: 0.95;
+}

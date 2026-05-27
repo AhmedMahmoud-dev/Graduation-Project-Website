@@ -152,6 +152,7 @@ export class AudioAnalysisStore extends BaseAnalysisStore<AudioAnalysisResponse,
       onSuccess: (result: AudioAnalysisResponse, jobId: string) => {
         const session = this.buildSessionPayload(jobId, result);
         this.saveLocalSession(session);
+        this.storageService.cacheAudioBlob(jobId, file);
         this.orchestrationService.syncSessionToCloud(
           jobId,
           result,

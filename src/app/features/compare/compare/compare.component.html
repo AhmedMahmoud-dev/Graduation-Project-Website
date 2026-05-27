@@ -6,34 +6,166 @@
     description="Select two past logs and view a deep side-by-side emotional comparison.">
   </app-page-header>
 
-  <!-- Main Content Area -->
-  <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 md:px-12 py-8 flex flex-col gap-12">
-    <!-- SECTION 1: SELECTION PANEL -->
-    <app-compare-selector [type]="compareType()" [analysisA]="analysisA()" [analysisB]="analysisB()"
-      [loadingA]="loadingA()" [loadingB]="loadingB()" (typeChange)="onTypeChange($event)" (selectA)="onSelectA($event)"
-      (selectB)="onSelectB($event)"></app-compare-selector>
-
-    @if (isComparisonReady()) {
-    <div class="flex flex-col gap-12 sm:gap-16">
-
-      <!-- SECTION 2: HERO ROW -->
-      <app-compare-hero [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-hero>
-
-      <!-- SECTION 3: TIMELINE OVERLAY -->
-      <app-compare-timeline [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-timeline>
-
-      <!-- SECTION 4: DISTRIBUTION -->
-      <app-compare-distribution [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-distribution>
-
-      <!-- SECTION 5: SENTENCE DIFF -->
-      <app-compare-diff [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-diff>
-
-      <!-- SECTION 6: STATS BOX -->
-      <app-compare-stats [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-stats>
-
+  <!-- SECTION 1: SELECTION PANEL -->
+  <section class="px-4 sm:px-8 md:px-12 py-12"
+    style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color)">
+    <div class="max-w-7xl mx-auto w-full min-w-0">
+      <app-compare-selector [type]="compareType()" [analysisA]="analysisA()" [analysisB]="analysisB()"
+        [loadingA]="loadingA()" [loadingB]="loadingB()" (typeChange)="onTypeChange($event)" (selectA)="onSelectA($event)"
+        (selectB)="onSelectB($event)"></app-compare-selector>
     </div>
+  </section>
+
+  @if (isComparisonReady()) {
+    <!-- SECTION 2: HERO ROW -->
+    <section class="px-4 sm:px-8 md:px-12 py-12"
+      style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color)">
+      <div class="max-w-7xl mx-auto w-full min-w-0">
+        <app-compare-hero [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-hero>
+      </div>
+    </section>
+
+    <!-- SECTION 2.5: SOURCE MEDIA COMPARISON -->
+    @if (compareType() === 'image' || compareType() === 'video' || compareType() === 'audio') {
+    <section class="px-4 sm:px-8 md:px-12 py-12"
+      style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color)">
+      <div class="max-w-7xl mx-auto w-full min-w-0">
+        <app-analysis-section-header 
+          title="Compared Media Sources" 
+          subtitle="Source Files"
+          description="Side-by-side review of analyzed files">
+        </app-analysis-section-header>
+
+        <div class="rounded-2xl p-5 sm:p-8 w-full max-w-[calc(100vw-2.5rem)] sm:max-w-full mt-8"
+          style="background: var(--bg-card); border: 1px solid var(--border-color)">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Source A -->
+            <div class="flex flex-col gap-4">
+              <div class="flex flex-col text-center">
+                <span class="text-xs font-black uppercase text-[color:var(--text-muted)] tracking-widest mb-1">Analysis A</span>
+                <span class="text-sm font-bold text-[color:var(--text-secondary)] truncate px-4">{{ getInputFileName(analysisA()) || 'Source File A' }}</span>
+              </div>
+              <div class="flex items-center justify-center bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] rounded-2xl p-4 overflow-hidden w-full"
+                   [ngClass]="{
+                     'min-h-[240px] md:min-h-[360px]': compareType() !== 'audio',
+                     'min-h-[140px] md:min-h-[180px]': compareType() === 'audio'
+                   }">
+                @if (compareType() === 'image') {
+                  @if (mediaUrlA()) {
+                    <div class="image-compare-wrapper">
+                      <img [src]="mediaUrlA()" class="max-h-[320px] w-auto max-w-full rounded-xl object-contain shadow-sm" />
+                      @for (face of ($any(analysisA())?.result?.faces || []); track face.face_id) {
+                        <div class="face-box-compare" [ngStyle]="getFaceStyle(analysisA(), face)">
+                          <span class="face-tag-compare" [style.background]="format.getEmotionColor(face.combined_final_emotion.label)">
+                            Face #{{ face.face_id }}
+                          </span>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <app-loading-state message="Loading Image..." subtitle="Retrieving visual frame from storage" [fullPage]="false" size="md"></app-loading-state>
+                  }
+                } @else if (compareType() === 'video') {
+                  @if (mediaUrlA()) {
+                    <app-video-player [src]="mediaUrlA()" [duration]="getVideoDuration(analysisA())" maxHeight="320px" class="w-full"></app-video-player>
+                  } @else {
+                    <app-loading-state message="Loading Video..." subtitle="Retrieving video stream" [fullPage]="false" size="md"></app-loading-state>
+                  }
+                } @else if (compareType() === 'audio') {
+                  @if (mediaUrlA()) {
+                    <app-audio-player [src]="mediaUrlA()" [blob]="mediaBlobA()" [filename]="getInputFileName(analysisA())" class="w-full"></app-audio-player>
+                  } @else {
+                    <app-loading-state message="Loading Audio..." subtitle="Retrieving audio stream" [fullPage]="false" size="md"></app-loading-state>
+                  }
+                }
+              </div>
+            </div>
+
+            <!-- Source B -->
+            <div class="flex flex-col gap-4">
+              <div class="flex flex-col text-center">
+                <span class="text-xs font-black uppercase text-[color:var(--text-muted)] tracking-widest mb-1">Analysis B</span>
+                <span class="text-sm font-bold text-[color:var(--text-secondary)] truncate px-4">{{ getInputFileName(analysisB()) || 'Source File B' }}</span>
+              </div>
+              <div class="flex items-center justify-center bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] rounded-2xl p-4 overflow-hidden w-full"
+                   [ngClass]="{
+                     'min-h-[240px] md:min-h-[360px]': compareType() !== 'audio',
+                     'min-h-[140px] md:min-h-[180px]': compareType() === 'audio'
+                   }">
+                @if (compareType() === 'image') {
+                  @if (mediaUrlB()) {
+                    <div class="image-compare-wrapper">
+                      <img [src]="mediaUrlB()" class="max-h-[320px] w-auto max-w-full rounded-xl object-contain shadow-sm" />
+                      @for (face of ($any(analysisB())?.result?.faces || []); track face.face_id) {
+                        <div class="face-box-compare" [ngStyle]="getFaceStyle(analysisB(), face)">
+                          <span class="face-tag-compare" [style.background]="format.getEmotionColor(face.combined_final_emotion.label)">
+                            Face #{{ face.face_id }}
+                          </span>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <app-loading-state message="Loading Image..." subtitle="Retrieving visual frame from storage" [fullPage]="false" size="md"></app-loading-state>
+                  }
+                } @else if (compareType() === 'video') {
+                  @if (mediaUrlB()) {
+                    <app-video-player [src]="mediaUrlB()" [duration]="getVideoDuration(analysisB())" maxHeight="320px" class="w-full"></app-video-player>
+                  } @else {
+                    <app-loading-state message="Loading Video..." subtitle="Retrieving video stream" [fullPage]="false" size="md"></app-loading-state>
+                  }
+                } @else if (compareType() === 'audio') {
+                  @if (mediaUrlB()) {
+                    <app-audio-player [src]="mediaUrlB()" [blob]="mediaBlobB()" [filename]="getInputFileName(analysisB())" class="w-full"></app-audio-player>
+                  } @else {
+                    <app-loading-state message="Loading Audio..." subtitle="Retrieving audio stream" [fullPage]="false" size="md"></app-loading-state>
+                  }
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
     }
-  </div>
+
+    <!-- SECTION 3: TIMELINE OVERLAY -->
+    @if (compareType() !== 'image') {
+    <section class="px-4 sm:px-8 md:px-12 py-12"
+      [style.background]="compareType() === 'text' ? 'var(--bg-secondary)' : 'var(--bg-primary)'"
+      style="border-bottom: 1px solid var(--border-color)">
+      <div class="max-w-7xl mx-auto w-full min-w-0">
+        <app-compare-timeline class="block w-full" [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-timeline>
+      </div>
+    </section>
+    }
+
+    <!-- SECTION 4: DISTRIBUTION -->
+    <section class="px-4 sm:px-8 md:px-12 py-12"
+      [style.background]="(compareType() === 'video' || compareType() === 'audio') ? 'var(--bg-secondary)' : 'var(--bg-primary)'"
+      style="border-bottom: 1px solid var(--border-color)">
+      <div class="max-w-7xl mx-auto w-full min-w-0">
+        <app-compare-distribution class="block w-full" [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-distribution>
+      </div>
+    </section>
+
+    <!-- SECTION 5: SENTENCE DIFF -->
+    <section class="px-4 sm:px-8 md:px-12 py-12"
+      [style.background]="(compareType() === 'video' || compareType() === 'audio') ? 'var(--bg-primary)' : 'var(--bg-secondary)'"
+      style="border-bottom: 1px solid var(--border-color)">
+      <div class="max-w-7xl mx-auto w-full min-w-0">
+        <app-compare-diff class="block w-full" [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-diff>
+      </div>
+    </section>
+
+    <!-- SECTION 6: STATS BOX -->
+    <section class="px-4 sm:px-8 md:px-12 py-12"
+      [style.background]="(compareType() === 'video' || compareType() === 'audio') ? 'var(--bg-secondary)' : 'var(--bg-primary)'"
+      style="border-bottom: 1px solid var(--border-color)">
+      <div class="max-w-7xl mx-auto w-full min-w-0">
+        <app-compare-stats class="block w-full" [analysisA]="analysisA()" [analysisB]="analysisB()"></app-compare-stats>
+      </div>
+    </section>
+  }
 
   <app-footer-section></app-footer-section>
 </div>

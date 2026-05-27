@@ -104,10 +104,17 @@
     <div class="max-w-7xl mx-auto w-full min-w-0">
       <app-analysis-section-header 
         title="Weekly Quota Status" 
-        subtitle="Computing limits reset next Monday" 
+        subtitle="Usage Tracker" 
+        description="Monitor your weekly computing usage limits across all analysis models."
         variant="none"
-        marginBottom="mb-8">
+        marginBottom="mb-4">
       </app-analysis-section-header>
+
+      <!-- Quota Reset Indicator -->
+      <div class="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] text-xs font-bold text-[color:var(--text-secondary)] shadow-sm mb-8 w-fit">
+        <app-icon name="clock" className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[color:var(--brand-primary)] shrink-0"></app-icon>
+        <span>Resets: <strong class="text-[color:var(--text-primary)] font-black">{{ quotaStore.quota()?.reset_date ? format.formatDate(quotaStore.quota()?.reset_date) : 'Next Monday' }}</strong></span>
+      </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <!-- Text Quota -->

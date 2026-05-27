@@ -35,6 +35,17 @@ export class AnalysisStorageService {
     return this.videoBlobCache.get(id) ?? null;
   }
 
+  // In-memory cache for audio blobs to survive component recreation on navigation
+  private audioBlobCache = new Map<string, Blob>();
+
+  cacheAudioBlob(id: string, blob: Blob): void {
+    this.audioBlobCache.set(id, blob);
+  }
+
+  getCachedAudioBlob(id: string): Blob | null {
+    return this.audioBlobCache.get(id) ?? null;
+  }
+
   // State signals
   private textSessionsSignal = signal<AnalysisSession[]>([]);
   private audioSessionsSignal = signal<AudioAnalysisSession[]>([]);

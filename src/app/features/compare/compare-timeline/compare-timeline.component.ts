@@ -34,11 +34,11 @@ export class CompareTimelineComponent {
     const b = this.analysisB();
     if (!a || !b) return [];
 
-    const isMedia = a.type === 'image' || a.type === 'video';
+    const isMedia = a.type === 'video';
     const options: {label: string, value: string}[] = [];
     
-    const facesA = (a.type === 'image' || a.type === 'video') ? (a.result as any).faces?.length || 0 : 0;
-    const facesB = (b.type === 'image' || b.type === 'video') ? (b.result as any).faces?.length || 0 : 0;
+    const facesA = a.type === 'video' ? (a.result as any).faces?.length || 0 : 0;
+    const facesB = b.type === 'video' ? (b.result as any).faces?.length || 0 : 0;
     const maxFaces = Math.max(facesA, facesB);
 
     if (isMedia) {
@@ -64,7 +64,7 @@ export class CompareTimelineComponent {
       if (!a) return;
 
       untracked(() => {
-        const isMedia = a.type === 'image' || a.type === 'video';
+        const isMedia = a.type === 'video';
         const currentTarget = this.compareTarget();
         const faces = (a.result as any).faces?.length || 0;
 
@@ -105,31 +105,7 @@ export class CompareTimelineComponent {
     const target = this.compareTarget();
     const type = session.type;
 
-    if (type === 'image') {
-      const res = session.result;
-      const probs: any = {};
-      let label = 'Image';
-      let tooltip = 'Static Scene Analysis';
 
-      if (target === 'overall') {
-        probs[res.scene_emotion.label.toLowerCase()] = res.scene_emotion.confidence;
-      } else {
-        const faceIdx = parseInt(target.split('_')[1]);
-        const face = res.faces?.[faceIdx];
-        if (!face) return []; 
-
-        face.combined_results.forEach((r: any) => {
-          probs[r.label.toLowerCase()] = r.confidence;
-        });
-        label = `Face ${faceIdx + 1}`;
-        tooltip = `Face ${faceIdx + 1} Analysis`;
-      }
-      
-      // FIX: For static images, provide two identical points to force ECharts to draw horizontal lines
-      const p1 = { label: label + ' (Start)', probabilities: probs, tooltipDetail: tooltip };
-      const p2 = { label: label + ' (End)', probabilities: probs, tooltipDetail: tooltip };
-      return [p1, p2];
-    }
 
     const timeline = this.getTimelineRaw(session);
 
@@ -191,7 +167,7 @@ export class CompareTimelineComponent {
     } else if (type === 'audio') {
       return session.result.final_multimodal_emotion.label.toLowerCase();
     } else {
-      // Image or Video
+      // Video
       if (target === 'overall') {
         return session.result.scene_emotion.label.toLowerCase();
       } else {

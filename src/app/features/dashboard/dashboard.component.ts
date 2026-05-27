@@ -161,6 +161,9 @@ export class DashboardComponent implements OnInit {
   }
 
   ngOnInit() {
+    // Load fresh quota status on initialization
+    this.quotaStore.loadQuota();
+
     // 1. Stale-while-revalidate: read cache
     const cached = this.cache.getItem<AnalysisStats>('emotra_stats');
     if (cached) {
