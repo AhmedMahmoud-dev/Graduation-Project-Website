@@ -26,6 +26,8 @@ import { TimelineDataPoint, DistributionDataPoint } from '../../../../core/model
 
 import { AudioAnalysisStore } from '../../../../core/stores/audio-analysis.store';
 import { ToastService } from '../../../../core/services/toast.service';
+import { QuotaStore } from '../../../../core/stores/quota.store';
+import { QuotaBannerComponent } from '../../../../shared/components/quota-banner/quota-banner.component';
 
 type InputTab = 'upload' | 'record';
 
@@ -49,7 +51,8 @@ type InputTab = 'upload' | 'record';
     PageHeaderComponent,
     AnalysisFeedbackComponent,
     SegmentedNavComponent,
-    AnalysisSectionHeaderComponent
+    AnalysisSectionHeaderComponent,
+    QuotaBannerComponent
   ],
   providers: [AudioAnalysisStore],
   templateUrl: './audio-analysis.component.html',
@@ -62,6 +65,9 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
   private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private toastService = inject(ToastService);
   private store = inject(AudioAnalysisStore);
+  private quotaStore = inject(QuotaStore);
+
+  isBlocked = computed(() => this.quotaStore.audio()?.is_blocked ?? false);
 
   // Delegated to Store
   state = this.store.state;

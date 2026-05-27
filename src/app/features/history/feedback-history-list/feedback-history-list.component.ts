@@ -25,7 +25,7 @@ export interface FeedbackListItem {
   createdAt: string;
   formattedDate: string;
   // Resolved from local sessions or history
-  analysisType: 'text' | 'audio' | 'image' | null;
+  analysisType: 'text' | 'audio' | 'image' | 'video' | null;
   title: string;
 }
 
@@ -287,18 +287,19 @@ export class FeedbackHistoryListComponent implements OnInit {
 
     return entries.map(f => {
       let title = f.feedback_type === 'system' ? 'Platform Experience' : 'Analysis Review';
-      let analysisType: 'text' | 'audio' | 'image' | null = f.analysis_type || null;
+      let analysisType: 'text' | 'audio' | 'image' | 'video' | null = f.analysis_type || null;
 
       if (f.feedback_type === 'analysis' && f.analysis_id) {
         // Search in all session types for a match to get metadata like titles
         const textSession = this.storageService.getSessions().find(s => s.id === f.analysis_id || s.cloudId === Number(f.analysis_id));
         const audioSession = this.storageService.getAudioSessions().find(s => s.id === f.analysis_id || s.cloudId === Number(f.analysis_id));
         const imageSession = this.storageService.getImageSessions().find(s => s.id === f.analysis_id || s.cloudId === Number(f.analysis_id));
+        const videoSession = this.storageService.getVideoSessions().find(s => s.id === f.analysis_id || s.cloudId === Number(f.analysis_id));
 
         // Also search in passed history list
         const historyItem = this.analysisHistory().find(h => h.client_id === f.analysis_id || h.id === Number(f.analysis_id));
 
-        const session = textSession || audioSession || imageSession;
+        const session = textSession || audioSession || imageSession || videoSession;
 
         // If we don't have analysisType from server yet, fall back to resolved type
         if (!analysisType && (session || historyItem)) {

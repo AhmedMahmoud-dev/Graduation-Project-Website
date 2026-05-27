@@ -1,58 +1,10 @@
+@import "../../analysis-shared.css";
+
 :host {
   display: block;
   font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   ACTION BUTTONS
-   ═══════════════════════════════════════════════════════════════ */
-.btn-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  height: 52px;
-  padding: 0 28px;
-  border-radius: 16px;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  border: none;
-  cursor: pointer;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.btn-action:active {
-  opacity: 0.85;
-}
-
-.btn-action-sm {
-  height: 46px;
-  padding: 0 22px;
-  font-size: 13px;
-}
-
-.btn-primary-action {
-  background: var(--brand-primary);
-  color: #fff;
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--brand-primary), transparent 60%);
-}
-
-.btn-primary-action:hover {
-  box-shadow: 0 6px 20px color-mix(in srgb, var(--brand-primary), transparent 50%);
-}
-
-.btn-outline-action {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-}
-
-.btn-outline-action:hover {
-  background: var(--bg-card);
-  border-color: var(--brand-primary);
-  color: var(--brand-primary);
-}
 
 /* ═══════════════════════════════════════════════════════════════
    ACTION ROW (Re-Record / Retake + Analyze)
@@ -409,17 +361,6 @@
 
   .file-info-detail {
     font-size: 11px;
-  }
-
-  .btn-action {
-    height: 48px;
-    padding: 0 20px;
-    border-radius: 14px;
-    font-size: 13px;
-  }
-
-  .btn-action-sm {
-    height: 44px;
   }
 }
 

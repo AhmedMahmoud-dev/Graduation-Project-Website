@@ -5,6 +5,7 @@ import { AnalysisStorageService } from './analysis-storage.service';
 import { AuthService } from './auth.service';
 import { ToastService } from './toast.service';
 import { ApiResponse } from '../models/api-response.model';
+import { QuotaStore } from '../stores/quota.store';
 
 @Injectable({ providedIn: 'root' })
 export class AnalysisOrchestrationService {
@@ -12,6 +13,7 @@ export class AnalysisOrchestrationService {
   private storage = inject(AnalysisStorageService);
   private auth = inject(AuthService);
   private toast = inject(ToastService);
+  private quotaStore = inject(QuotaStore);
 
   /**
    * Fetches an analysis session from the API, maps it, and saves it locally.
@@ -36,7 +38,7 @@ export class AnalysisOrchestrationService {
   syncSessionToCloud<TResult>(
     sid: string,
     result: TResult,
-    analysisType: 'text' | 'audio' | 'image',
+    analysisType: 'text' | 'audio' | 'image' | 'video',
     syncCallback: (sid: string, res: TResult) => Observable<ApiResponse<number>>
   ): void {
     if (!this.auth.isAuthenticated()) return;
@@ -45,6 +47,7 @@ export class AnalysisOrchestrationService {
       next: (apiRes) => {
         if (apiRes.is_success && apiRes.data != null) {
           this.storage.markAsSynced(sid, apiRes.data, analysisType);
+          this.quotaStore.loadQuota();
         } else {
           this.toast.show('Save Failed', 'Analysis could not be saved to cloud.', 'error', 'error');
         }

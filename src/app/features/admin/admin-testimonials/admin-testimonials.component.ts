@@ -1,5 +1,6 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import { AdminService } from '../../../core/services/admin.service';
 import { AdminTestimonial } from '../../../core/models/admin.model';
 import { AppCacheService } from '../../../core/services/app-cache.service';
@@ -8,13 +9,14 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../../shared/components/layout/page-header/page-header.component';
 import { ToastService } from '../../../core/services/toast.service';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 const CACHE_KEY = 'emotra_admin_testimonials';
 
 @Component({
   selector: 'app-admin-testimonials',
   standalone: true,
-  imports: [CommonModule, LoadingStateComponent, EmptyStateComponent, PageHeaderComponent],
+  imports: [CommonModule, LoadingStateComponent, EmptyStateComponent, PageHeaderComponent, PaginationComponent],
   templateUrl: './admin-testimonials.component.html',
   styleUrl: './admin-testimonials.component.css'
 })
@@ -28,6 +30,22 @@ export class AdminTestimonialsComponent implements OnInit {
   isLoading = signal<boolean>(true);
   error = signal<string | null>(null);
   isRefreshing = signal<boolean>(false);
+
+  // Pagination
+  currentPage = signal<number>(1);
+  pageSize = signal<number>(10);
+  totalTestimonials = signal<number>(0);
+  totalPages = computed(() => Math.ceil(this.testimonials().length / this.pageSize()) || 1);
+
+  // Pagination-based Slicing
+  paginatedTestimonials = computed(() => {
+    const list = this.testimonials();
+    const page = this.currentPage();
+    const size = this.pageSize();
+    
+    const startIndex = (page - 1) * size;
+    return list.slice(startIndex, startIndex + size);
+  });
 
   // Track which card is currently being processed
   processingId = signal<number | null>(null);
@@ -48,8 +66,6 @@ export class AdminTestimonialsComponent implements OnInit {
 
   fetchTestimonials(isBackground: boolean = false): void {
     if (!isBackground) {
-      // If we already have data OR it's not the initial load (isLoading is false), 
-      // we prefer the refreshing spinner over the full-page loader
       if (this.testimonials().length > 0 || !this.isLoading()) {
         this.isRefreshing.set(true);
       } else {
@@ -58,18 +74,57 @@ export class AdminTestimonialsComponent implements OnInit {
     }
     this.error.set(null);
 
-    this.adminService.getPendingTestimonials(1, 50).subscribe({
+    this.adminService.getPendingTestimonials(1, 1000).subscribe({
       next: (res) => {
         if (res.is_success && res.data) {
-          this.testimonials.set(res.data);
-          this.cache.setItem(CACHE_KEY, res.data);
+          const firstPageTestimonials = res.data;
+          const total = res.total;
+
+          if (firstPageTestimonials.length < total && firstPageTestimonials.length > 0) {
+            const serverPageSize = firstPageTestimonials.length;
+            const totalPagesNeeded = Math.ceil(total / serverPageSize);
+            const requests = [];
+
+            for (let p = 2; p <= totalPagesNeeded; p++) {
+              requests.push(this.adminService.getPendingTestimonials(p, serverPageSize));
+            }
+
+            forkJoin(requests).subscribe({
+              next: (responses) => {
+                let allTestimonials = [...firstPageTestimonials];
+                for (const r of responses) {
+                  if (r.is_success && r.data) {
+                    allTestimonials = [...allTestimonials, ...r.data];
+                  }
+                }
+
+                this.testimonials.set(allTestimonials);
+                this.totalTestimonials.set(allTestimonials.length);
+                this.cache.setItem(CACHE_KEY, allTestimonials);
+                this.isLoading.set(false);
+                this.isRefreshing.set(false);
+              },
+              error: () => {
+                this.testimonials.set(firstPageTestimonials);
+                this.totalTestimonials.set(firstPageTestimonials.length);
+                this.isLoading.set(false);
+                this.isRefreshing.set(false);
+              }
+            });
+          } else {
+            this.testimonials.set(firstPageTestimonials);
+            this.totalTestimonials.set(total);
+            this.cache.setItem(CACHE_KEY, firstPageTestimonials);
+            this.isLoading.set(false);
+            this.isRefreshing.set(false);
+          }
         } else {
           if (this.testimonials().length === 0) {
             this.error.set(res.message || 'Failed to load testimonials.');
           }
+          this.isLoading.set(false);
+          this.isRefreshing.set(false);
         }
-        this.isLoading.set(false);
-        this.isRefreshing.set(false);
       },
       error: () => {
         if (this.testimonials().length === 0) {
@@ -79,6 +134,11 @@ export class AdminTestimonialsComponent implements OnInit {
         this.isRefreshing.set(false);
       }
     });
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages()) return;
+    this.currentPage.set(page);
   }
 
   approve(testimonial: AdminTestimonial): void {

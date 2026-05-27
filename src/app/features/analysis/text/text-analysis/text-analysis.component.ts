@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { TextAnalysisResult } from '../../../../core/models/text-analysis.model';
 import { TextAnalysisStore } from '../../../../core/stores/text-analysis.store';
+import { QuotaStore } from '../../../../core/stores/quota.store';
 
 import { EmotionIconComponent } from '../../../../shared/components/emotion-icon/emotion-icon.component';
 import { FooterSectionComponent } from '../../../../shared/components/footer/footer.component';
@@ -19,6 +20,7 @@ import { LoadingStateComponent } from '../../../../shared/components/loading-sta
 import { PageHeaderComponent } from '../../../../shared/components/layout/page-header/page-header.component';
 import { AnalysisFeedbackComponent } from '../../../../shared/components/analysis-feedback/analysis-feedback.component';
 import { AnalysisSectionHeaderComponent } from '../../../../shared/components/analysis-section-header/analysis-section-header.component';
+import { QuotaBannerComponent } from '../../../../shared/components/quota-banner/quota-banner.component';
 
 const SAMPLE_TEXTS = [
   // Pure sad
@@ -93,7 +95,8 @@ const SAMPLE_TEXTS = [
     LoadingStateComponent,
     PageHeaderComponent,
     AnalysisFeedbackComponent,
-    AnalysisSectionHeaderComponent
+    AnalysisSectionHeaderComponent,
+    QuotaBannerComponent
   ],
   providers: [TextAnalysisStore],
   templateUrl: './app-text-analysis.html',
@@ -101,6 +104,9 @@ const SAMPLE_TEXTS = [
 })
 export class TextAnalysisComponent implements OnInit {
   private store = inject(TextAnalysisStore);
+  private quotaStore = inject(QuotaStore);
+
+  isBlocked = computed(() => this.quotaStore.text()?.is_blocked ?? false);
 
   // Expose store state / signals directly for the template
   state = this.store.state;

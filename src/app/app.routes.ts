@@ -85,6 +85,14 @@ export const routes: Routes = [
         path: 'analysis/image/:id',
         loadComponent: () => import('./features/analysis/image/image-analysis/image-analysis.component').then(m => m.ImageAnalysisComponent)
       },
+      {
+        path: 'analysis/video',
+        loadComponent: () => import('./features/analysis/video/video-analysis/video-analysis.component').then(m => m.VideoAnalysisComponent)
+      },
+      {
+        path: 'analysis/video/:id',
+        loadComponent: () => import('./features/analysis/video/video-analysis/video-analysis.component').then(m => m.VideoAnalysisComponent)
+      },
       { path: 'history', component: HistoryComponent },
       {
         path: 'compare',

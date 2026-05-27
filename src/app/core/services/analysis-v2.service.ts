@@ -8,6 +8,7 @@ import { ImageAnalysisResponse, ImageAnalysisSession } from '../models/image-ana
 import { VideoAnalysisResponse, VideoAnalysisSession } from '../models/video-analysis.model';
 import { AuthService } from './auth.service';
 import { ApiResponse } from '../models/api-response.model';
+import { UserQuotaStatus } from '../models/quota.model';
 import {
   AnalysisHistoryResponse,
   AnalysisStats,
@@ -156,6 +157,14 @@ export class AnalysisV2Service {
   clearHistory(): Observable<ApiResponse<boolean>> {
     const url = `${environment.apiUrl}/api/analysis/clear`;
     return this.http.delete<ApiResponse<boolean>>(url);
+  }
+
+  /**
+   * Retrieves active weekly usage and limit metrics for the authenticated user.
+   */
+  getQuota(): Observable<ApiResponse<UserQuotaStatus>> {
+    const url = `${environment.apiUrl}/api/analysis/quota`;
+    return this.http.get<ApiResponse<UserQuotaStatus>>(url);
   }
 
   /**

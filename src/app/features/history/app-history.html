@@ -59,7 +59,7 @@
       <!-- Type Tabs -->
       <div class="w-full lg:w-max">
         <app-segmented-nav [options]="typeOptions" [selectedValue]="filterType()"
-          (selectedValueChange)="filterType.set($event !== 'all' && $event !== 'text' && $event !== 'audio' && $event !== 'image' && $event !== 'feedback' ? 'all' : $event)">
+          (selectedValueChange)="filterType.set($event !== 'all' && $event !== 'text' && $event !== 'audio' && $event !== 'image' && $event !== 'video' && $event !== 'feedback' ? 'all' : $event)">
         </app-segmented-nav>
       </div>
 
@@ -205,19 +205,31 @@
       <!-- Empty State -->
       @if (!isLoading() && filteredCount() === 0) {
       <app-empty-state minHeight="50vh">
-        <app-icon name="clock" className="w-12 h-12" [strokeWidth]="1.5" empty-icon></app-icon>
-        <ng-container empty-msg>No analysis logs matched</ng-container>
-        <ng-container empty-hint>
-          {{ isWholeHistoryEmpty() ? "You haven't completed any analyses yet. Head over to Text or Audio analysis
-          to get started." : "Try adjusting your filters or search query to find what you're looking for." }}
-        </ng-container>
-        <div empty-actions class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
-          <a routerLink="/analysis/text" class="w-full sm:w-auto btn-primary px-8 py-4 text-sm text-center">New Text
-            Analysis</a>
-          <a routerLink="/analysis/audio" class="w-full sm:w-auto btn-secondary px-8 py-4 text-sm text-center">New Audio
-            Analysis</a>
-          <a routerLink="/analysis/image" class="w-full sm:w-auto btn-secondary px-8 py-4 text-sm text-center">New Image
-            Analysis</a>
+        <app-icon [name]="emptyStateIcon()" className="w-12 h-12" [strokeWidth]="1.5" empty-icon></app-icon>
+        <ng-container empty-msg>{{ emptyStateTitle() }}</ng-container>
+        <ng-container empty-hint>{{ emptyStateHint() }}</ng-container>
+        <div empty-actions class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full flex-wrap">
+          @if (isWholeHistoryEmpty()) {
+            <a routerLink="/analysis" class="w-full sm:w-auto btn-primary px-8 py-4 text-sm text-center">Start New Analysis</a>
+          } @else if (!searchQuery().trim()) {
+            @if (filterType() === 'text') {
+              <a routerLink="/analysis/text" class="w-full sm:w-auto btn-primary px-8 py-4 text-sm text-center">New Text Analysis</a>
+            }
+            @if (filterType() === 'audio') {
+              <a routerLink="/analysis/audio" class="w-full sm:w-auto btn-primary px-8 py-4 text-sm text-center">New Audio Analysis</a>
+            }
+            @if (filterType() === 'image') {
+              <a routerLink="/analysis/image" class="w-full sm:w-auto btn-primary px-8 py-4 text-sm text-center">New Image Analysis</a>
+            }
+            @if (filterType() === 'video') {
+              <a routerLink="/analysis/video" class="w-full sm:w-auto btn-primary px-8 py-4 text-sm text-center">New Video Analysis</a>
+            }
+            @if (filterType() === 'feedback') {
+              <a routerLink="/dashboard" class="w-full sm:w-auto btn-primary px-8 py-4 text-sm text-center">Back to Dashboard</a>
+            }
+          } @else {
+            <button (click)="refreshHistory()" class="w-full sm:w-auto btn-primary px-8 py-4 text-sm text-center">Reset Search & Filters</button>
+          }
         </div>
       </app-empty-state>
       }
@@ -233,7 +245,7 @@
 <!-- DRY Templates -->
 <ng-template #typeBadge let-type="type">
   <span class="type-indicator">
-    <app-icon [name]="type === 'text' ? 'text' : (type === 'image' ? 'image' : 'audio')" className="w-3.5 h-3.5"></app-icon>
+    <app-icon [name]="type === 'text' ? 'text' : (type === 'image' ? 'image' : (type === 'video' ? 'video' : 'audio'))" className="w-3.5 h-3.5"></app-icon>
     {{ type }}
   </span>
 </ng-template>

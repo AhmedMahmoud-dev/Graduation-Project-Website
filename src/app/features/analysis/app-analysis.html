@@ -11,6 +11,12 @@
         <!-- Text Analysis (Active) -->
         <a routerLink="/analysis/text"
           class="group p-6 xs:p-8 lg:p-8 rounded-3xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] shadow-sm transition-all duration-300 flex flex-col items-center text-center hover:border-[color:var(--color-primary)] relative overflow-hidden h-full">
+          @if (quotaStore.text()?.is_blocked) {
+            <div class="absolute top-4 right-4 bg-red-500/10 text-red-500 text-xs font-bold px-2.5 py-1.5 rounded-full border border-red-500/20 backdrop-blur-xs flex items-center gap-1.5 z-10">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+              Limit Reached
+            </div>
+          }
           <div
             class="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-transform duration-300">
             <svg class="w-8 h-8 text-[color:var(--color-primary)]" fill="none" stroke="currentColor"
@@ -33,6 +39,12 @@
         <!-- Audio Analysis (Active) -->
         <a routerLink="/analysis/audio"
           class="group p-6 xs:p-8 lg:p-8 rounded-3xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] shadow-sm transition-all duration-300 flex flex-col items-center text-center hover:border-[color:var(--color-accent)] relative overflow-hidden h-full">
+          @if (quotaStore.audio()?.is_blocked) {
+            <div class="absolute top-4 right-4 bg-red-500/10 text-red-500 text-xs font-bold px-2.5 py-1.5 rounded-full border border-red-500/20 backdrop-blur-xs flex items-center gap-1.5 z-10">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+              Limit Reached
+            </div>
+          }
           <div
             class="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-transform duration-300">
             <svg class="w-8 h-8 text-[color:var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,6 +66,12 @@
         <!-- Image Analysis (Active) -->
         <a routerLink="/analysis/image"
           class="group p-6 xs:p-8 lg:p-8 rounded-3xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] shadow-sm transition-all duration-300 flex flex-col items-center text-center hover:border-emerald-500/50 relative overflow-hidden h-full">
+          @if (quotaStore.image()?.is_blocked) {
+            <div class="absolute top-4 right-4 bg-red-500/10 text-red-500 text-xs font-bold px-2.5 py-1.5 rounded-full border border-red-500/20 backdrop-blur-xs flex items-center gap-1.5 z-10">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+              Limit Reached
+            </div>
+          }
           <div
             class="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-transform duration-300">
             <svg class="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,9 +89,15 @@
           </span>
         </a>
 
-        <!-- Video Analysis (Coming Soon) -->
-        <a routerLink="/models/image-video"
+        <!-- Video Analysis (Active) -->
+        <a routerLink="/analysis/video"
           class="group p-6 xs:p-8 lg:p-8 rounded-3xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] shadow-sm transition-all duration-300 flex flex-col items-center text-center hover:border-rose-500/50 relative overflow-hidden h-full">
+          @if (quotaStore.video()?.is_blocked) {
+            <div class="absolute top-4 right-4 bg-red-500/10 text-red-500 text-xs font-bold px-2.5 py-1.5 rounded-full border border-red-500/20 backdrop-blur-xs flex items-center gap-1.5 z-10">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+              Limit Reached
+            </div>
+          }
           <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-transform">
             <svg class="w-8 h-8 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -82,11 +106,12 @@
           </div>
           <h3 class="text-xl font-bold mb-2 text-[color:var(--color-text)]">Video Analysis</h3>
           <p class="text-sm text-[color:var(--color-text-muted)] mb-6 flex-1 font-medium leading-relaxed">Dynamic multimodal analysis across the entire timeline.</p>
-          <div class="flex items-center gap-3">
-            <span
-              class="px-3 py-1 bg-rose-500/10 text-rose-600 rounded-full text-[10px] font-black uppercase tracking-wider">Coming Soon</span>
-            <span class="text-xs font-bold text-[color:var(--color-primary)] group-hover:underline">Explore →</span>
-          </div>
+          <span
+            class="text-sm font-semibold text-rose-500 group-hover:underline inline-flex items-center">
+            Get Started <svg class="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </span>
         </a>
       </div>
     </div>

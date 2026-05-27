@@ -46,7 +46,7 @@ export abstract class BaseAnalysisStore<TResult, TSession = unknown> {
   private hasPendingScrollRequest = false;
 
   // ─── Abstract Config Hooks ────────────────────────────────────────
-  protected abstract readonly analysisType: 'text' | 'audio' | 'image';
+  protected abstract readonly analysisType: 'text' | 'audio' | 'image' | 'video';
   protected abstract readonly analysisRoute: string;
   protected abstract readonly expectedApiType: string;
 

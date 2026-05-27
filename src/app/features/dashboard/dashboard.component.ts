@@ -20,6 +20,7 @@ import { FormattingService } from '../../core/services/formatting.service';
 import { AppCacheService } from '../../core/services/app-cache.service';
 import { AnalysisStats } from '../../core/models/analysis-v2.model';
 import { AnalysisSectionHeaderComponent } from '../../shared/components/analysis-section-header/analysis-section-header.component';
+import { QuotaStore } from '../../core/stores/quota.store';
 
 
 export interface DashboardActivity {
@@ -81,6 +82,7 @@ export class DashboardComponent implements OnInit {
   private toastService = inject(ToastService);
   protected format = inject(FormattingService);
   private cache = inject(AppCacheService);
+  protected quotaStore = inject(QuotaStore);
 
   private destroyRef = inject(DestroyRef);
 

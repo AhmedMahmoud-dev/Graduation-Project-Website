@@ -57,6 +57,12 @@
           } @else if (item.analysisType === 'audio') {
           <!-- Microphone for audio analysis -->
           <app-icon name="audio" className="w-7 h-7 md:w-8 md:h-8 text-[color:var(--text-muted)] opacity-60" [strokeWidth]="1.5"></app-icon>
+          } @else if (item.analysisType === 'image') {
+          <!-- Photo for image analysis -->
+          <app-icon name="image" className="w-7 h-7 md:w-8 md:h-8 text-[color:var(--text-muted)] opacity-60" [strokeWidth]="1.5"></app-icon>
+          } @else if (item.analysisType === 'video') {
+          <!-- Camera/Video for video analysis -->
+          <app-icon name="video" className="w-7 h-7 md:w-8 md:h-8 text-[color:var(--text-muted)] opacity-60" [strokeWidth]="1.5"></app-icon>
           } @else {
           <!-- Document for text analysis -->
           <app-icon name="text" className="w-7 h-7 md:w-8 md:h-8 text-[color:var(--text-muted)] opacity-60" [strokeWidth]="1.5"></app-icon>
@@ -68,10 +74,12 @@
           <span class="type-badge" [attr.data-type]="item.feedbackType">
             {{ item.feedbackType === 'system' ? 'Platform' : (item.analysisType || 'text') }}
           </span>
+          @if (item.feedbackType !== 'analysis') {
           <span class="type-badge"
             style="background: color-mix(in srgb, var(--brand-primary) 15%, transparent); color: var(--brand-primary);">
             {{ item.feedbackType }}
           </span>
+          }
           @if (item.isPublic !== null) {
           <span class="visibility-badge" [attr.data-public]="item.isPublic">
             {{ item.isPublic ? 'Public' : 'Private' }}
@@ -93,11 +101,13 @@
             {{ item.feedbackType === 'system' ? 'Platform' : (item.analysisType || 'text') }}
           </span>
 
+          @if (item.feedbackType !== 'analysis') {
           <span class="meta-divider !hidden md:!block"></span>
           <span class="type-badge !hidden md:!inline-flex"
             style="background: color-mix(in srgb, var(--brand-primary) 15%, transparent); color: var(--brand-primary); text-transform: uppercase;">
             {{ item.feedbackType }}
           </span>
+          }
 
           @if (item.title && item.title !== 'Platform Experience' && item.title !== 'Analysis Review' &&
           item.analysisType !== 'audio') {

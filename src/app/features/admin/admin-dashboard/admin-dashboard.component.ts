@@ -89,7 +89,15 @@ export class AdminDashboardComponent implements OnInit {
     const currentStats = this.stats();
     if (!currentStats || !currentStats.emotion_distribution) return [];
 
-    return Object.entries(currentStats.emotion_distribution).map(([label, value]) => ({
+    const mapped: Record<string, number> = {};
+    for (const [label, value] of Object.entries(currentStats.emotion_distribution)) {
+      const lower = label.toLowerCase();
+      const normalizedKey = lower === 'happiness' ? 'joy' : label;
+      const key = normalizedKey.toLowerCase() === 'joy' ? 'joy' : normalizedKey;
+      mapped[key] = (mapped[key] || 0) + value;
+    }
+
+    return Object.entries(mapped).map(([label, value]) => ({
       label,
       value
     }));
@@ -105,8 +113,12 @@ export class AdminDashboardComponent implements OnInit {
 
     const purple = themeColors['--color-primary'] || '#a855f7';
     const blue = themeColors['--color-accent'] || '#3b82f6';
+    
+    const emoColors = this.colorSettings.emotionColors();
+    const pink = emoColors['contempt'] || '#db2777'; // Pink/rose for image (mapped to contempt)
+    const orange = emoColors['fear'] || '#f97316';   // Orange for video (mapped to fear)
 
-    return this.chartService.getAnalysesByTypeOptions(currentStats, purple, blue);
+    return this.chartService.getAnalysesByTypeOptions(currentStats, purple, blue, pink, orange);
   });
 
   /** Trend line chart options for general platform growth */
@@ -124,7 +136,7 @@ export class AdminDashboardComponent implements OnInit {
     return this.chartService.getTrendChartOptions(currentStats, theme, brandPrimary, accent);
   });
 
-  /** Detailed trend comparing Text vs Audio analyses over time */
+  /** Detailed trend comparing Text, Audio, Image, and Video analyses over time */
   typeTrendOptions = computed<EChartsOption>(() => {
     const currentStats = this.stats();
     const theme = this.chartTheme.getChartTheme();
@@ -135,8 +147,12 @@ export class AdminDashboardComponent implements OnInit {
 
     const purple = themeColors['--color-primary'] || '#a855f7';
     const blue = themeColors['--color-accent'] || '#3b82f6';
+    
+    const emoColors = this.colorSettings.emotionColors();
+    const pink = emoColors['contempt'] || '#db2777'; // Pink/rose for image (mapped to contempt)
+    const orange = emoColors['fear'] || '#f97316';   // Orange for video (mapped to fear)
 
-    return this.chartService.getTypeTrendOptions(currentStats, theme, purple, blue);
+    return this.chartService.getTypeTrendOptions(currentStats, theme, purple, blue, pink, orange);
   });
 
   getInitials(name: string): string {

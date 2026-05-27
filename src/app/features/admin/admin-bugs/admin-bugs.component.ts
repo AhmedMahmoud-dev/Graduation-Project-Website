@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import { AdminService } from '../../../core/services/admin.service';
 import { AdminBugReport } from '../../../core/models/admin.model';
 import { AppCacheService } from '../../../core/services/app-cache.service';
@@ -10,6 +11,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
 import { PageHeaderComponent } from '../../../shared/components/layout/page-header/page-header.component';
 import { ToastService } from '../../../core/services/toast.service';
 import { DropdownMenuComponent, DropdownOption } from '../../../shared/components/dropdown-menu/dropdown-menu.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 interface CachedBugsData {
   bugs: AdminBugReport[];
@@ -22,7 +24,7 @@ const CACHE_KEY = 'emotra_admin_bugs';
 @Component({
   selector: 'app-admin-bugs',
   standalone: true,
-  imports: [CommonModule, LoadingStateComponent, EmptyStateComponent, PageHeaderComponent, DropdownMenuComponent],
+  imports: [CommonModule, LoadingStateComponent, EmptyStateComponent, PageHeaderComponent, DropdownMenuComponent, PaginationComponent],
   templateUrl: './admin-bugs.component.html',
   styleUrl: './admin-bugs.component.css'
 })
@@ -38,6 +40,16 @@ export class AdminBugsComponent implements OnInit {
   sortState = useTableSort<AdminBugReport>(this.bugs);
   sortedBugs = this.sortState.sortedData;
 
+  // Pagination-based Slicing
+  paginatedBugs = computed(() => {
+    const list = this.sortedBugs();
+    const page = this.currentPage();
+    const size = this.pageSize();
+    
+    const startIndex = (page - 1) * size;
+    return list.slice(startIndex, startIndex + size);
+  });
+
   isLoading = signal<boolean>(true);
   error = signal<string | null>(null);
 
@@ -46,7 +58,7 @@ export class AdminBugsComponent implements OnInit {
   pageSize = signal<number>(10);
   totalBugs = signal<number>(0);
 
-  totalPages = computed(() => Math.ceil(this.totalBugs() / this.pageSize()) || 1);
+  totalPages = computed(() => Math.ceil(this.bugs().length / this.pageSize()) || 1);
 
   // Expanded row for detail view
   expandedId = signal<number | null>(null);
@@ -87,24 +99,65 @@ export class AdminBugsComponent implements OnInit {
     }
     this.error.set(null);
 
-    this.adminService.getBugReports(this.currentPage(), this.pageSize()).subscribe({
+    this.adminService.getBugReports(1, 1000).subscribe({
       next: (res) => {
         if (res.is_success && res.data) {
-          const enrichedData = res.data.map(bug => this.enrichBugData(bug));
-          this.bugs.set(enrichedData);
-          this.totalBugs.set(res.total);
-          this.cache.setItem<CachedBugsData>(CACHE_KEY, {
-            bugs: enrichedData,
-            total: res.total,
-            page: this.currentPage()
-          });
+          const firstPageBugs = res.data.map(bug => this.enrichBugData(bug));
+          const total = res.total;
+
+          if (firstPageBugs.length < total && firstPageBugs.length > 0) {
+            const serverPageSize = firstPageBugs.length;
+            const totalPagesNeeded = Math.ceil(total / serverPageSize);
+            const requests = [];
+
+            for (let p = 2; p <= totalPagesNeeded; p++) {
+              requests.push(this.adminService.getBugReports(p, serverPageSize));
+            }
+
+            forkJoin(requests).subscribe({
+              next: (responses) => {
+                let allBugs = [...firstPageBugs];
+                for (const r of responses) {
+                  if (r.is_success && r.data) {
+                    allBugs = [...allBugs, ...r.data.map(bug => this.enrichBugData(bug))];
+                  }
+                }
+
+                this.bugs.set(allBugs);
+                this.totalBugs.set(allBugs.length);
+                this.cache.setItem<CachedBugsData>(CACHE_KEY, {
+                  bugs: allBugs,
+                  total: allBugs.length,
+                  page: this.currentPage()
+                });
+                this.isLoading.set(false);
+                this.isRefreshing.set(false);
+              },
+              error: () => {
+                this.bugs.set(firstPageBugs);
+                this.totalBugs.set(firstPageBugs.length);
+                this.isLoading.set(false);
+                this.isRefreshing.set(false);
+              }
+            });
+          } else {
+            this.bugs.set(firstPageBugs);
+            this.totalBugs.set(total);
+            this.cache.setItem<CachedBugsData>(CACHE_KEY, {
+              bugs: firstPageBugs,
+              total: total,
+              page: this.currentPage()
+            });
+            this.isLoading.set(false);
+            this.isRefreshing.set(false);
+          }
         } else {
           if (this.bugs().length === 0) {
             this.error.set(res.message || 'Failed to load bug reports.');
           }
+          this.isLoading.set(false);
+          this.isRefreshing.set(false);
         }
-        this.isLoading.set(false);
-        this.isRefreshing.set(false);
       },
       error: () => {
         if (this.bugs().length === 0) {
@@ -120,7 +173,6 @@ export class AdminBugsComponent implements OnInit {
     if (page < 1 || page > this.totalPages()) return;
     this.currentPage.set(page);
     this.expandedId.set(null);
-    this.fetchBugs();
   }
 
   // Mobile Sort Options
@@ -240,19 +292,4 @@ export class AdminBugsComponent implements OnInit {
     });
   }
 
-  getPageNumbers(): number[] {
-    const total = this.totalPages();
-    const current = this.currentPage();
-    const pages: number[] = [];
-    const maxVisible = 5;
-
-    let start = Math.max(1, current - Math.floor(maxVisible / 2));
-    let end = Math.min(total, start + maxVisible - 1);
-    start = Math.max(1, end - maxVisible + 1);
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    return pages;
-  }
 }

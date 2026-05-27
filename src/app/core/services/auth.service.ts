@@ -13,6 +13,7 @@ import { AlertsService } from './alerts.service';
 import { AlertService } from './alert.service';
 import { AdminService } from './admin.service';
 import { AdminSupportService } from './admin-support.service';
+import { QuotaStore } from '../stores/quota.store';
 
 @Injectable({
   providedIn: 'root'
@@ -27,6 +28,7 @@ export class AuthService {
   private alertService = inject(AlertService);
   private adminService = inject(AdminService);
   private adminSupportService = inject(AdminSupportService);
+  private quotaStore = inject(QuotaStore);
 
   private isBrowser = isPlatformBrowser(this.platformId);
 
@@ -111,6 +113,7 @@ export class AuthService {
             this.prefetchHistoryMeta();
             this.alertsService.fetchStats();
             this.alertsService.fetchSettings();
+            this.quotaStore.loadQuota();
 
             // Alerts Page Background Prefetch (Matches AlertsComponent pageSize: 10)
             this.alertService.getAlerts(1, 10).pipe(takeUntil(this.logout$)).subscribe({
@@ -239,6 +242,7 @@ export class AuthService {
     if (!this.isBrowser) return;
 
     this.logout$.next();
+    this.quotaStore.clearQuota();
 
     // Core keys that MUST be removed
     const coreKeys = [
@@ -309,6 +313,7 @@ export class AuthService {
           if (!this.isAdmin()) {
             this.alertsService.fetchStats();
             this.alertsService.fetchSettings();
+            this.quotaStore.loadQuota();
           }
           this.alertsService.initSignalR(user.token);
         }

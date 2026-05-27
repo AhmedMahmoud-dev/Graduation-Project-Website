@@ -10,6 +10,7 @@
   <!-- Main Input Section -->
   <section class="flex-1 py-8 sm:py-12 md:py-16 px-4 sm:px-6 md:px-12" style="background: var(--bg-secondary)">
     <div class="max-w-3xl mx-auto w-full min-w-0">
+      <app-quota-banner type="audio"></app-quota-banner>
 
       <!-- ═══ Input Card ═══ -->
       <div class="rounded-[28px] overflow-hidden border border-[color:var(--border-color)] shadow-md"
@@ -85,7 +86,7 @@
           <!-- Actions -->
           <div class="action-row">
             @if (activeTab() === 'record') {
-            <button (click)="startRecording()" class="btn-action btn-outline-action btn-action-sm w-full sm:w-48">
+            <button [disabled]="isBlocked()" (click)="startRecording()" class="btn-action btn-outline-action btn-action-sm w-full sm:w-48 disabled:opacity-40 disabled:cursor-not-allowed">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -93,8 +94,8 @@
               Re-Record
             </button>
             }
-            <button (click)="startAnalysis()"
-              class="btn-action btn-primary-action btn-action-sm w-full sm:w-auto sm:ml-auto">
+            <button [disabled]="isBlocked()" (click)="startAnalysis()"
+              class="btn-action btn-primary-action btn-action-sm w-full sm:w-auto sm:ml-auto disabled:opacity-40 disabled:cursor-not-allowed">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
@@ -107,10 +108,15 @@
         @if (activeTab() === 'upload') {
         <div class="p-4 sm:p-6 md:p-8">
           @if (!selectedFile()) {
-          <div class="drop-zone" [class.dragging]="isDragging() && !isDraggingInvalid()"
-            [class.dragging-invalid]="isDraggingInvalid()" (dragover)="onDragOver($event)"
-            (dragenter)="onDragOver($event)" (dragleave)="onDragLeave()" (drop)="onFileDrop($event)">
-            <input type="file" (change)="onFileSelected($event)" class="absolute inset-0 opacity-0 cursor-pointer"
+          <div class="drop-zone" [class.dragging]="isDragging() && !isDraggingInvalid() && !isBlocked()"
+            [class.dragging-invalid]="isDraggingInvalid() || isBlocked()"
+            [class.opacity-40]="isBlocked()"
+            [class.cursor-not-allowed]="isBlocked()"
+            (dragover)="!isBlocked() && onDragOver($event)"
+            (dragenter)="!isBlocked() && onDragOver($event)"
+            (dragleave)="!isBlocked() && onDragLeave()"
+            (drop)="!isBlocked() && onFileDrop($event)">
+            <input type="file" [disabled]="isBlocked()" (change)="onFileSelected($event)" class="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
               accept=".mp3,.wav,.ogg,.m4a,.webm" #fileInput>
             <div class="drop-zone-icon">
               <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,7 +125,9 @@
               </svg>
             </div>
             <h4 class="text-lg sm:text-xl font-extrabold mb-1.5 tracking-tight" style="color: var(--text-primary)">
-              @if (isDraggingInvalid()) {
+              @if (isBlocked()) {
+              Weekly limit reached
+              } @else if (isDraggingInvalid()) {
               Unsupported file format
               } @else if (isDragging()) {
               Release to upload
@@ -127,8 +135,13 @@
               Upload Audio File
               }
             </h4>
-            <p class="text-xs sm:text-sm mb-5 font-medium" style="color: var(--text-muted)">Drag & drop or click to
-              browse from your device</p>
+            <p class="text-xs sm:text-sm mb-5 font-medium" style="color: var(--text-muted)">
+              @if (isBlocked()) {
+              Your weekly Audio analysis quota is exhausted.
+              } @else {
+              Drag & drop or click to browse from your device
+              }
+            </p>
             <div class="flex flex-wrap items-center justify-center gap-1.5 mb-5">
               <span class="format-badge">MP3</span>
               <span class="format-badge">WAV</span>
@@ -136,7 +149,7 @@
               <span class="format-badge">M4A</span>
               <span class="format-badge">≤ {{ MAX_FILE_SIZE_MB }} MB</span>
             </div>
-            <button class="btn-browse">
+            <button [disabled]="isBlocked()" class="btn-browse disabled:opacity-40 disabled:cursor-not-allowed">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
@@ -163,7 +176,7 @@
           <div class="w-full mb-6">
             <app-audio-waveform [isRecording]="isRecording()"></app-audio-waveform>
           </div>
-          <button (click)="stopRecording()" class="btn-action btn-stop-action w-full sm:w-64">
+          <button (click)="stopRecording()" class="btn-action btn-danger-action w-full sm:w-64">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -190,7 +203,7 @@
             <p class="text-xs sm:text-sm font-medium" style="color: var(--text-muted)">Click below to start capturing
               audio</p>
           </div>
-          <button (click)="startRecording()" class="btn-action btn-primary-action w-full sm:w-72 mt-5">
+          <button [disabled]="isBlocked()" (click)="startRecording()" class="btn-action btn-primary-action w-full sm:w-72 mt-5 disabled:opacity-40 disabled:cursor-not-allowed">
             <span class="record-dot" style="background: #fff"></span>
             Start Recording
           </button>
@@ -343,16 +356,18 @@
         </div>
       </div>
       <!-- 3.4 Emotion Timeline -->
-      <div
-        class="rounded-2xl p-5 sm:p-12 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] shadow-xl relative overflow-hidden w-full">
+      <div class="w-full">
         <app-analysis-section-header title="Emotion Timeline" subtitle="Temporal Logic"
           description="A chronological journey of detected sentiments across speech segments">
         </app-analysis-section-header>
 
-        <div class="mt-6 sm:mt-8 overflow-x-auto">
-          <app-emotion-timeline [data]="timelineData()" [dominant]="result()!.final_multimodal_emotion.label"
-            class="block w-full min-w-[300px] h-[300px] sm:h-[400px]">
-          </app-emotion-timeline>
+        <div
+          class="rounded-2xl p-5 sm:p-12 mt-8 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] shadow-xl relative overflow-hidden w-full">
+          <div class="overflow-x-auto">
+            <app-emotion-timeline [data]="timelineData()" [dominant]="result()!.final_multimodal_emotion.label"
+              class="block w-full min-w-[300px] h-[300px] sm:h-[400px]">
+            </app-emotion-timeline>
+          </div>
         </div>
       </div>
       <!-- 3.5 Distribution & Comparison -->

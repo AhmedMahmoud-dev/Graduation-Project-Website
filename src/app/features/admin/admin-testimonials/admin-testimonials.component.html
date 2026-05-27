@@ -59,7 +59,7 @@
       <!-- Testimonial Cards Grid -->
       @if (testimonials().length > 0) {
         <div class="testimonials-grid">
-          @for (item of testimonials(); track item.id) {
+          @for (item of paginatedTestimonials(); track item.id) {
             <div class="testimonial-card" [class.testimonial-card--processing]="processingId() === item.id">
 
               <!-- Card Header: User Info + Rating -->
@@ -105,6 +105,14 @@
             </div>
           }
         </div>
+        
+        <!-- Pagination Component -->
+        <app-pagination
+          [currentPage]="currentPage()"
+          [pageSize]="pageSize()"
+          [totalItems]="testimonials().length"
+          (pageChange)="goToPage($event)">
+        </app-pagination>
       }
     </section>
 

@@ -71,8 +71,8 @@ if not log.handlers:
 # ═════════════════════════════════════════════════════════════════════════════
 
 EMOTION_MODEL_NAME  = "enet_b0_8_best_vgaf"
-FACE_DETECT_THRESH  = 0.75          # SSD confidence threshold
-CONFIDENCE_GATE     = 0.25
+FACE_DETECT_THRESH  = 0.60          # Lowered from 0.75 for better sensitivity
+CONFIDENCE_GATE     = 0.20          # Lowered from 0.25
 EMA_ALPHA_BASE      = 0.30
 # Adaptive sampling — fps target scales with video duration:
 #   < 5s   → 8 fps
@@ -479,7 +479,8 @@ def _read_sampled_frames(video_path: str, frame_step: int) -> tuple:
     if not cap.isOpened():
         raise ValueError(f"Cannot open video: {video_path}")
 
-    native_fps   = cap.get(cv2.CAP_PROP_FPS) or 25.0
+    fps_raw = cap.get(cv2.CAP_PROP_FPS)
+    native_fps = fps_raw if (0 < fps_raw <= 120) else 25.0
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     sampled   = []
@@ -505,7 +506,8 @@ def _read_sampled_frames(video_path: str, frame_step: int) -> tuple:
         log.info("Frame-diff skip: dropped %d/%d near-duplicate frames",
                  skipped, skipped + len(sampled))
 
-    return sampled, native_fps, total_frames
+    # Return the actual frame index reached as the total frame count
+    return sampled, native_fps, frame_idx
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -577,22 +579,34 @@ def predict_emotion_video(video_path: str) -> dict:
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise ValueError(f"Cannot open video: {video_path}")
-    native_fps   = cap.get(cv2.CAP_PROP_FPS) or 25.0
+    
+    fps_raw = cap.get(cv2.CAP_PROP_FPS)
+    # Sanitize FPS: some codecs report 0 or 1000 when they fail
+    native_fps = fps_raw if (0 < fps_raw <= 120) else 25.0
+    
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     cap.release()
 
-    duration_sec   = total_frames / native_fps
-    fps_target     = _adaptive_fps_target(duration_sec)
-    frame_step     = max(1, int(round(native_fps / fps_target)))
+    # If total_frames is garbage (negative), use a placeholder and recalculate later
+    is_count_reliable = total_frames > 0
+    duration_sec = (total_frames / native_fps) if is_count_reliable else 0.0
+    
+    fps_target = _adaptive_fps_target(duration_sec)
+    frame_step = max(1, int(round(native_fps / fps_target)))
+
+    # ── 2. Pre-read sampled frames (with diff-skip) ───────────────────────────
+    t0 = time.time()
+    sampled_frames, actual_fps, actual_total_frames = _read_sampled_frames(video_path, frame_step)
+    
+    # Update metadata with actual counts from the decode loop
+    if not is_count_reliable:
+        total_frames = actual_total_frames
+        duration_sec = total_frames / native_fps
 
     log.info(
         "Video: %.1fs, %.0f fps, %d frames | adaptive fps_target=%.1f → step=%d, workers=%d",
         duration_sec, native_fps, total_frames, fps_target, frame_step, VIDEO_WORKER_PROCS,
     )
-
-    # ── 2. Pre-read sampled frames (with diff-skip) ───────────────────────────
-    t0 = time.time()
-    sampled_frames, _, _ = _read_sampled_frames(video_path, frame_step)
     log.info("Pre-read %d frames in %.2fs", len(sampled_frames), time.time() - t0)
 
     if not sampled_frames:
@@ -630,7 +644,7 @@ def predict_emotion_video(video_path: str) -> dict:
     log.info("Parallel inference: %.2fs for %d frames", time.time() - t1, len(sampled_frames))
 
     # ── 4. DeepSORT tracking (sequential — stateful) ──────────────────────────
-    tracker    = DeepSort(max_age=10, n_init=3, nn_budget=100)
+    tracker    = DeepSort(max_age=15, n_init=2, nn_budget=100)
     track_data: dict = {}
 
     for sample_idx in sorted(frame_results.keys()):

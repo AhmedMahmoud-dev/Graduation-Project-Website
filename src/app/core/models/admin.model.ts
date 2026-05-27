@@ -23,7 +23,7 @@ export interface PlatformStats {
   new_users_last30_days: number;
   total_analyses_last30_days: number;
   most_common_emotion: string;
-  analyses_by_type_trend: Array<{ date: string; text_count: number; audio_count: number }>;
+  analyses_by_type_trend: Array<{ date: string; text_count: number; audio_count: number; image_count?: number; video_count?: number }>;
   top_active_users: Array<{ user_id: string; full_name: string; email: string; analysis_count: number }>;
   system_feedback_count: number;
   online_users: number;

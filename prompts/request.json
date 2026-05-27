@@ -1,0 +1,80 @@
+{
+  "client_id": "3c5f8df2-d04b-4b2a-aef2-f7b53ec6e2d1",
+  "result": {
+    "video_filename": "test_video.mp4",
+    "duration_seconds": 8.0,
+    "total_frames": 192,
+    "sampled_frames": 24,
+    "faces_tracked": 1,
+    "faces": [
+      {
+        "face_id": 1,
+        "track_id": 1,
+        "frames_seen": 22,
+        "timeline": [
+          {
+            "frame_index": 2,
+            "timestamp_sec": 0.667,
+            "probabilities": {
+              "anger": 0.0072,
+              "contempt": 0.0001,
+              "disgust": 0.0976,
+              "fear": 0.0061,
+              "happiness": 0.7911,
+              "neutral": 0.0002,
+              "sadness": 0.0977,
+              "surprise": 0.0001
+            },
+            "dominant": {
+              "label": "happiness",
+              "confidence": 0.7910647754321439,
+              "confidence_percent": 79.11,
+              "category": "positive"
+            },
+            "frame_reference": "track_1_frame_2"
+          }
+        ],
+        "combined_final_emotion": {
+          "label": "happiness",
+          "confidence": 0.7888167629907953,
+          "confidence_percent": 78.88,
+          "category": "positive"
+        },
+        "combined_results": [
+          {
+            "label": "happiness",
+            "confidence": 0.7888167629907953,
+            "confidence_percent": 78.88
+          },
+          {
+            "label": "neutral",
+            "confidence": 0.15562536734644647,
+            "confidence_percent": 15.56
+          }
+        ],
+        "transitions": [
+          {
+            "frame_index": 6,
+            "timestamp_sec": 2.0,
+            "from_emotion": "happiness",
+            "to_emotion": "neutral"
+          }
+        ]
+      }
+    ],
+    "scene_emotion": {
+      "label": "happiness",
+      "confidence": 0.7888167629907953,
+      "confidence_percent": 78.88,
+      "category": "positive"
+    },
+    "timestamp": "2026-05-22T16:40:05.958250",
+    "processing_time_ms": 9551.068,
+    "model_info": {
+      "detector": "opencv-dnn-res10-ssd",
+      "emotion_model": "enet_b0_8_best_vgaf",
+      "tracker": "deepsort",
+      "version": "v1.2"
+    }
+  }
+}

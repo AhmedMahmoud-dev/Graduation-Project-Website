@@ -1,9 +1,11 @@
 import { Component, OnInit, inject, signal, computed, effect, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
 import { AdminUser } from '../../../core/models/admin.model';
+import { UserQuotaStatus, UpdateUserQuotaLimits } from '../../../core/models/quota.model';
 import { AppCacheService } from '../../../core/services/app-cache.service';
 import { FormattingService } from '../../../core/services/formatting.service';
 import { useTableSort } from '../../../core/utils/sort.util';
@@ -14,6 +16,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { DropdownMenuComponent, DropdownOption } from '../../../shared/components/dropdown-menu/dropdown-menu.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { SearchInputComponent } from '../../../shared/components/search-input/search-input.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 
 interface CachedUsersData {
@@ -27,7 +30,7 @@ const CACHE_KEY = 'emotra_admin_users';
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, LoadingStateComponent, EmptyStateComponent, PageHeaderComponent, DropdownMenuComponent, ReactiveFormsModule, SearchInputComponent],
+  imports: [CommonModule, LoadingStateComponent, EmptyStateComponent, PageHeaderComponent, DropdownMenuComponent, ReactiveFormsModule, SearchInputComponent, PaginationComponent],
   templateUrl: './admin-users.component.html',
   styleUrl: './admin-users.component.css'
 })
@@ -42,7 +45,7 @@ export class AdminUsersComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      if (this.isBanModalOpen()) {
+      if (this.isBanModalOpen() || this.isQuotaModalOpen()) {
         document.body.classList.add('no-scroll');
       } else {
         document.body.classList.remove('no-scroll');
@@ -55,6 +58,16 @@ export class AdminUsersComponent implements OnInit {
   users = signal<AdminUser[]>([]);
   searchQuery = signal<string>('');
   statusFilter = signal<string>('all');
+
+  updateSearchQuery(q: string) {
+    this.searchQuery.set(q);
+    this.currentPage.set(1);
+  }
+
+  updateStatusFilter(status: string) {
+    this.statusFilter.set(status);
+    this.currentPage.set(1);
+  }
 
   filteredUsers = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
@@ -85,6 +98,16 @@ export class AdminUsersComponent implements OnInit {
   sortState = useTableSort<AdminUser>(this.filteredUsers);
   sortedUsers = this.sortState.sortedData;
 
+  // Pagination-based Slicing
+  paginatedUsers = computed(() => {
+    const list = this.sortedUsers();
+    const page = this.currentPage();
+    const size = this.pageSize();
+    
+    const startIndex = (page - 1) * size;
+    return list.slice(startIndex, startIndex + size);
+  });
+
   isLoading = signal<boolean>(true);
   error = signal<string | null>(null);
 
@@ -93,11 +116,24 @@ export class AdminUsersComponent implements OnInit {
   pageSize = signal<number>(10);
   totalUsers = signal<number>(0);
 
-  totalPages = computed(() => Math.ceil(this.totalUsers() / this.pageSize()) || 1);
+  totalPages = computed(() => Math.ceil(this.filteredUsers().length / this.pageSize()) || 1);
 
   isUpdating = signal<boolean>(false);
   updatingUserId = signal<string | null>(null);
   isRefreshing = signal<boolean>(false);
+
+  // Quota Modal
+  isQuotaModalOpen = signal<boolean>(false);
+  selectedUserForQuota = signal<AdminUser | null>(null);
+  userQuotaDetails = signal<UserQuotaStatus | null>(null);
+  isLoadingQuota = signal<boolean>(false);
+  
+  quotaForm = this.fb.group({
+    textTokensLimit: [0, [Validators.required, Validators.min(0)]],
+    audioSecondsLimit: [0, [Validators.required, Validators.min(0)]],
+    videoSecondsLimit: [0, [Validators.required, Validators.min(0)]],
+    imageCountLimit: [0, [Validators.required, Validators.min(0)]]
+  });
 
   // Ban Modal
   isBanModalOpen = signal<boolean>(false);
@@ -234,25 +270,74 @@ export class AdminUsersComponent implements OnInit {
     }
     this.error.set(null);
 
-    this.adminService.getUsers(this.currentPage(), this.pageSize())
+    // Fetch page 1 with a large size (e.g. 1000) to get all users in a single request if possible
+    this.adminService.getUsers(1, 1000)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
       next: (res) => {
         if (res.is_success && res.data) {
-          this.users.set(res.data);
-          this.totalUsers.set(res.total);
-          this.cache.setItem<CachedUsersData>(CACHE_KEY, {
-            users: res.data,
-            total: res.total,
-            page: this.currentPage()
-          });
+          const firstPageUsers = res.data;
+          const total = res.total;
+
+          // If the backend didn't return all users (because of server-side page size limit),
+          // we fetch the remaining pages.
+          if (firstPageUsers.length < total && firstPageUsers.length > 0) {
+            const serverPageSize = firstPageUsers.length;
+            const totalPagesNeeded = Math.ceil(total / serverPageSize);
+            const requests = [];
+
+            for (let p = 2; p <= totalPagesNeeded; p++) {
+              requests.push(this.adminService.getUsers(p, serverPageSize));
+            }
+
+            forkJoin(requests)
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe({
+              next: (responses) => {
+                let allUsers = [...firstPageUsers];
+                for (const r of responses) {
+                  if (r.is_success && r.data) {
+                    allUsers = [...allUsers, ...r.data];
+                  }
+                }
+
+                this.users.set(allUsers);
+                this.totalUsers.set(allUsers.length);
+                this.cache.setItem<CachedUsersData>(CACHE_KEY, {
+                  users: allUsers,
+                  total: allUsers.length,
+                  page: this.currentPage()
+                });
+                this.isLoading.set(false);
+                this.isRefreshing.set(false);
+              },
+              error: () => {
+                // Fallback to whatever we got on page 1 if additional pages fail
+                this.users.set(firstPageUsers);
+                this.totalUsers.set(firstPageUsers.length);
+                this.isLoading.set(false);
+                this.isRefreshing.set(false);
+              }
+            });
+          } else {
+            // Otherwise we fetched all users in one go
+            this.users.set(firstPageUsers);
+            this.totalUsers.set(total);
+            this.cache.setItem<CachedUsersData>(CACHE_KEY, {
+              users: firstPageUsers,
+              total: total,
+              page: this.currentPage()
+            });
+            this.isLoading.set(false);
+            this.isRefreshing.set(false);
+          }
         } else {
           if (this.users().length === 0) {
             this.error.set(res.message || 'Failed to load users.');
           }
+          this.isLoading.set(false);
+          this.isRefreshing.set(false);
         }
-        this.isLoading.set(false);
-        this.isRefreshing.set(false);
       },
       error: () => {
         if (this.users().length === 0) {
@@ -267,7 +352,6 @@ export class AdminUsersComponent implements OnInit {
   goToPage(page: number): void {
     if (page < 1 || page > this.totalPages()) return;
     this.currentPage.set(page);
-    this.fetchUsers();
   }
 
   sortOptions: DropdownOption[] = [
@@ -406,25 +490,83 @@ export class AdminUsersComponent implements OnInit {
 
 
 
-  getPageNumbers(): number[] {
-    const total = this.totalPages();
-    const current = this.currentPage();
-    const pages: number[] = [];
-    const maxVisible = 5;
-
-    let start = Math.max(1, current - Math.floor(maxVisible / 2));
-    let end = Math.min(total, start + maxVisible - 1);
-    start = Math.max(1, end - maxVisible + 1);
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    return pages;
-  }
-
   isUserOnline(user: AdminUser): boolean {
     // A user is online if their account is active AND the server reports them as online
     return user.is_active && user.is_online;
   }
 
+  openQuotaModal(user: AdminUser) {
+    this.selectedUserForQuota.set(user);
+    this.userQuotaDetails.set(null);
+    this.isLoadingQuota.set(true);
+    this.isQuotaModalOpen.set(true);
+    
+    this.adminService.getUserQuota(user.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          if (res.is_success && res.data) {
+            this.userQuotaDetails.set(res.data);
+            this.quotaForm.setValue({
+              textTokensLimit: res.data.text.limit,
+              audioSecondsLimit: res.data.audio.limit,
+              videoSecondsLimit: res.data.video.limit,
+              imageCountLimit: res.data.image.limit
+            });
+          } else {
+            this.toastService.show('Error', res.message || 'Failed to load user quota details.', 'error');
+            this.closeQuotaModal();
+          }
+          this.isLoadingQuota.set(false);
+        },
+        error: () => {
+          this.toastService.show('Error', 'Failed to connect to the server.', 'error');
+          this.closeQuotaModal();
+          this.isLoadingQuota.set(false);
+        }
+      });
+  }
+
+  closeQuotaModal() {
+    this.isQuotaModalOpen.set(false);
+    this.selectedUserForQuota.set(null);
+    this.userQuotaDetails.set(null);
+  }
+
+  saveQuotaLimits() {
+    if (this.quotaForm.invalid) {
+      this.quotaForm.markAllAsTouched();
+      return;
+    }
+
+    const user = this.selectedUserForQuota();
+    if (!user) return;
+
+    const raw = this.quotaForm.getRawValue();
+    const payload: UpdateUserQuotaLimits = {
+      text_tokens_limit: Number(raw.textTokensLimit),
+      audio_seconds_limit: Number(raw.audioSecondsLimit),
+      video_seconds_limit: Number(raw.videoSecondsLimit),
+      image_count_limit: Number(raw.imageCountLimit)
+    };
+
+    this.isUpdating.set(true);
+    this.adminService.updateUserQuota(user.id, payload)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          if (res.is_success) {
+            this.toastService.show('Quota Updated', 'User weekly quota limits updated successfully.', 'success');
+            this.closeQuotaModal();
+          } else {
+            this.toastService.show('Error', res.message || 'Failed to update quota limits.', 'error');
+          }
+          this.isUpdating.set(false);
+        },
+        error: () => {
+          this.toastService.show('Error', 'Server error. Failed to update quota limits.', 'error');
+          this.isUpdating.set(false);
+        }
+      });
+  }
 }

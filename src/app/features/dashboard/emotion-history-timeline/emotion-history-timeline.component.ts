@@ -18,7 +18,7 @@ interface FilterTab {
   label: string;
 }
 
-type TypeFilter = 'all' | 'text' | 'audio' | 'image';
+type TypeFilter = 'all' | 'text' | 'audio' | 'image' | 'video';
 type RangeFilter = '7d' | '30d' | 'all';
 
 /** Flat view model for each history entry. */
@@ -41,6 +41,7 @@ const TYPE_TABS: FilterTab[] = [
   { value: 'text', label: 'Text' },
   { value: 'audio', label: 'Audio' },
   { value: 'image', label: 'Image' },
+  { value: 'video', label: 'Video' },
 ];
 
 const RANGE_TABS: FilterTab[] = [
@@ -408,7 +409,7 @@ export class EmotionHistoryTimelineComponent {
     if (type === 'text') {
       return s.result?.combined_final_emotion?.label || 'neutral';
     }
-    if (type === 'image') {
+    if (type === 'image' || type === 'video') {
       const label = s.result?.scene_emotion?.label || 'neutral';
       return label.toLowerCase() === 'happiness' ? 'joy' : label;
     }
@@ -421,7 +422,7 @@ export class EmotionHistoryTimelineComponent {
     if (type === 'text') {
       return s.result?.combined_final_emotion?.confidence_percent || 0;
     }
-    if (type === 'image') {
+    if (type === 'image' || type === 'video') {
       return s.result?.scene_emotion?.confidence_percent || 0;
     }
     return s.result?.final_multimodal_emotion?.confidence_percent || s.result?.combined_final_emotion?.confidence_percent || 0;

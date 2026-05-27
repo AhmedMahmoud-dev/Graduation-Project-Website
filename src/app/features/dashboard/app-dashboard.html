@@ -97,6 +97,155 @@
       </div>
     </div>
   </section>
+
+  <!-- Weekly Quota & Limits Tracker -->
+  @if (quotaStore.quota()) {
+  <section class="py-12 px-6 md:px-12 border-b border-[color:var(--border-color)] bg-[color:var(--bg-primary)]">
+    <div class="max-w-7xl mx-auto w-full min-w-0">
+      <app-analysis-section-header 
+        title="Weekly Quota Status" 
+        subtitle="Computing limits reset next Monday" 
+        variant="none"
+        marginBottom="mb-8">
+      </app-analysis-section-header>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Text Quota -->
+        @if (quotaStore.text(); as q) {
+        <div class="rounded-3xl p-6 border flex flex-col transition-all duration-300 bg-[color:var(--bg-card)] shadow-sm"
+          [class.border-red-500]="q.is_blocked"
+          [class.border-[color:var(--border-color)]]="!q.is_blocked">
+          <div class="flex items-center justify-between mb-6">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center bg-[color:var(--bg-secondary)] text-[color:var(--brand-primary)]">
+              <app-icon name="text" className="w-6 h-6"></app-icon>
+            </div>
+            @if (q.is_blocked) {
+              <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-red-500/10 text-red-500">Limit Reached</span>
+            } @else {
+              <span class="text-xs font-bold text-[color:var(--text-muted)]">{{ q.used_percentage | number:'1.0-0' }}% Used</span>
+            }
+          </div>
+          <div class="mt-auto">
+            <span class="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-muted)] block mb-1">Text Analysis</span>
+            <span class="text-2xl font-black text-[color:var(--text-primary)] tracking-tighter">{{ q.used | number }} / {{ q.limit | number }} <span class="text-[10px] font-bold tracking-widest uppercase opacity-40 ml-0.5">Tokens</span></span>
+            
+            <div class="h-2 w-full rounded-full bg-[color:var(--bg-secondary)] overflow-hidden mt-4 mb-3">
+              <div class="h-full rounded-full transition-all duration-500"
+                [style.width.%]="q.used_percentage"
+                [class.bg-red-500]="q.is_blocked"
+                [class.bg-[color:var(--brand-primary)]]="!q.is_blocked">
+              </div>
+            </div>
+            <p class="text-[10px] font-bold text-[color:var(--text-muted)] uppercase tracking-wide">
+              {{ q.remaining | number }} Tokens remaining
+            </p>
+          </div>
+        </div>
+        }
+
+        <!-- Audio Quota -->
+        @if (quotaStore.audio(); as q) {
+        <div class="rounded-3xl p-6 border flex flex-col transition-all duration-300 bg-[color:var(--bg-card)] shadow-sm"
+          [class.border-red-500]="q.is_blocked"
+          [class.border-[color:var(--border-color)]]="!q.is_blocked">
+          <div class="flex items-center justify-between mb-6">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center bg-[color:var(--bg-secondary)] text-indigo-500">
+              <app-icon name="audio" className="w-6 h-6"></app-icon>
+            </div>
+            @if (q.is_blocked) {
+              <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-red-500/10 text-red-500">Limit Reached</span>
+            } @else {
+              <span class="text-xs font-bold text-[color:var(--text-muted)]">{{ q.used_percentage | number:'1.0-0' }}% Used</span>
+            }
+          </div>
+          <div class="mt-auto">
+            <span class="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-muted)] block mb-1">Audio Analysis</span>
+            <span class="text-2xl font-black text-[color:var(--text-primary)] tracking-tighter">{{ q.used | number:'1.0-1' }}s / {{ q.limit | number:'1.0-0' }}s <span class="text-[10px] font-bold tracking-widest uppercase opacity-40 ml-0.5">Seconds</span></span>
+            
+            <div class="h-2 w-full rounded-full bg-[color:var(--bg-secondary)] overflow-hidden mt-4 mb-3">
+              <div class="h-full rounded-full transition-all duration-500"
+                [style.width.%]="q.used_percentage"
+                [class.bg-red-500]="q.is_blocked"
+                [class.bg-indigo-500]="!q.is_blocked">
+              </div>
+            </div>
+            <p class="text-[10px] font-bold text-[color:var(--text-muted)] uppercase tracking-wide">
+              {{ q.remaining | number:'1.0-1' }}s remaining
+            </p>
+          </div>
+        </div>
+        }
+
+        <!-- Image Quota -->
+        @if (quotaStore.image(); as q) {
+        <div class="rounded-3xl p-6 border flex flex-col transition-all duration-300 bg-[color:var(--bg-card)] shadow-sm"
+          [class.border-red-500]="q.is_blocked"
+          [class.border-[color:var(--border-color)]]="!q.is_blocked">
+          <div class="flex items-center justify-between mb-6">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center bg-[color:var(--bg-secondary)] text-emerald-500">
+              <app-icon name="image" className="w-6 h-6"></app-icon>
+            </div>
+            @if (q.is_blocked) {
+              <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-red-500/10 text-red-500">Limit Reached</span>
+            } @else {
+              <span class="text-xs font-bold text-[color:var(--text-muted)]">{{ q.used_percentage | number:'1.0-0' }}% Used</span>
+            }
+          </div>
+          <div class="mt-auto">
+            <span class="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-muted)] block mb-1">Image Analysis</span>
+            <span class="text-2xl font-black text-[color:var(--text-primary)] tracking-tighter">{{ q.used | number }} / {{ q.limit | number }} <span class="text-[10px] font-bold tracking-widest uppercase opacity-40 ml-0.5">Images</span></span>
+            
+            <div class="h-2 w-full rounded-full bg-[color:var(--bg-secondary)] overflow-hidden mt-4 mb-3">
+              <div class="h-full rounded-full transition-all duration-500"
+                [style.width.%]="q.used_percentage"
+                [class.bg-red-500]="q.is_blocked"
+                [class.bg-emerald-500]="!q.is_blocked">
+              </div>
+            </div>
+            <p class="text-[10px] font-bold text-[color:var(--text-muted)] uppercase tracking-wide">
+              {{ q.remaining | number }} Images remaining
+            </p>
+          </div>
+        </div>
+        }
+
+        <!-- Video Quota -->
+        @if (quotaStore.video(); as q) {
+        <div class="rounded-3xl p-6 border flex flex-col transition-all duration-300 bg-[color:var(--bg-card)] shadow-sm"
+          [class.border-red-500]="q.is_blocked"
+          [class.border-[color:var(--border-color)]]="!q.is_blocked">
+          <div class="flex items-center justify-between mb-6">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center bg-[color:var(--bg-secondary)] text-rose-500">
+              <app-icon name="video" className="w-6 h-6"></app-icon>
+            </div>
+            @if (q.is_blocked) {
+              <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-red-500/10 text-red-500">Limit Reached</span>
+            } @else {
+              <span class="text-xs font-bold text-[color:var(--text-muted)]">{{ q.used_percentage | number:'1.0-0' }}% Used</span>
+            }
+          </div>
+          <div class="mt-auto">
+            <span class="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-muted)] block mb-1">Video Analysis</span>
+            <span class="text-2xl font-black text-[color:var(--text-primary)] tracking-tighter">{{ q.used | number:'1.0-1' }}s / {{ q.limit | number:'1.0-0' }}s <span class="text-[10px] font-bold tracking-widest uppercase opacity-40 ml-0.5">Seconds</span></span>
+            
+            <div class="h-2 w-full rounded-full bg-[color:var(--bg-secondary)] overflow-hidden mt-4 mb-3">
+              <div class="h-full rounded-full transition-all duration-500"
+                [style.width.%]="q.used_percentage"
+                [class.bg-red-500]="q.is_blocked"
+                [class.bg-rose-500]="!q.is_blocked">
+              </div>
+            </div>
+            <p class="text-[10px] font-bold text-[color:var(--text-muted)] uppercase tracking-wide">
+              {{ q.remaining | number:'1.0-1' }}s remaining
+            </p>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+  </section>
+  }
+
   <!-- ── Emotion Journey & Deep Dive ─────────────────────────────────── -->
   <app-emotion-history-timeline></app-emotion-history-timeline>
   <!-- Recent Processing Feed -->
@@ -240,12 +389,7 @@
         dashboard.
       </ng-container>
       <div empty-actions class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
-        <a routerLink="/analysis/text" class="w-full sm:w-auto btn-primary px-8 py-4 text-sm text-center">New Text
-          Analysis</a>
-        <a routerLink="/analysis/audio" class="w-full sm:w-auto btn-secondary px-8 py-4 text-sm text-center">New Audio
-          Analysis</a>
-        <a routerLink="/analysis/image" class="w-full sm:w-auto btn-secondary px-8 py-4 text-sm text-center">New Image
-          Analysis</a>
+        <a routerLink="/analysis" class="w-full sm:w-auto btn-primary px-8 py-4 text-sm text-center">Start New Analysis</a>
       </div>
     </app-empty-state>
   </div>

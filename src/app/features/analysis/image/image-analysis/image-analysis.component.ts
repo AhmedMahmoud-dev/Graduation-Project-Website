@@ -8,6 +8,7 @@ import { ImageAnalysisStore } from '../../../../core/stores/image-analysis.store
 import { AnalysisV2Service } from '../../../../core/services/analysis-v2.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { AnalysisStorageService } from '../../../../core/services/analysis-storage.service';
+import { QuotaStore } from '../../../../core/stores/quota.store';
 
 import { EmotionIconComponent } from '../../../../shared/components/emotion-icon/emotion-icon.component';
 import { FooterSectionComponent } from '../../../../shared/components/footer/footer.component';
@@ -22,6 +23,7 @@ import { PageHeaderComponent } from '../../../../shared/components/layout/page-h
 import { AnalysisFeedbackComponent } from '../../../../shared/components/analysis-feedback/analysis-feedback.component';
 import { SegmentedNavComponent, SegmentedNavOption } from '../../../../shared/components/segmented-nav/segmented-nav.component';
 import { AnalysisSectionHeaderComponent } from '../../../../shared/components/analysis-section-header/analysis-section-header.component';
+import { QuotaBannerComponent } from "../../../../shared/components/quota-banner/quota-banner.component";
 
 @Component({
   selector: 'app-image-analysis',
@@ -41,8 +43,9 @@ import { AnalysisSectionHeaderComponent } from '../../../../shared/components/an
     PageHeaderComponent,
     AnalysisFeedbackComponent,
     SegmentedNavComponent,
-    AnalysisSectionHeaderComponent
-  ],
+    AnalysisSectionHeaderComponent,
+    QuotaBannerComponent
+],
   providers: [ImageAnalysisStore],
   templateUrl: './image-analysis.component.html',
   styleUrls: ['./image-analysis.component.css']
@@ -55,6 +58,9 @@ export class ImageAnalysisComponent implements OnInit, OnDestroy {
   private analysisV2Service = inject(AnalysisV2Service);
   private storageService = inject(AnalysisStorageService);
   store = inject(ImageAnalysisStore);
+  private quotaStore = inject(QuotaStore);
+
+  isBlocked = computed(() => this.quotaStore.image()?.is_blocked ?? false);
 
   // Expose store state / signals directly for the template
   state = this.store.state;
@@ -80,9 +86,18 @@ export class ImageAnalysisComponent implements OnInit, OnDestroy {
   isDragging = signal<boolean>(false);
   isDraggingInvalid = signal<boolean>(false);
 
-  // File Upload / Capture State
+  // File Upload State
   uploadedFile = signal<File | null>(null);
-  previewUrl = signal<SafeUrl | null>(null);
+  uploadUrl = signal<SafeUrl | null>(null);
+
+  // Webcam Capture State
+  capturedFile = signal<File | null>(null);
+  captureUrl = signal<SafeUrl | null>(null);
+
+  // Computed file and url resolution
+  selectedFile = computed(() => this.activeTab() === 'upload' ? this.uploadedFile() : this.capturedFile());
+  previewUrl = computed(() => this.activeTab() === 'upload' ? this.uploadUrl() : this.captureUrl());
+
   imageLoading = signal<boolean>(true);
 
 
@@ -116,7 +131,9 @@ export class ImageAnalysisComponent implements OnInit, OnDestroy {
             const cachedBlob = this.storageService.getCachedImageBlob(sid);
             if (cachedBlob) {
               const objectUrl = URL.createObjectURL(cachedBlob);
-              this.previewUrl.set(this.sanitizer.bypassSecurityTrustUrl(objectUrl));
+              const safeUrl = this.sanitizer.bypassSecurityTrustUrl(objectUrl);
+              this.uploadUrl.set(safeUrl);
+              this.captureUrl.set(safeUrl);
               this.imageLoading.set(false);
             } else {
               this.imageLoading.set(true);
@@ -132,6 +149,16 @@ export class ImageAnalysisComponent implements OnInit, OnDestroy {
           }
         });
       }
+    });
+
+    // Handle camera lifecycle on tab changes
+    effect(() => {
+      const tab = this.activeTab();
+      untracked(() => {
+        if (tab === 'upload') {
+          this.stopCamera();
+        }
+      });
     });
 
     // Reactive scroll-to-feedback handling
@@ -214,7 +241,7 @@ export class ImageAnalysisComponent implements OnInit, OnDestroy {
     this.error.set(null);
     this.uploadedFile.set(file);
     const objectUrl = URL.createObjectURL(file);
-    this.previewUrl.set(this.sanitizer.bypassSecurityTrustUrl(objectUrl));
+    this.uploadUrl.set(this.sanitizer.bypassSecurityTrustUrl(objectUrl));
   }
 
   // --- WEBCAM CAMERA ---
@@ -222,9 +249,9 @@ export class ImageAnalysisComponent implements OnInit, OnDestroy {
   async startCamera() {
     if (!this.isBrowser) return;
     this.cameraError.set(null);
-    // Clear preview url and uploaded file so the capture workspace is rendered
-    this.previewUrl.set(null);
-    this.uploadedFile.set(null);
+    // Clear capture state so the capture workspace is rendered
+    this.capturedFile.set(null);
+    this.captureUrl.set(null);
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 1280, height: 720, facingMode: 'user' }
@@ -274,9 +301,9 @@ export class ImageAnalysisComponent implements OnInit, OnDestroy {
       canvas.toBlob((blob) => {
         if (blob) {
           const file = new File([blob], `capture_${Date.now()}.jpg`, { type: 'image/jpeg' });
-          this.uploadedFile.set(file);
+          this.capturedFile.set(file);
           const objectUrl = URL.createObjectURL(file);
-          this.previewUrl.set(this.sanitizer.bypassSecurityTrustUrl(objectUrl));
+          this.captureUrl.set(this.sanitizer.bypassSecurityTrustUrl(objectUrl));
           this.stopCamera();
         }
       }, 'image/jpeg', 0.95);
@@ -286,7 +313,7 @@ export class ImageAnalysisComponent implements OnInit, OnDestroy {
   // --- ANALYSIS ---
 
   startAnalysis() {
-    const file = this.uploadedFile();
+    const file = this.selectedFile();
     if (file) {
       this.imageLoading.set(true);
       this.store.startAnalysis(file);
@@ -294,15 +321,25 @@ export class ImageAnalysisComponent implements OnInit, OnDestroy {
   }
 
   clearFile() {
-    this.uploadedFile.set(null);
-    this.previewUrl.set(null);
-    this.stopCamera();
+    if (this.activeTab() === 'upload') {
+      this.uploadedFile.set(null);
+      this.uploadUrl.set(null);
+    } else {
+      this.capturedFile.set(null);
+      this.captureUrl.set(null);
+      this.stopCamera();
+    }
     this.error.set(null);
   }
 
   resetToInput() {
     this.store.resetToInput();
-    this.clearFile();
+    this.uploadedFile.set(null);
+    this.uploadUrl.set(null);
+    this.capturedFile.set(null);
+    this.captureUrl.set(null);
+    this.stopCamera();
+    this.error.set(null);
     this.imageLoading.set(true);
   }
 
@@ -312,7 +349,9 @@ export class ImageAnalysisComponent implements OnInit, OnDestroy {
     this.analysisV2Service.getMediaStream(cloudId).subscribe({
       next: (blob) => {
         const objectUrl = URL.createObjectURL(blob);
-        this.previewUrl.set(this.sanitizer.bypassSecurityTrustUrl(objectUrl));
+        const safeUrl = this.sanitizer.bypassSecurityTrustUrl(objectUrl);
+        this.uploadUrl.set(safeUrl);
+        this.captureUrl.set(safeUrl);
       },
       error: (err) => {
         console.error('Failed to fetch historical image:', err);

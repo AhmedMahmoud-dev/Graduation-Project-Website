@@ -19,7 +19,7 @@ import { AppCacheService } from '../../core/services/app-cache.service';
 import { AnalysisHistoryItem, AnalysisType } from '../../core/models/analysis-v2.model';
 import { AlertsService } from '../../core/services/alerts.service';
 
-type FilterType = 'all' | 'text' | 'audio' | 'image' | 'feedback';
+type FilterType = 'all' | 'text' | 'audio' | 'image' | 'video' | 'feedback';
 type SortOrder = 'newest' | 'oldest';
 
 const HISTORY_STATE_KEY = 'emotra_history_state';
@@ -52,6 +52,7 @@ export class HistoryComponent implements OnInit {
     { label: 'Text', value: 'text' },
     { label: 'Audio', value: 'audio' },
     { label: 'Image', value: 'image' },
+    { label: 'Video', value: 'video' },
     { label: 'Feedback', value: 'feedback' }
   ];
   filterType = signal<FilterType>('all');
@@ -98,6 +99,52 @@ export class HistoryComponent implements OnInit {
 
   hasAnyData = computed(() => this.hasAnyHistory() || this.hasFeedbackCache());
   isWholeHistoryEmpty = computed(() => !this.hasAnyHistory() && !this.hasFeedbackCache());
+
+  emptyStateIcon = computed(() => {
+    if (this.isWholeHistoryEmpty()) {
+      return 'clock';
+    }
+    if (this.searchQuery().trim()) {
+      return 'search';
+    }
+    const type = this.filterType();
+    return type === 'feedback' ? 'globe' : type;
+  });
+
+  emptyStateTitle = computed(() => {
+    if (this.isWholeHistoryEmpty()) {
+      return 'No Analyses Completed Yet';
+    }
+    if (this.searchQuery().trim()) {
+      return 'No Matches Found';
+    }
+    switch (this.filterType()) {
+      case 'text': return 'No Text Analyses';
+      case 'audio': return 'No Audio Analyses';
+      case 'image': return 'No Image Analyses';
+      case 'video': return 'No Video Analyses';
+      case 'feedback': return 'No Platform Reviews';
+      default: return 'No analyses found';
+    }
+  });
+
+  emptyStateHint = computed(() => {
+    if (this.isWholeHistoryEmpty()) {
+      return 'You haven\'t completed any analyses yet. Start a new session to build your emotional timeline.';
+    }
+    const query = this.searchQuery().trim();
+    if (query) {
+      return `We couldn't find any records matching "${query}". Try checking your spelling or clearing the search.`;
+    }
+    switch (this.filterType()) {
+      case 'text': return 'Start a text analysis session to see your results here.';
+      case 'audio': return 'Start an audio analysis session to see your results here.';
+      case 'image': return 'Start an image analysis session to see your results here.';
+      case 'video': return 'Start a video analysis session to see your results here.';
+      case 'feedback': return 'Submit your first platform feedback to see it here.';
+      default: return 'No logs available for this section.';
+    }
+  });
 
   showFilters = computed(() => {
     // Show filters if we have any data at all, or if currently searching/tab-switched
@@ -148,7 +195,7 @@ export class HistoryComponent implements OnInit {
           dominantLabel: s.dominant_emotion?.toLowerCase() === 'happiness' ? 'joy' : s.dominant_emotion,
           dominantCategory: safeCategory,
           emotionColor: this.format.getEmotionColor(s.dominant_emotion?.toLowerCase() === 'happiness' ? 'joy' : s.dominant_emotion),
-          icon: s.type.toLowerCase() === 'text' ? 'document-text' : (s.type.toLowerCase() === 'image' ? 'image' : 'microphone'),
+          icon: s.type.toLowerCase() === 'text' ? 'text' : (s.type.toLowerCase() === 'image' ? 'image' : (s.type.toLowerCase() === 'video' ? 'video' : 'audio')),
           formattedDate: this.format.formatDate(s.timestamp),
           title: s.summary_text || 'Analysis Result',
           confidence: s.confidence_percent
@@ -382,6 +429,7 @@ export class HistoryComponent implements OnInit {
     this.cache.removeItem('emotra_history_meta_text');
     this.cache.removeItem('emotra_history_meta_audio');
     this.cache.removeItem('emotra_history_meta_image');
+    this.cache.removeItem('emotra_history_meta_video');
     this.cache.removeItem('emotra_stats');
     this.cache.removeItem(`emotra_analysis_detail_${cloudId}`);
 
@@ -426,10 +474,12 @@ export class HistoryComponent implements OnInit {
       'emotra_history_meta_text',
       'emotra_history_meta_audio',
       'emotra_history_meta_image',
+      'emotra_history_meta_video',
       'emotra_stats',
       'emotra_text_sessions',
       'emotra_audio_sessions',
       'emotra_image_sessions',
+      'emotra_video_sessions',
       'emotra_feedback',
       'emotra_feedback_history',
       'emotra_system_feedback',

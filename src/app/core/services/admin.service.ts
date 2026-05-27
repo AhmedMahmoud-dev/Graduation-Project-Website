@@ -11,6 +11,7 @@ import {
   AdminTestimonial,
   ServiceHealth
 } from '../models/admin.model';
+import { UserQuotaStatus, UpdateUserQuotaLimits } from '../models/quota.model';
 
 @Injectable({
   providedIn: 'root'
@@ -113,5 +114,21 @@ export class AdminService {
    */
   getHealth(): Observable<ApiResponse<ServiceHealth[]>> {
     return this.http.get<ApiResponse<ServiceHealth[]>>(`${this.apiUrl}/health`);
+  }
+
+  /**
+   * 6.1 Get User Quota
+   * Fetches the weekly quota usage and customized limits for a specific user.
+   */
+  getUserQuota(userId: string): Observable<ApiResponse<UserQuotaStatus>> {
+    return this.http.get<ApiResponse<UserQuotaStatus>>(`${this.apiUrl}/users/${userId}/quota`);
+  }
+
+  /**
+   * 6.2 Update User Quota Limits
+   * Updates (overrides) the default/current limits for a specific user.
+   */
+  updateUserQuota(userId: string, limits: UpdateUserQuotaLimits): Observable<ApiResponse<boolean>> {
+    return this.http.patch<ApiResponse<boolean>>(`${this.apiUrl}/users/${userId}/quota`, limits);
   }
 }

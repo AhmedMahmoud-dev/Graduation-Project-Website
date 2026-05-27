@@ -99,7 +99,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for (msg of sortedMessages(); track msg.id) {
+                    @for (msg of paginatedMessages(); track msg.id) {
                     <tr [class.row--expanded]="expandedMessageId() === msg.id">
                         <td>
                             <div class="user-cell">
@@ -206,7 +206,7 @@
         </div>
 
         <div class="mobile-cards hide-desktop">
-            @for (msg of sortedMessages(); track msg.id) {
+            @for (msg of paginatedMessages(); track msg.id) {
             <div class="mobile-card">
                 <div class="mobile-card__header">
                     <div class="user-cell">
@@ -270,6 +270,12 @@
             </div>
             }
         </div>
+        <app-pagination
+            [currentPage]="currentPage()"
+            [pageSize]="pageSize()"
+            [totalItems]="messages().length"
+            (pageChange)="goToPage($event)">
+        </app-pagination>
         }
     </section>
     }

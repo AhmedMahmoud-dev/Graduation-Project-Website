@@ -8,16 +8,26 @@ import { DistributionDataPoint } from '../models/chart-data.model';
 export class AdminChartService {
   private format = inject(FormattingService);
 
-  getAnalysesByTypeOptions(stats: PlatformStats, purple: string, blue: string): DistributionDataPoint[] {
+  getAnalysesByTypeOptions(stats: PlatformStats, purple: string, blue: string, green: string, orange: string): DistributionDataPoint[] {
     if (!stats || !stats.analyses_by_type) return [];
     
     return Object.entries(stats.analyses_by_type).map(([label, value]) => {
-      const isAudio = label.toLowerCase() === 'audio';
-      const isText = label.toLowerCase() === 'text';
+      const lower = label.toLowerCase();
+      const isAudio = lower === 'audio';
+      const isText = lower === 'text';
+      const isImage = lower === 'image';
+      const isVideo = lower === 'video';
+      
+      let color: string | undefined = undefined;
+      if (isAudio) color = purple;
+      else if (isText) color = blue;
+      else if (isImage) color = green;
+      else if (isVideo) color = orange;
+
       return {
         label: label.charAt(0).toUpperCase() + label.slice(1),
         value,
-        color: isAudio ? purple : (isText ? blue : undefined)
+        color
       };
     });
   }
@@ -55,29 +65,39 @@ export class AdminChartService {
     } as any;
   }
 
-  getTypeTrendOptions(stats: PlatformStats, theme: any, purple: string, blue: string): EChartsOption {
+  getTypeTrendOptions(stats: PlatformStats, theme: any, purple: string, blue: string, green: string, orange: string): EChartsOption {
     if (!stats || !stats.analyses_by_type_trend) return {};
 
     const dates = stats.analyses_by_type_trend.map(t => this.format.formatShortDate(t.date));
     const textData = stats.analyses_by_type_trend.map(t => t.text_count);
     const audioData = stats.analyses_by_type_trend.map(t => t.audio_count);
+    const imageData = stats.analyses_by_type_trend.map(t => t.image_count ?? 0);
+    const videoData = stats.analyses_by_type_trend.map(t => t.video_count ?? 0);
 
     return {
       ...theme,
       backgroundColor: 'transparent',
       tooltip: { ...theme.tooltip, trigger: 'axis' },
-      legend: { data: ['Text', 'Audio'], bottom: 0, textStyle: { ...theme.legend?.textStyle } },
+      legend: { data: ['Text', 'Audio', 'Image', 'Video'], bottom: 0, textStyle: { ...theme.legend?.textStyle } },
       grid: { left: 12, right: 24, bottom: 40, top: 16, containLabel: true },
       xAxis: { ...theme.xAxis, type: 'category', boundaryGap: true, data: dates } as any,
       yAxis: { ...theme.yAxis, type: 'value' } as any,
       series: [
         {
           name: 'Text', type: 'bar', stack: 'total', barWidth: '40%',
-          data: textData, itemStyle: { color: blue, borderRadius: [4, 4, 0, 0] }
+          data: textData, itemStyle: { color: blue }
         },
         {
           name: 'Audio', type: 'bar', stack: 'total', barWidth: '40%',
-          data: audioData, itemStyle: { color: purple, borderRadius: [4, 4, 0, 0] }
+          data: audioData, itemStyle: { color: purple }
+        },
+        {
+          name: 'Image', type: 'bar', stack: 'total', barWidth: '40%',
+          data: imageData, itemStyle: { color: green }
+        },
+        {
+          name: 'Video', type: 'bar', stack: 'total', barWidth: '40%',
+          data: videoData, itemStyle: { color: orange, borderRadius: [4, 4, 0, 0] }
         }
       ]
     } as any;
