@@ -9,7 +9,8 @@ import {
   AdminUser,
   AdminBugReport,
   AdminTestimonial,
-  ServiceHealth
+  ServiceHealth,
+  GlobalQuota
 } from '../models/admin.model';
 import { UserQuotaStatus, UpdateUserQuotaLimits } from '../models/quota.model';
 import { AdminSupportReplyRequest, AdminSupportListResponse, AdminSupportReplyResponse } from '../models/support.model';
@@ -195,5 +196,21 @@ export class AdminService {
    */
   replyToSupportMessage(id: number, request: AdminSupportReplyRequest): Observable<ApiResponse<AdminSupportReplyResponse>> {
     return this.http.post<ApiResponse<AdminSupportReplyResponse>>(`${this.apiUrl}/support/${id}/reply`, request);
+  }
+
+  /**
+   * 8.1 Get Global Quota Defaults
+   * Retrieve the current system-wide default limits.
+   */
+  getGlobalQuota(): Observable<ApiResponse<GlobalQuota>> {
+    return this.http.get<ApiResponse<GlobalQuota>>(`${this.apiUrl}/quota/global`);
+  }
+
+  /**
+   * 8.2 Update Global Quota Defaults
+   * Update the system-wide default limits and apply them to all users.
+   */
+  updateGlobalQuota(limits: Partial<GlobalQuota>): Observable<ApiResponse<boolean>> {
+    return this.http.patch<ApiResponse<boolean>>(`${this.apiUrl}/quota/global`, limits);
   }
 }

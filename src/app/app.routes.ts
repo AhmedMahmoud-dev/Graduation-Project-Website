@@ -133,6 +133,10 @@ export const routes: Routes = [
       {
         path: 'support',
         loadComponent: () => import('./features/admin/admin-support/admin-support.component').then(m => m.AdminSupportComponent)
+      },
+      {
+        path: 'quota',
+        loadComponent: () => import('./features/admin/admin-quota/admin-quota.component').then(m => m.AdminQuotaComponent)
       }
     ]
   },

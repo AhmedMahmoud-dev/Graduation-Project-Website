@@ -1,0 +1,167 @@
+<div class="admin-quota">
+
+  <!-- Loading -->
+  @if (isLoading()) {
+    <app-loading-state
+      message="Loading Quota Settings..."
+      subtitle="Fetching platform defaults"
+      size="md"
+      [fullPage]="true">
+    </app-loading-state>
+  }
+
+  <!-- Error -->
+  @if (!isLoading() && error()) {
+    <app-empty-state [isFullPage]="true">
+      <svg empty-icon xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+      <span empty-msg>Failed to Load Settings</span>
+      <span empty-hint>{{ error() }}</span>
+      <button empty-actions (click)="fetchGlobalQuota()" class="action-btn action-btn--primary">
+        Try Again
+      </button>
+    </app-empty-state>
+  }
+
+  <!-- Content -->
+  @if (!isLoading() && !error()) {
+
+    <!-- Header -->
+    <section class="admin-header-section">
+      <app-page-header
+        title="Global Quota Settings"
+        subtitle="ADMIN PANEL"
+        description="Manage the system-wide default limits for all users.">
+        <div actions class="flex items-center gap-3">
+          <button (click)="fetchGlobalQuota()" class="refresh-btn" [class.refresh-btn--spinning]="isRefreshing()">
+            <svg class="refresh-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <span class="refresh-btn__label">Refresh</span>
+          </button>
+        </div>
+      </app-page-header>
+    </section>
+
+    <!-- Content Section -->
+    <section class="admin-content-section">
+      <div class="quota-container">
+        
+        <!-- Warning Banner -->
+        <div class="warning-banner">
+          <div class="warning-banner__icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+          </div>
+          <div class="warning-banner__content">
+            <h3 class="warning-banner__title">Important Note</h3>
+            <p class="warning-banner__text">
+              Updating these global limits will <strong>immediately clear all individual user overrides</strong> and reset everyone to these values.
+            </p>
+          </div>
+        </div>
+
+        <div class="quota-card">
+          <form [formGroup]="quotaForm" (ngSubmit)="onSubmit()" class="quota-form">
+            
+            <div class="form-grid">
+              <!-- Text Tokens -->
+              <div class="form-group">
+                <label for="text_tokens_limit" class="form-label">Text Tokens Limit</label>
+                <div class="input-wrapper">
+                  <input 
+                    id="text_tokens_limit" 
+                    type="number" 
+                    formControlName="text_tokens_limit" 
+                    class="form-input"
+                    [class.form-input--error]="quotaForm.get('text_tokens_limit')?.touched && quotaForm.get('text_tokens_limit')?.invalid"
+                  >
+                  <span class="input-suffix">Tokens / Week</span>
+                </div>
+                @if (quotaForm.get('text_tokens_limit')?.touched && quotaForm.get('text_tokens_limit')?.invalid) {
+                  <p class="error-text">Must be at least 1 token.</p>
+                }
+              </div>
+
+              <!-- Audio Seconds -->
+              <div class="form-group">
+                <label for="audio_seconds_limit" class="form-label">Audio Seconds Limit</label>
+                <div class="input-wrapper">
+                  <input 
+                    id="audio_seconds_limit" 
+                    type="number" 
+                    formControlName="audio_seconds_limit" 
+                    class="form-input"
+                    [class.form-input--error]="quotaForm.get('audio_seconds_limit')?.touched && quotaForm.get('audio_seconds_limit')?.invalid"
+                  >
+                  <span class="input-suffix">Seconds / Week</span>
+                </div>
+                @if (quotaForm.get('audio_seconds_limit')?.touched && quotaForm.get('audio_seconds_limit')?.invalid) {
+                  <p class="error-text">Must be at least 1 second.</p>
+                }
+              </div>
+
+              <!-- Video Seconds -->
+              <div class="form-group">
+                <label for="video_seconds_limit" class="form-label">Video Seconds Limit</label>
+                <div class="input-wrapper">
+                  <input 
+                    id="video_seconds_limit" 
+                    type="number" 
+                    formControlName="video_seconds_limit" 
+                    class="form-input"
+                    [class.form-input--error]="quotaForm.get('video_seconds_limit')?.touched && quotaForm.get('video_seconds_limit')?.invalid"
+                  >
+                  <span class="input-suffix">Seconds / Week</span>
+                </div>
+                @if (quotaForm.get('video_seconds_limit')?.touched && quotaForm.get('video_seconds_limit')?.invalid) {
+                  <p class="error-text">Must be at least 1 second.</p>
+                }
+              </div>
+
+              <!-- Image Count -->
+              <div class="form-group">
+                <label for="image_count_limit" class="form-label">Image Count Limit</label>
+                <div class="input-wrapper">
+                  <input 
+                    id="image_count_limit" 
+                    type="number" 
+                    formControlName="image_count_limit" 
+                    class="form-input"
+                    [class.form-input--error]="quotaForm.get('image_count_limit')?.touched && quotaForm.get('image_count_limit')?.invalid"
+                  >
+                  <span class="input-suffix">Images / Week</span>
+                </div>
+                @if (quotaForm.get('image_count_limit')?.touched && quotaForm.get('image_count_limit')?.invalid) {
+                  <p class="error-text">Must be at least 1 image.</p>
+                }
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" (click)="resetForm()" class="action-btn action-btn--secondary" [disabled]="isSaving()">
+                Discard Changes
+              </button>
+              <button type="submit" class="action-btn action-btn--primary" [disabled]="isSaving() || quotaForm.invalid">
+                @if (isSaving()) {
+                  <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Updating Platform...
+                } @else {
+                  Save & Apply to All Users
+                }
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </section>
+
+  }
+
+</div>

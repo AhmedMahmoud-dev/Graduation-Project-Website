@@ -81,3 +81,10 @@ export interface ServiceHealth {
   response_time_ms: number;
   last_checked_at: string;
 }
+
+export interface GlobalQuota {
+  text_tokens_limit: number;
+  audio_seconds_limit: number;
+  video_seconds_limit: number;
+  image_count_limit: number;
+}
