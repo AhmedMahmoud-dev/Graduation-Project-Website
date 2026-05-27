@@ -19,7 +19,6 @@ export class CompareStatsComponent {
   protected format = inject(FormattingService);
   analysisA = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
   analysisB = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
-  target = input<string>('overall');
 
   statsRows = computed(() => {
     if (!this.analysisA() || !this.analysisB()) return [];
@@ -119,22 +118,12 @@ export class CompareStatsComponent {
   });
 
   private getDominant(session: any) {
-    const target = this.target();
-
     if (session.type === 'text') {
       return (session.result as TextAnalysisResult).combined_final_emotion;
     } else if (session.type === 'audio') {
       return (session.result as AudioAnalysisResponse).final_multimodal_emotion;
-    } else {
-      // Image or Video: Use target
-      if (target === 'overall') {
-        return session.result.scene_emotion;
-      } else {
-        const faceIdx = parseInt(target.split('_')[1]);
-        const face = session.result.faces?.[faceIdx];
-        return face?.combined_final_emotion || { label: 'Neutral', confidence_percent: 0 };
-      }
     }
+    return session.result.scene_emotion;
   }
 
   private getSegmentLabel(type: string): string {

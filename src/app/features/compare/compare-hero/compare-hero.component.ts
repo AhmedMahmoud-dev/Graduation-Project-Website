@@ -16,7 +16,6 @@ export class CompareHeroComponent {
   protected format = inject(FormattingService);
   analysisA = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
   analysisB = input.required<AnalysisSession | AudioAnalysisSession | ImageAnalysisSession | VideoAnalysisSession | null>();
-  target = input<string>('overall');
 
   emotionA = computed(() => this.getDominantEmotion(this.analysisA()));
   emotionB = computed(() => this.getDominantEmotion(this.analysisB()));
@@ -112,8 +111,6 @@ export class CompareHeroComponent {
 
   private getDominantEmotion(session: any) {
     if (!session) return null;
-    const target = this.target();
-
     if (session.type === 'text') {
       const res = session.result as TextAnalysisResult;
       return {
@@ -129,25 +126,13 @@ export class CompareHeroComponent {
         category: res.category
       };
     } else {
-      // Image or Video: Use target
-      if (target === 'overall') {
-        const res = session.result.scene_emotion;
-        return {
-          label: res.label,
-          confidence: res.confidence_percent,
-          category: res.category
-        };
-      } else {
-        const faceIdx = parseInt(target.split('_')[1]);
-        const face = session.result.faces?.[faceIdx];
-        if (!face) return null;
-        const res = face.combined_final_emotion;
-        return {
-          label: res.label,
-          confidence: res.confidence_percent,
-          category: res.category
-        };
-      }
+      // Image or Video both have scene_emotion at result root
+      const res = session.result.scene_emotion;
+      return {
+        label: res.label,
+        confidence: res.confidence_percent,
+        category: res.category
+      };
     }
   }
 
