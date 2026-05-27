@@ -1,4 +1,4 @@
-import { Component, input, computed, inject, signal } from '@angular/core';
+import { Component, input, computed, inject, signal, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AnalysisSession, AudioAnalysisSession, TextAnalysisResult } from '../../../core/models/text-analysis.model';
 import { ImageAnalysisSession } from '../../../core/models/image-analysis.model';
