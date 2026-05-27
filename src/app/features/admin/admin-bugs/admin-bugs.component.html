@@ -40,8 +40,27 @@
     </app-page-header>
   </section>
 
-  <!-- Content Section -->
+  <!-- Page Content -->
   <section class="admin-content-section">
+
+    <!-- Toolbar Row -->
+    <div class="flex flex-wrap items-center gap-4 mb-8 relative z-[10]">
+      <div class="w-full md:w-48">
+        <app-dropdown-menu [options]="statusOptions" [selectedValue]="statusFilter()"
+          (selectedValueChange)="updateStatusFilter($event)" placeholder="Filter by Status">
+        </app-dropdown-menu>
+      </div>
+      <div class="w-full md:w-48">
+        <app-dropdown-menu [options]="priorityOptions" [selectedValue]="priorityFilter()"
+          (selectedValueChange)="updatePriorityFilter($event)" placeholder="Filter by Priority">
+        </app-dropdown-menu>
+      </div>
+      <div class="w-full md:w-48">
+        <app-dropdown-menu [options]="categoryOptions" [selectedValue]="categoryFilter()"
+          (selectedValueChange)="updateCategoryFilter($event)" placeholder="Filter by Category">
+        </app-dropdown-menu>
+      </div>
+    </div>
 
     <!-- Empty State -->
     @if (bugs().length === 0) {
@@ -50,7 +69,7 @@
         <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
       <span empty-msg>No Bug Reports</span>
-      <span empty-hint>There are no reported issues at this time.</span>
+      <span empty-hint>There are no reported issues matching your current filters.</span>
     </app-empty-state>
     }
 
@@ -60,58 +79,58 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th (click)="sortState.toggleSort('title')"
+            <th (click)="onSortChange('title')"
               class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
               <div class="flex items-center gap-1">
                 Title
-                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'title'"
-                  [class.group-hover:opacity-50]="sortState.sortColumn() !== 'title'"
-                  [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'title'">
-                  {{ sortState.sortColumn() === 'title' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                <span class="text-[10px]" [class.opacity-0]="sortColumn() !== 'title'"
+                  [class.group-hover:opacity-50]="sortColumn() !== 'title'"
+                  [class.text-[color:var(--brand-primary)]]="sortColumn() === 'title'">
+                  {{ sortColumn() === 'title' && sortDirection() === 'desc' ? '▼' : '▲' }}
                 </span>
               </div>
             </th>
-            <th (click)="sortState.toggleSort('category')"
+            <th (click)="onSortChange('category')"
               class="hide-mobile cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
               <div class="flex items-center gap-1">
                 Category
-                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'category'"
-                  [class.group-hover:opacity-50]="sortState.sortColumn() !== 'category'"
-                  [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'category'">
-                  {{ sortState.sortColumn() === 'category' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                <span class="text-[10px]" [class.opacity-0]="sortColumn() !== 'category'"
+                  [class.group-hover:opacity-50]="sortColumn() !== 'category'"
+                  [class.text-[color:var(--brand-primary)]]="sortColumn() === 'category'">
+                  {{ sortColumn() === 'category' && sortDirection() === 'desc' ? '▼' : '▲' }}
                 </span>
               </div>
             </th>
-            <th (click)="sortState.toggleSort('priority')"
+            <th (click)="onSortChange('priority')"
               class="hide-mobile cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
               <div class="flex items-center gap-1">
                 Priority
-                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'priority'"
-                  [class.group-hover:opacity-50]="sortState.sortColumn() !== 'priority'"
-                  [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'priority'">
-                  {{ sortState.sortColumn() === 'priority' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                <span class="text-[10px]" [class.opacity-0]="sortColumn() !== 'priority'"
+                  [class.group-hover:opacity-50]="sortColumn() !== 'priority'"
+                  [class.text-[color:var(--brand-primary)]]="sortColumn() === 'priority'">
+                  {{ sortColumn() === 'priority' && sortDirection() === 'desc' ? '▼' : '▲' }}
                 </span>
               </div>
             </th>
-            <th (click)="sortState.toggleSort('status')"
+            <th (click)="onSortChange('status')"
               class="hide-tablet cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
               <div class="flex items-center gap-1">
                 Status
-                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'status'"
-                  [class.group-hover:opacity-50]="sortState.sortColumn() !== 'status'"
-                  [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'status'">
-                  {{ sortState.sortColumn() === 'status' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                <span class="text-[10px]" [class.opacity-0]="sortColumn() !== 'status'"
+                  [class.group-hover:opacity-50]="sortColumn() !== 'status'"
+                  [class.text-[color:var(--brand-primary)]]="sortColumn() === 'status'">
+                  {{ sortColumn() === 'status' && sortDirection() === 'desc' ? '▼' : '▲' }}
                 </span>
               </div>
             </th>
-            <th (click)="sortState.toggleSort('created_at')"
+            <th (click)="onSortChange('created_at')"
               class="hide-tablet cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
               <div class="flex items-center gap-1">
                 Date
-                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'created_at'"
-                  [class.group-hover:opacity-50]="sortState.sortColumn() !== 'created_at'"
-                  [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'created_at'">
-                  {{ sortState.sortColumn() === 'created_at' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                <span class="text-[10px]" [class.opacity-0]="sortColumn() !== 'created_at'"
+                  [class.group-hover:opacity-50]="sortColumn() !== 'created_at'"
+                  [class.text-[color:var(--brand-primary)]]="sortColumn() === 'created_at'">
+                  {{ sortColumn() === 'created_at' && sortDirection() === 'desc' ? '▼' : '▲' }}
                 </span>
               </div>
             </th>
@@ -119,7 +138,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (bug of paginatedBugs(); track bug.id) {
+          @for (bug of bugs(); track bug.id) {
           <!-- Main Row -->
           <tr>
             <td>
@@ -257,7 +276,7 @@
     <!-- Mobile Sort -->
     <div class="mobile-sort hide-desktop" style="margin-top: 2rem;">
       <label>Sort by:</label>
-      <div class="select-wrapper" style="z-index: 50;">
+      <div class="select-wrapper" style="z-index: 5;">
         <app-dropdown-menu [options]="sortOptions" [selectedValue]="selectedSortValue()"
           (selectedValueChange)="onMobileSortChange($event)">
         </app-dropdown-menu>
@@ -266,7 +285,7 @@
 
     <!-- Mobile Cards -->
     <div class="mobile-cards hide-desktop">
-      @for (bug of paginatedBugs(); track bug.id) {
+      @for (bug of bugs(); track bug.id) {
       <div class="mobile-card">
         <div class="mobile-card__header">
           <div class="mobile-card__title-group">
@@ -376,7 +395,7 @@
     <app-pagination
       [currentPage]="currentPage()"
       [pageSize]="pageSize()"
-      [totalItems]="bugs().length"
+      [totalItems]="totalBugs()"
       (pageChange)="goToPage($event)">
     </app-pagination>
     }

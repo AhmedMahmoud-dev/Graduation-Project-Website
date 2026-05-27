@@ -56,7 +56,7 @@
     </div>
 
     <!-- Empty List -->
-    @if (sortedUsers().length === 0) {
+    @if (users().length === 0) {
     <app-empty-state>
       <svg empty-icon xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
         <path
@@ -76,63 +76,63 @@
     }
 
     <!-- Table (Desktop) -->
-    @if (sortedUsers().length > 0) {
+    @if (users().length > 0) {
     <div class="table-wrapper hide-mobile">
       <table class="data-table">
         <thead>
           <tr>
-            <th (click)="sortState.toggleSort('first_name')"
+            <th (click)="onSortChange('first_name')"
               class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
               <div class="flex items-center gap-1">
                 User
-                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'first_name'"
-                  [class.group-hover:opacity-50]="sortState.sortColumn() !== 'first_name'"
-                  [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'first_name'">
-                  {{ sortState.sortColumn() === 'first_name' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                <span class="text-[10px]" [class.opacity-0]="sortColumn() !== 'first_name'"
+                  [class.group-hover:opacity-50]="sortColumn() !== 'first_name'"
+                  [class.text-[color:var(--brand-primary)]]="sortColumn() === 'first_name'">
+                  {{ sortColumn() === 'first_name' && sortDirection() === 'desc' ? '▼' : '▲' }}
                 </span>
               </div>
             </th>
-            <th (click)="sortState.toggleSort('email')"
+            <th (click)="onSortChange('email')"
               class="hide-mobile cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
               <div class="flex items-center gap-1">
                 Email
-                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'email'"
-                  [class.group-hover:opacity-50]="sortState.sortColumn() !== 'email'"
-                  [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'email'">
-                  {{ sortState.sortColumn() === 'email' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                <span class="text-[10px]" [class.opacity-0]="sortColumn() !== 'email'"
+                  [class.group-hover:opacity-50]="sortColumn() !== 'email'"
+                  [class.text-[color:var(--brand-primary)]]="sortColumn() === 'email'">
+                  {{ sortColumn() === 'email' && sortDirection() === 'desc' ? '▼' : '▲' }}
                 </span>
               </div>
             </th>
-            <th (click)="sortState.toggleSort('total_analyses')"
+            <th (click)="onSortChange('total_analyses')"
               class="hide-mobile cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
               <div class="flex items-center gap-1">
                 Analyses
-                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'total_analyses'"
-                  [class.group-hover:opacity-50]="sortState.sortColumn() !== 'total_analyses'"
-                  [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'total_analyses'">
-                  {{ sortState.sortColumn() === 'total_analyses' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                <span class="text-[10px]" [class.opacity-0]="sortColumn() !== 'total_analyses'"
+                  [class.group-hover:opacity-50]="sortColumn() !== 'total_analyses'"
+                  [class.text-[color:var(--brand-primary)]]="sortColumn() === 'total_analyses'">
+                  {{ sortColumn() === 'total_analyses' && sortDirection() === 'desc' ? '▼' : '▲' }}
                 </span>
               </div>
             </th>
-            <th (click)="sortState.toggleSort('created_at')"
+            <th (click)="onSortChange('created_at')"
               class="hide-tablet cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
               <div class="flex items-center gap-1">
                 Joined
-                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'created_at'"
-                  [class.group-hover:opacity-50]="sortState.sortColumn() !== 'created_at'"
-                  [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'created_at'">
-                  {{ sortState.sortColumn() === 'created_at' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                <span class="text-[10px]" [class.opacity-0]="sortColumn() !== 'created_at'"
+                  [class.group-hover:opacity-50]="sortColumn() !== 'created_at'"
+                  [class.text-[color:var(--brand-primary)]]="sortColumn() === 'created_at'">
+                  {{ sortColumn() === 'created_at' && sortDirection() === 'desc' ? '▼' : '▲' }}
                 </span>
               </div>
             </th>
-            <th (click)="sortState.toggleSort('is_active')"
+            <th (click)="onSortChange('is_active')"
               class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
               <div class="flex items-center gap-1">
                 Status
-                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'is_active'"
-                  [class.group-hover:opacity-50]="sortState.sortColumn() !== 'is_active'"
-                  [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'is_active'">
-                  {{ sortState.sortColumn() === 'is_active' && sortState.sortDirection() === 'desc' ? '▼' : '▲' }}
+                <span class="text-[10px]" [class.opacity-0]="sortColumn() !== 'is_active'"
+                  [class.group-hover:opacity-50]="sortColumn() !== 'is_active'"
+                  [class.text-[color:var(--brand-primary)]]="sortColumn() === 'is_active'">
+                  {{ sortColumn() === 'is_active' && sortDirection() === 'desc' ? '▼' : '▲' }}
                 </span>
               </div>
             </th>
@@ -140,7 +140,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (user of paginatedUsers(); track user.id) {
+          @for (user of users(); track user.id) {
           <tr>
             <td>
               <div class="user-cell">
@@ -219,7 +219,7 @@
 
     <!-- Mobile Cards (shown only on small screens) -->
     <div class="mobile-cards hide-desktop">
-      @for (user of paginatedUsers(); track user.id) {
+      @for (user of users(); track user.id) {
       <div class="mobile-card">
         <div class="mobile-card__header">
           <div class="user-cell">
@@ -287,7 +287,7 @@
     <app-pagination
       [currentPage]="currentPage()"
       [pageSize]="pageSize()"
-      [totalItems]="filteredUsers().length"
+      [totalItems]="totalUsers()"
       (pageChange)="goToPage($event)">
     </app-pagination>
     }

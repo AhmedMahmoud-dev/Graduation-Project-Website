@@ -12,6 +12,7 @@ import {
   ServiceHealth
 } from '../models/admin.model';
 import { UserQuotaStatus, UpdateUserQuotaLimits } from '../models/quota.model';
+import { AdminSupportReplyRequest, AdminSupportListResponse, AdminSupportReplyResponse } from '../models/support.model';
 
 @Injectable({
   providedIn: 'root'
@@ -30,12 +31,27 @@ export class AdminService {
 
   /**
    * 2.1 List All Users
-   * Retrieves a paginated list of registered users.
+   * Retrieves a paginated and filtered list of registered users.
    */
-  getUsers(page: number = 1, pageSize: number = 10): Observable<PaginatedAdminResponse<AdminUser[]>> {
-    const params = new HttpParams()
+  getUsers(
+    page: number = 1, 
+    pageSize: number = 10,
+    search: string | null = null,
+    status: string = 'all',
+    sortBy: string | null = null,
+    sortOrder: string = 'asc'
+  ): Observable<PaginatedAdminResponse<AdminUser[]>> {
+    let params = new HttpParams()
       .set('page', page.toString())
       .set('pageSize', pageSize.toString());
+
+    if (search) params = params.set('search', search);
+    if (status && status !== 'all') params = params.set('status', status);
+    if (sortBy) {
+      params = params.set('sortBy', sortBy);
+      params = params.set('sortOrder', sortOrder);
+    }
+
     return this.http.get<PaginatedAdminResponse<AdminUser[]>>(`${this.apiUrl}/users`, { params });
   }
 
@@ -61,12 +77,29 @@ export class AdminService {
 
   /**
    * 3.1 List All Bug Reports
-   * Retrieves a paginated list of technical issues.
+   * Retrieves a paginated and filtered list of technical issues.
    */
-  getBugReports(page: number = 1, pageSize: number = 10): Observable<PaginatedAdminResponse<AdminBugReport[]>> {
-    const params = new HttpParams()
+  getBugReports(
+    page: number = 1, 
+    pageSize: number = 10,
+    status: string = 'all',
+    priority: string = 'all',
+    category: string = 'all',
+    sortBy: string | null = null,
+    sortOrder: string = 'desc'
+  ): Observable<PaginatedAdminResponse<AdminBugReport[]>> {
+    let params = new HttpParams()
       .set('page', page.toString())
       .set('pageSize', pageSize.toString());
+
+    if (status && status !== 'all') params = params.set('status', status);
+    if (priority && priority !== 'all') params = params.set('priority', priority);
+    if (category && category !== 'all') params = params.set('category', category);
+    if (sortBy) {
+      params = params.set('sortBy', sortBy);
+      params = params.set('sortOrder', sortOrder);
+    }
+
     return this.http.get<PaginatedAdminResponse<AdminBugReport[]>>(`${this.apiUrl}/bugs`, { params });
   }
 
@@ -130,5 +163,37 @@ export class AdminService {
    */
   updateUserQuota(userId: string, limits: UpdateUserQuotaLimits): Observable<ApiResponse<boolean>> {
     return this.http.patch<ApiResponse<boolean>>(`${this.apiUrl}/users/${userId}/quota`, limits);
+  }
+
+  /**
+   * 7.1 List All Support Messages
+   * Retrieves a paginated and filtered list of support tickets for administrators.
+   */
+  getSupportMessages(
+    page: number = 1, 
+    pageSize: number = 10, 
+    status: string = 'all',
+    sortBy: string | null = null,
+    sortOrder: string = 'desc'
+  ): Observable<ApiResponse<AdminSupportListResponse>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
+
+    if (status && status !== 'all') params = params.set('status', status);
+    if (sortBy) {
+      params = params.set('sortBy', sortBy);
+      params = params.set('sortOrder', sortOrder);
+    }
+
+    return this.http.get<ApiResponse<AdminSupportListResponse>>(`${this.apiUrl}/support`, { params });
+  }
+
+  /**
+   * 7.2 Reply to Support Message
+   * Sends an administrative reply to a support ticket.
+   */
+  replyToSupportMessage(id: number, request: AdminSupportReplyRequest): Observable<ApiResponse<AdminSupportReplyResponse>> {
+    return this.http.post<ApiResponse<AdminSupportReplyResponse>>(`${this.apiUrl}/support/${id}/reply`, request);
   }
 }

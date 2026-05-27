@@ -1,14 +1,13 @@
 import { Component, OnInit, inject, signal, computed, effect, DestroyRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { forkJoin } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
 import { AdminUser } from '../../../core/models/admin.model';
 import { UserQuotaStatus, UpdateUserQuotaLimits } from '../../../core/models/quota.model';
 import { AppCacheService } from '../../../core/services/app-cache.service';
 import { FormattingService } from '../../../core/services/formatting.service';
-import { useTableSort } from '../../../core/utils/sort.util';
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../../shared/components/layout/page-header/page-header.component';
@@ -23,9 +22,11 @@ interface CachedUsersData {
   users: AdminUser[];
   total: number;
   page: number;
+  statusFilter: string;
+  searchQuery: string;
 }
 
-const CACHE_KEY = 'emotra_admin_users';
+const CACHE_KEY = 'emotra_admin_users_v2';
 
 @Component({
   selector: 'app-admin-users',
@@ -51,76 +52,63 @@ export class AdminUsersComponent implements OnInit {
         document.body.classList.remove('no-scroll');
       }
     });
+
+    // Handle Search Debouncing
+    toObservable(this.searchQuery)
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        takeUntilDestroyed()
+      )
+      .subscribe(() => {
+        this.currentPage.set(1);
+        this.fetchUsers();
+      });
   }
 
   currentUser = this.authService.currentUser;
 
+  // State Signals
   users = signal<AdminUser[]>([]);
   searchQuery = signal<string>('');
   statusFilter = signal<string>('all');
+  
+  // Sorting State
+  sortColumn = signal<string | null>('created_at');
+  sortDirection = signal<'asc' | 'desc'>('desc');
+
+  // Pagination State
+  currentPage = signal<number>(1);
+  pageSize = signal<number>(10);
+  totalUsers = signal<number>(0);
+
+  totalPages = computed(() => Math.ceil(this.totalUsers() / this.pageSize()) || 1);
+
+  isLoading = signal<boolean>(true);
+  error = signal<string | null>(null);
+  isUpdating = signal<boolean>(false);
+  updatingUserId = signal<string | null>(null);
+  isRefreshing = signal<boolean>(false);
 
   updateSearchQuery(q: string) {
     this.searchQuery.set(q);
-    this.currentPage.set(1);
   }
 
   updateStatusFilter(status: string) {
     this.statusFilter.set(status);
     this.currentPage.set(1);
+    this.fetchUsers();
   }
 
-  filteredUsers = computed(() => {
-    const q = this.searchQuery().toLowerCase().trim();
-    const status = this.statusFilter();
-    let list = this.users();
-
-    // 1. Status Filter
-    if (status !== 'all') {
-      list = list.filter(user => {
-        if (status === 'online') return this.isUserOnline(user);
-        if (status === 'offline') return !this.isUserOnline(user) && user.is_active;
-        if (status === 'banned') return !user.is_active;
-        return true;
-      });
+  onSortChange(column: string) {
+    if (this.sortColumn() === column) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortColumn.set(column);
+      this.sortDirection.set('desc');
     }
-
-    // 2. Search Query
-    if (!q) return list;
-
-    return list.filter(user =>
-      `${user.first_name} ${user.last_name}`.toLowerCase().includes(q) ||
-      user.email.toLowerCase().includes(q) ||
-      user.id.toLowerCase().includes(q)
-    );
-  });
-
-  // Sorting
-  sortState = useTableSort<AdminUser>(this.filteredUsers);
-  sortedUsers = this.sortState.sortedData;
-
-  // Pagination-based Slicing
-  paginatedUsers = computed(() => {
-    const list = this.sortedUsers();
-    const page = this.currentPage();
-    const size = this.pageSize();
-    
-    const startIndex = (page - 1) * size;
-    return list.slice(startIndex, startIndex + size);
-  });
-
-  isLoading = signal<boolean>(true);
-  error = signal<string | null>(null);
-
-  // Pagination
-  currentPage = signal<number>(1);
-  pageSize = signal<number>(10);
-  totalUsers = signal<number>(0);
-
-  totalPages = computed(() => Math.ceil(this.filteredUsers().length / this.pageSize()) || 1);
-
-  isUpdating = signal<boolean>(false);
-  updatingUserId = signal<string | null>(null);
-  isRefreshing = signal<boolean>(false);
+    this.fetchUsers();
+  }
 
   // Quota Modal
   isQuotaModalOpen = signal<boolean>(false);
@@ -171,14 +159,10 @@ export class AdminUsersComponent implements OnInit {
 
   onBanReasonChange(value: any) {
     this.banForm.get('reason')?.setValue(value);
-    this.banForm.get('reason')?.markAsTouched();
-    this.banForm.get('reason')?.updateValueAndValidity();
   }
 
   onBanDurationChange(value: any) {
     this.banForm.get('duration')?.setValue(value);
-    this.banForm.get('duration')?.markAsTouched();
-    this.banForm.get('duration')?.updateValueAndValidity();
   }
 
   openBanModal(user: AdminUser) {
@@ -209,7 +193,6 @@ export class AdminUsersComponent implements OnInit {
       return;
     }
 
-    // Map -1 back to null for the API (Permanent ban), or parse number
     const finalDuration = Number(duration) === -1 ? null : (duration ? Number(duration) : null);
 
     this.isUpdating.set(true);
@@ -219,17 +202,7 @@ export class AdminUsersComponent implements OnInit {
       .subscribe({
       next: (res) => {
         if (res.is_success) {
-          const updatedList = this.users().map(u =>
-            u.id === user.id ? { ...u, is_active: false } : u
-          );
-          this.users.set(updatedList);
-
-          this.cache.setItem<CachedUsersData>(CACHE_KEY, {
-            users: updatedList,
-            total: this.totalUsers(),
-            page: this.currentPage()
-          });
-
+          this.fetchUsers(true);
           this.closeBanModal();
           this.toastService.show('User Banned', `${user.first_name} has been suspended.`, 'warning');
         } else {
@@ -252,8 +225,9 @@ export class AdminUsersComponent implements OnInit {
       this.users.set(cached.users);
       this.totalUsers.set(cached.total);
       this.currentPage.set(cached.page);
+      this.statusFilter.set(cached.statusFilter);
+      this.searchQuery.set(cached.searchQuery);
       this.isLoading.set(false);
-      // Fetch in background
       this.fetchUsers(true);
     } else {
       this.fetchUsers(false);
@@ -270,74 +244,35 @@ export class AdminUsersComponent implements OnInit {
     }
     this.error.set(null);
 
-    // Fetch page 1 with a large size (e.g. 1000) to get all users in a single request if possible
-    this.adminService.getUsers(1, 1000)
+    this.adminService.getUsers(
+      this.currentPage(),
+      this.pageSize(),
+      this.searchQuery(),
+      this.statusFilter(),
+      this.sortColumn(),
+      this.sortDirection()
+    )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
       next: (res) => {
         if (res.is_success && res.data) {
-          const firstPageUsers = res.data;
-          const total = res.total;
-
-          // If the backend didn't return all users (because of server-side page size limit),
-          // we fetch the remaining pages.
-          if (firstPageUsers.length < total && firstPageUsers.length > 0) {
-            const serverPageSize = firstPageUsers.length;
-            const totalPagesNeeded = Math.ceil(total / serverPageSize);
-            const requests = [];
-
-            for (let p = 2; p <= totalPagesNeeded; p++) {
-              requests.push(this.adminService.getUsers(p, serverPageSize));
-            }
-
-            forkJoin(requests)
-              .pipe(takeUntilDestroyed(this.destroyRef))
-              .subscribe({
-              next: (responses) => {
-                let allUsers = [...firstPageUsers];
-                for (const r of responses) {
-                  if (r.is_success && r.data) {
-                    allUsers = [...allUsers, ...r.data];
-                  }
-                }
-
-                this.users.set(allUsers);
-                this.totalUsers.set(allUsers.length);
-                this.cache.setItem<CachedUsersData>(CACHE_KEY, {
-                  users: allUsers,
-                  total: allUsers.length,
-                  page: this.currentPage()
-                });
-                this.isLoading.set(false);
-                this.isRefreshing.set(false);
-              },
-              error: () => {
-                // Fallback to whatever we got on page 1 if additional pages fail
-                this.users.set(firstPageUsers);
-                this.totalUsers.set(firstPageUsers.length);
-                this.isLoading.set(false);
-                this.isRefreshing.set(false);
-              }
-            });
-          } else {
-            // Otherwise we fetched all users in one go
-            this.users.set(firstPageUsers);
-            this.totalUsers.set(total);
-            this.cache.setItem<CachedUsersData>(CACHE_KEY, {
-              users: firstPageUsers,
-              total: total,
-              page: this.currentPage()
-            });
-            this.isLoading.set(false);
-            this.isRefreshing.set(false);
-          }
+          this.users.set(res.data);
+          this.totalUsers.set(res.total);
+          
+          this.cache.setItem<CachedUsersData>(CACHE_KEY, {
+            users: res.data,
+            total: res.total,
+            page: this.currentPage(),
+            statusFilter: this.statusFilter(),
+            searchQuery: this.searchQuery()
+          });
         } else {
           if (this.users().length === 0) {
             this.error.set(res.message || 'Failed to load users.');
           }
-          this.isLoading.set(false);
-          this.isRefreshing.set(false);
         }
+        this.isLoading.set(false);
+        this.isRefreshing.set(false);
       },
       error: () => {
         if (this.users().length === 0) {
@@ -352,43 +287,38 @@ export class AdminUsersComponent implements OnInit {
   goToPage(page: number): void {
     if (page < 1 || page > this.totalPages()) return;
     this.currentPage.set(page);
+    this.fetchUsers();
   }
 
   sortOptions: DropdownOption[] = [
-    { label: 'Default (None)', value: '' },
-    { label: 'Name (A-Z)', value: 'first_name:asc' },
-    { label: 'Name (Z-A)', value: 'first_name:desc' },
     { label: 'Newest First', value: 'created_at:desc' },
     { label: 'Oldest First', value: 'created_at:asc' },
+    { label: 'Name (A-Z)', value: 'first_name:asc' },
+    { label: 'Name (Z-A)', value: 'first_name:desc' },
     { label: 'Analyses (High-Low)', value: 'total_analyses:desc' },
     { label: 'Status', value: 'is_active:asc' }
   ];
 
   selectedSortValue = computed(() => {
-    const col = this.sortState.sortColumn();
-    const dir = this.sortState.sortDirection();
-    return col && dir ? `${String(col)}:${dir}` : '';
+    const col = this.sortColumn();
+    const dir = this.sortDirection();
+    return col && dir ? `${col}:${dir}` : 'created_at:desc';
   });
 
   onMobileSortChange(value: string): void {
-    if (!value) {
-      this.sortState.sortColumn.set(null);
-      this.sortState.sortDirection.set(null);
-      return;
-    }
+    if (!value) return;
     const [col, dir] = value.split(':');
-    this.sortState.sortColumn.set(col as any);
-    this.sortState.sortDirection.set(dir as 'asc' | 'desc');
+    this.sortColumn.set(col);
+    this.sortDirection.set(dir as 'asc' | 'desc');
+    this.fetchUsers();
   }
 
   toggleUserStatus(user: AdminUser): void {
     if (this.isUpdating()) return;
 
     if (user.is_active) {
-      // If active, we want to BAN -> open modal
       this.openBanModal(user);
     } else {
-      // If already banned, we want to ACTIVATE -> simple toggle
       this.toastService.confirm(
         'Activate User?',
         `Are you sure you want to reactivate ${user.first_name}'s account?`,
@@ -401,17 +331,7 @@ export class AdminUsersComponent implements OnInit {
             .subscribe({
             next: (res) => {
               if (res.is_success) {
-                const updatedList = this.users().map(u =>
-                  u.id === user.id ? { ...u, is_active: true } : u
-                );
-                this.users.set(updatedList);
-
-                this.cache.setItem<CachedUsersData>(CACHE_KEY, {
-                  users: updatedList,
-                  total: this.totalUsers(),
-                  page: this.currentPage()
-                });
-
+                this.fetchUsers(true);
                 this.toastService.show('Status Updated', `${user.first_name} has been activated.`, 'success');
               } else {
                 this.toastService.show('Error', res.message || 'Failed to update status.', 'error');
@@ -463,16 +383,7 @@ export class AdminUsersComponent implements OnInit {
       .subscribe({
       next: (res) => {
         if (res.is_success) {
-          const updatedList = this.users().filter(u => u.id !== user.id);
-          this.users.set(updatedList);
-          this.totalUsers.update(t => t - 1);
-
-          this.cache.setItem<CachedUsersData>(CACHE_KEY, {
-            users: updatedList,
-            total: this.totalUsers(),
-            page: this.currentPage()
-          });
-
+          this.fetchUsers(true);
           this.toastService.show('User Purged', `${user.first_name}'s account has been permanently removed.`, 'success', 'check');
         } else {
           this.toastService.show('Purge Failed', res.message || 'Incorrect password or server error.', 'error', 'error');
@@ -488,10 +399,7 @@ export class AdminUsersComponent implements OnInit {
     });
   }
 
-
-
   isUserOnline(user: AdminUser): boolean {
-    // A user is online if their account is active AND the server reports them as online
     return user.is_active && user.is_online;
   }
 

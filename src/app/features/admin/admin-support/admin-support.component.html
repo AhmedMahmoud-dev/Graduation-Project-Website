@@ -28,7 +28,7 @@
     <!-- Header Section -->
     <section class="admin-header-section">
         <app-page-header title="Support Queue" subtitle="ADMIN PANEL"
-            [description]="pendingMessagesCount() + ' pending inquiries reported'">
+            [description]="totalMessages() + ' inquiries matching filters'">
             <div actions class="flex items-center gap-3">
                 <button (click)="fetchMessages()" class="refresh-btn" [class.refresh-btn--spinning]="isRefreshing()">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -43,14 +43,24 @@
 
     <!-- Content Section -->
     <section class="admin-content-section">
+
+        <!-- Toolbar Row -->
+        <div class="flex items-center gap-4 mb-8 relative z-[10]">
+            <div class="w-full md:w-48">
+                <app-dropdown-menu [options]="statusOptions" [selectedValue]="statusFilter()"
+                    (selectedValueChange)="updateStatusFilter($event)" placeholder="Filter by Status">
+                </app-dropdown-menu>
+            </div>
+        </div>
+
         @if (messages().length === 0) {
         <app-empty-state minHeight="40vh">
             <svg empty-icon fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <ng-container empty-msg>Clear for now!</ng-container>
-            <ng-container empty-hint>All support requests have been handled.</ng-container>
+            <ng-container empty-msg>No matching inquiries!</ng-container>
+            <ng-container empty-hint>Try adjusting your status filter.</ng-container>
         </app-empty-state>
         } @else {
         <!-- Desktop Table -->
@@ -59,38 +69,38 @@
                 <thead>
                     <tr>
                         <th>User</th>
-                        <th (click)="sortState.toggleSort('subject')"
+                        <th (click)="onSortChange('subject')"
                             class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
                             <div class="flex items-center gap-1">
                                 Subject
-                                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'subject'"
-                                    [class.group-hover:opacity-50]="sortState.sortColumn() !== 'subject'"
-                                    [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'subject'">
-                                    {{ sortState.sortColumn() === 'subject' && sortState.sortDirection() === 'desc' ?
+                                <span class="text-[10px]" [class.opacity-0]="sortColumn() !== 'subject'"
+                                    [class.group-hover:opacity-50]="sortColumn() !== 'subject'"
+                                    [class.text-[color:var(--brand-primary)]]="sortColumn() === 'subject'">
+                                    {{ sortColumn() === 'subject' && sortDirection() === 'desc' ?
                                     '▼' : '▲' }}
                                 </span>
                             </div>
                         </th>
-                        <th (click)="sortState.toggleSort('created_at')"
+                        <th (click)="onSortChange('created_at')"
                             class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
                             <div class="flex items-center gap-1">
                                 Date
-                                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'created_at'"
-                                    [class.group-hover:opacity-50]="sortState.sortColumn() !== 'created_at'"
-                                    [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'created_at'">
-                                    {{ sortState.sortColumn() === 'created_at' && sortState.sortDirection() === 'desc' ?
+                                <span class="text-[10px]" [class.opacity-0]="sortColumn() !== 'created_at'"
+                                    [class.group-hover:opacity-50]="sortColumn() !== 'created_at'"
+                                    [class.text-[color:var(--brand-primary)]]="sortColumn() === 'created_at'">
+                                    {{ sortColumn() === 'created_at' && sortDirection() === 'desc' ?
                                     '▼' : '▲' }}
                                 </span>
                             </div>
                         </th>
-                        <th (click)="sortState.toggleSort('status')"
+                        <th (click)="onSortChange('status')"
                             class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
                             <div class="flex items-center gap-1">
                                 Status
-                                <span class="text-[10px]" [class.opacity-0]="sortState.sortColumn() !== 'status'"
-                                    [class.group-hover:opacity-50]="sortState.sortColumn() !== 'status'"
-                                    [class.text-[color:var(--brand-primary)]]="sortState.sortColumn() === 'status'">
-                                    {{ sortState.sortColumn() === 'status' && sortState.sortDirection() === 'desc' ? '▼'
+                                <span class="text-[10px]" [class.opacity-0]="sortColumn() !== 'status'"
+                                    [class.group-hover:opacity-50]="sortColumn() !== 'status'"
+                                    [class.text-[color:var(--brand-primary)]]="sortColumn() === 'status'">
+                                    {{ sortColumn() === 'status' && sortDirection() === 'desc' ? '▼'
                                     : '▲' }}
                                 </span>
                             </div>
@@ -99,7 +109,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for (msg of paginatedMessages(); track msg.id) {
+                    @for (msg of messages(); track msg.id) {
                     <tr [class.row--expanded]="expandedMessageId() === msg.id">
                         <td>
                             <div class="user-cell">
@@ -198,7 +208,7 @@
         <!-- Mobile View -->
         <div class="mobile-sort hide-desktop">
             <label>Sort by:</label>
-            <div class="select-wrapper">
+            <div class="select-wrapper" style="z-index: 5;">
                 <app-dropdown-menu [options]="sortOptions" [selectedValue]="selectedSortValue()"
                     (selectedValueChange)="onMobileSortChange($event)">
                 </app-dropdown-menu>
@@ -206,7 +216,7 @@
         </div>
 
         <div class="mobile-cards hide-desktop">
-            @for (msg of paginatedMessages(); track msg.id) {
+            @for (msg of messages(); track msg.id) {
             <div class="mobile-card">
                 <div class="mobile-card__header">
                     <div class="user-cell">
@@ -273,7 +283,7 @@
         <app-pagination
             [currentPage]="currentPage()"
             [pageSize]="pageSize()"
-            [totalItems]="messages().length"
+            [totalItems]="totalMessages()"
             (pageChange)="goToPage($event)">
         </app-pagination>
         }

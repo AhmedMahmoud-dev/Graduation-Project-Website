@@ -2,8 +2,7 @@ import { Component, inject, signal, OnInit, computed, DestroyRef } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
-import { AdminSupportService } from '../../../core/services/admin-support.service';
+import { AdminService } from '../../../core/services/admin.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FormattingService } from '../../../core/services/formatting.service';
 import { AdminSupportMessage } from '../../../core/models/support.model';
@@ -11,11 +10,17 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../../shared/components/layout/page-header/page-header.component';
 import { AppCacheService } from '../../../core/services/app-cache.service';
-import { useTableSort } from '../../../core/utils/sort.util';
 import { DropdownMenuComponent, DropdownOption } from '../../../shared/components/dropdown-menu/dropdown-menu.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
-const CACHE_KEY = 'emotra_admin_support';
+interface CachedSupportData {
+  messages: AdminSupportMessage[];
+  total: number;
+  page: number;
+  status: string;
+}
+
+const CACHE_KEY = 'emotra_admin_support_v2';
 
 @Component({
   selector: 'app-admin-support',
@@ -25,35 +30,28 @@ const CACHE_KEY = 'emotra_admin_support';
   styleUrls: ['./admin-support.component.css']
 })
 export class AdminSupportComponent implements OnInit {
-  private adminSupportService = inject(AdminSupportService);
+  private adminService = inject(AdminService);
   private toastService = inject(ToastService);
   protected format = inject(FormattingService);
   private cache = inject(AppCacheService);
   private destroyRef = inject(DestroyRef);
 
+  // State Signals
   messages = signal<AdminSupportMessage[]>([]);
+  statusFilter = signal<string>('all');
+  
+  // Sorting State
+  sortColumn = signal<string | null>('created_at');
+  sortDirection = signal<'asc' | 'desc'>('desc');
 
-  // Sorting
-  sortState = useTableSort<AdminSupportMessage>(this.messages);
-  sortedMessages = this.sortState.sortedData;
-
-  // Pagination
+  // Pagination State
   currentPage = signal<number>(1);
   pageSize = signal<number>(10);
-  totalPages = computed(() => Math.ceil(this.messages().length / this.pageSize()) || 1);
-
-  // Pagination-based Slicing
-  paginatedMessages = computed(() => {
-    const list = this.sortedMessages();
-    const page = this.currentPage();
-    const size = this.pageSize();
-    
-    const startIndex = (page - 1) * size;
-    return list.slice(startIndex, startIndex + size);
-  });
-
   totalMessages = signal<number>(0);
+
+  totalPages = computed(() => Math.ceil(this.totalMessages() / this.pageSize()) || 1);
   pendingMessagesCount = computed(() => this.messages().filter(m => m.status === 'open' || m.status === 'pending').length);
+
   isLoading = signal(true);
   error = signal<string | null>(null);
   isRefreshing = signal<boolean>(false);
@@ -63,13 +61,36 @@ export class AdminSupportComponent implements OnInit {
   isReplying = signal<number | null>(null);
   replyText = signal<Record<number, string>>({});
 
+  statusOptions: DropdownOption[] = [
+    { label: 'All Statuses', value: 'all' },
+    { label: 'Pending', value: 'open' },
+    { label: 'Replied', value: 'replied' }
+  ];
+
+  updateStatusFilter(status: string) {
+    this.statusFilter.set(status);
+    this.currentPage.set(1);
+    this.fetchMessages();
+  }
+
+  onSortChange(column: string) {
+    if (this.sortColumn() === column) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortColumn.set(column);
+      this.sortDirection.set('desc');
+    }
+    this.fetchMessages();
+  }
+
   ngOnInit() {
-    const cached = this.cache.getItem<AdminSupportMessage[]>(CACHE_KEY);
+    const cached = this.cache.getItem<CachedSupportData>(CACHE_KEY);
     if (cached) {
-      this.messages.set(cached);
-      this.totalMessages.set(cached.length);
+      this.messages.set(cached.messages);
+      this.totalMessages.set(cached.total);
+      this.currentPage.set(cached.page);
+      this.statusFilter.set(cached.status || 'all');
       this.isLoading.set(false);
-      // Background sync
       this.fetchMessages(true);
     } else {
       this.fetchMessages(false);
@@ -85,75 +106,37 @@ export class AdminSupportComponent implements OnInit {
       }
     }
     this.error.set(null);
-    this.adminSupportService.getMessages(1, 1000)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
+
+    this.adminService.getSupportMessages(
+      this.currentPage(),
+      this.pageSize(),
+      this.statusFilter(),
+      this.sortColumn(),
+      this.sortDirection()
+    )
+    .pipe(takeUntilDestroyed(this.destroyRef))
+    .subscribe({
       next: (res) => {
         if (res.is_success && res.data) {
-          const data = res.data;
-          let firstPageItems: AdminSupportMessage[] = [];
-          let total = 0;
-
-          if (Array.isArray(data)) {
-            firstPageItems = data;
-            total = data.length;
-          } else if (data.items) {
-            firstPageItems = data.items;
-            total = data.total_count ?? data.items.length;
-          }
-
-          if (firstPageItems.length < total && firstPageItems.length > 0) {
-            const serverPageSize = firstPageItems.length;
-            const totalPagesNeeded = Math.ceil(total / serverPageSize);
-            const requests = [];
-
-            for (let p = 2; p <= totalPagesNeeded; p++) {
-              requests.push(this.adminSupportService.getMessages(p, serverPageSize));
-            }
-
-            forkJoin(requests)
-              .pipe(takeUntilDestroyed(this.destroyRef))
-              .subscribe({
-              next: (responses) => {
-                let allItems = [...firstPageItems];
-                for (const r of responses) {
-                  if (r.is_success && r.data) {
-                    const rData = r.data;
-                    if (Array.isArray(rData)) {
-                      allItems = [...allItems, ...rData];
-                    } else if (rData.items) {
-                      allItems = [...allItems, ...rData.items];
-                    }
-                  }
-                }
-
-                this.messages.set(allItems);
-                this.totalMessages.set(allItems.length);
-                this.cache.setItem(CACHE_KEY, allItems);
-                this.isLoading.set(false);
-                this.isRefreshing.set(false);
-              },
-              error: () => {
-                this.messages.set(firstPageItems);
-                this.totalMessages.set(firstPageItems.length);
-                this.isLoading.set(false);
-                this.isRefreshing.set(false);
-              }
-            });
-          } else {
-            this.messages.set(firstPageItems);
-            this.totalMessages.set(total);
-            this.cache.setItem(CACHE_KEY, firstPageItems);
-            this.isLoading.set(false);
-            this.isRefreshing.set(false);
-          }
+          const items = Array.isArray(res.data) ? res.data : (res.data.items || []);
+          const total = Array.isArray(res.data) ? res.data.length : (res.data.total_count ?? items.length);
+          
+          this.messages.set(items);
+          this.totalMessages.set(total);
+          
+          this.cache.setItem<CachedSupportData>(CACHE_KEY, {
+            messages: items,
+            total: total,
+            page: this.currentPage(),
+            status: this.statusFilter()
+          });
         } else {
           if (this.messages().length === 0) {
             this.error.set('Failed to load support queue');
           }
-          this.isLoading.set(false);
-          this.isRefreshing.set(false);
         }
+        this.isLoading.set(false);
+        this.isRefreshing.set(false);
       },
       error: (err) => {
         if (this.messages().length === 0) {
@@ -169,6 +152,7 @@ export class AdminSupportComponent implements OnInit {
     if (page < 1 || page > this.totalPages()) return;
     this.currentPage.set(page);
     this.expandedMessageId.set(null);
+    this.fetchMessages();
   }
 
   toggleMessage(id: number) {
@@ -184,21 +168,14 @@ export class AdminSupportComponent implements OnInit {
     if (!reply) return;
 
     this.isReplying.set(id);
-    this.adminSupportService.replyToMessage(id, { message: reply })
+    this.adminService.replyToSupportMessage(id, { message: reply })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
       next: (res) => {
         if (res.is_success) {
           this.toastService.show('Reply Sent', 'Your response has been sent to the user.', 'success', 'check');
-          
-          // Update local state instantly
-          const updatedList = this.messages().map(m => 
-            m.id === id ? ({ ...m, status: 'replied', replied_at: new Date().toISOString() } as AdminSupportMessage) : m
-          );
-          this.messages.set(updatedList);
-          this.cache.setItem(CACHE_KEY, updatedList);
-          
-          this.expandedMessageId.set(null); // Close on success
+          this.fetchMessages(true);
+          this.expandedMessageId.set(null);
         }
         this.isReplying.set(null);
       },
@@ -216,27 +193,23 @@ export class AdminSupportComponent implements OnInit {
 
   // Mobile Sorting Support
   sortOptions: DropdownOption[] = [
-    { label: 'Default', value: '' },
-    { label: 'Status', value: 'status:asc' },
-    { label: 'Date (Newest)', value: 'created_at:desc' },
-    { label: 'Date (Oldest)', value: 'created_at:asc' },
-    { label: 'Subject (A-Z)', value: 'subject:asc' }
+    { label: 'Newest First', value: 'created_at:desc' },
+    { label: 'Oldest First', value: 'created_at:asc' },
+    { label: 'Subject (A-Z)', value: 'subject:asc' },
+    { label: 'Status', value: 'status:asc' }
   ];
 
   selectedSortValue = computed(() => {
-    const col = this.sortState.sortColumn();
-    const dir = this.sortState.sortDirection();
-    return col && dir ? `${String(col)}:${dir}` : '';
+    const col = this.sortColumn();
+    const dir = this.sortDirection();
+    return col && dir ? `${String(col)}:${dir}` : 'created_at:desc';
   });
 
   onMobileSortChange(value: string): void {
-    if (!value) {
-      this.sortState.sortColumn.set(null);
-      this.sortState.sortDirection.set(null);
-      return;
-    }
+    if (!value) return;
     const [col, dir] = value.split(':');
-    this.sortState.sortColumn.set(col as any);
-    this.sortState.sortDirection.set(dir as 'asc' | 'desc');
+    this.sortColumn.set(col);
+    this.sortDirection.set(dir as 'asc' | 'desc');
+    this.fetchMessages();
   }
 }

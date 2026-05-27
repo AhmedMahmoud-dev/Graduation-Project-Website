@@ -12,7 +12,6 @@ import { ColorSettingsService } from './color-settings.service';
 import { AlertsService } from './alerts.service';
 import { AlertService } from './alert.service';
 import { AdminService } from './admin.service';
-import { AdminSupportService } from './admin-support.service';
 import { QuotaStore } from '../stores/quota.store';
 
 @Injectable({
@@ -27,7 +26,6 @@ export class AuthService {
   private alertsService = inject(AlertsService);
   private alertService = inject(AlertService);
   private adminService = inject(AdminService);
-  private adminSupportService = inject(AdminSupportService);
   private quotaStore = inject(QuotaStore);
 
   private isBrowser = isPlatformBrowser(this.platformId);
@@ -516,7 +514,7 @@ export class AuthService {
     });
 
     // 6. Support (Queue)
-    this.adminSupportService.getMessages(1, 100).pipe(takeUntil(this.logout$)).subscribe({
+    this.adminService.getSupportMessages(1, 100).pipe(takeUntil(this.logout$)).subscribe({
       next: r => {
         if (!this.isAuthenticated()) return;
         if (r.is_success && r.data) {

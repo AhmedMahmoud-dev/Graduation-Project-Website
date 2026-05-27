@@ -1,11 +1,10 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { forkJoin } from 'rxjs';
 import { AdminService } from '../../../core/services/admin.service';
 import { AdminBugReport } from '../../../core/models/admin.model';
 import { AppCacheService } from '../../../core/services/app-cache.service';
 import { FormattingService } from '../../../core/services/formatting.service';
-import { useTableSort } from '../../../core/utils/sort.util';
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../../shared/components/layout/page-header/page-header.component';
@@ -17,9 +16,12 @@ interface CachedBugsData {
   bugs: AdminBugReport[];
   total: number;
   page: number;
+  status: string;
+  priority: string;
+  category: string;
 }
 
-const CACHE_KEY = 'emotra_admin_bugs';
+const CACHE_KEY = 'emotra_admin_bugs_v2';
 
 @Component({
   selector: 'app-admin-bugs',
@@ -33,32 +35,28 @@ export class AdminBugsComponent implements OnInit {
   private toastService = inject(ToastService);
   private cache = inject(AppCacheService);
   protected format = inject(FormattingService);
+  private destroyRef = inject(DestroyRef);
 
+  // State Signals
   bugs = signal<AdminBugReport[]>([]);
+  statusFilter = signal<string>('all');
+  priorityFilter = signal<string>('all');
+  categoryFilter = signal<string>('all');
+  
+  // Sorting State
+  sortColumn = signal<string | null>('created_at');
+  sortDirection = signal<'asc' | 'desc'>('desc');
 
-  // Sorting
-  sortState = useTableSort<AdminBugReport>(this.bugs);
-  sortedBugs = this.sortState.sortedData;
-
-  // Pagination-based Slicing
-  paginatedBugs = computed(() => {
-    const list = this.sortedBugs();
-    const page = this.currentPage();
-    const size = this.pageSize();
-    
-    const startIndex = (page - 1) * size;
-    return list.slice(startIndex, startIndex + size);
-  });
-
-  isLoading = signal<boolean>(true);
-  error = signal<string | null>(null);
-
-  // Pagination
+  // Pagination State
   currentPage = signal<number>(1);
   pageSize = signal<number>(10);
   totalBugs = signal<number>(0);
 
-  totalPages = computed(() => Math.ceil(this.bugs().length / this.pageSize()) || 1);
+  totalPages = computed(() => Math.ceil(this.totalBugs() / this.pageSize()) || 1);
+
+  isLoading = signal<boolean>(true);
+  error = signal<string | null>(null);
+  isRefreshing = signal<boolean>(false);
 
   // Expanded row for detail view
   expandedId = signal<number | null>(null);
@@ -70,19 +68,69 @@ export class AdminBugsComponent implements OnInit {
   // Available statuses for the dropdown
   readonly statuses = ['Open', 'In Progress', 'Closed'];
 
-  isRefreshing = signal<boolean>(false);
+  statusOptions: DropdownOption[] = [
+    { label: 'All Statuses', value: 'all' },
+    { label: 'Open', value: 'Open' },
+    { label: 'In Progress', value: 'In Progress' },
+    { label: 'Closed', value: 'Closed' }
+  ];
+
+  priorityOptions: DropdownOption[] = [
+    { label: 'All Priorities', value: 'all' },
+    { label: 'Low', value: 'Low' },
+    { label: 'Medium', value: 'Medium' },
+    { label: 'High', value: 'High' }
+  ];
+
+  categoryOptions: DropdownOption[] = [
+    { label: 'All Categories', value: 'all' },
+    { label: 'UI/UX', value: 'UI/UX' },
+    { label: 'Analysis Error', value: 'ANALYSIS ERROR' },
+    { label: 'Login Issue', value: 'LOGIN ISSUE' },
+    { label: 'Performance', value: 'PERFORMANCE' },
+    { label: 'Data Issue', value: 'DATA ISSUE' },
+    { label: 'Other', value: 'OTHER' }
+  ];
+
+  updateStatusFilter(status: string) {
+    this.statusFilter.set(status);
+    this.currentPage.set(1);
+    this.fetchBugs();
+  }
+
+  updatePriorityFilter(priority: string) {
+    this.priorityFilter.set(priority);
+    this.currentPage.set(1);
+    this.fetchBugs();
+  }
+
+  updateCategoryFilter(category: string) {
+    this.categoryFilter.set(category);
+    this.currentPage.set(1);
+    this.fetchBugs();
+  }
+
+  onSortChange(column: string) {
+    if (this.sortColumn() === column) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortColumn.set(column);
+      this.sortDirection.set('desc');
+    }
+    this.fetchBugs();
+  }
 
   ngOnInit(): void {
-    // 1. Check cache
     const cached = this.cache.getItem<CachedBugsData>(CACHE_KEY);
-
     if (cached) {
       const parsedBugs = cached.bugs.map(b => this.enrichBugData(b));
       this.bugs.set(parsedBugs);
       this.totalBugs.set(cached.total);
       this.currentPage.set(cached.page);
+      this.statusFilter.set(cached.status || 'all');
+      this.priorityFilter.set(cached.priority || 'all');
+      this.categoryFilter.set(cached.category || 'all');
       this.isLoading.set(false);
-      // Fetch in background
       this.fetchBugs(true);
     } else {
       this.fetchBugs(false);
@@ -99,65 +147,38 @@ export class AdminBugsComponent implements OnInit {
     }
     this.error.set(null);
 
-    this.adminService.getBugReports(1, 1000).subscribe({
+    this.adminService.getBugReports(
+      this.currentPage(),
+      this.pageSize(),
+      this.statusFilter(),
+      this.priorityFilter(),
+      this.categoryFilter(),
+      this.sortColumn(),
+      this.sortDirection()
+    )
+    .pipe(takeUntilDestroyed(this.destroyRef))
+    .subscribe({
       next: (res) => {
         if (res.is_success && res.data) {
-          const firstPageBugs = res.data.map(bug => this.enrichBugData(bug));
-          const total = res.total;
-
-          if (firstPageBugs.length < total && firstPageBugs.length > 0) {
-            const serverPageSize = firstPageBugs.length;
-            const totalPagesNeeded = Math.ceil(total / serverPageSize);
-            const requests = [];
-
-            for (let p = 2; p <= totalPagesNeeded; p++) {
-              requests.push(this.adminService.getBugReports(p, serverPageSize));
-            }
-
-            forkJoin(requests).subscribe({
-              next: (responses) => {
-                let allBugs = [...firstPageBugs];
-                for (const r of responses) {
-                  if (r.is_success && r.data) {
-                    allBugs = [...allBugs, ...r.data.map(bug => this.enrichBugData(bug))];
-                  }
-                }
-
-                this.bugs.set(allBugs);
-                this.totalBugs.set(allBugs.length);
-                this.cache.setItem<CachedBugsData>(CACHE_KEY, {
-                  bugs: allBugs,
-                  total: allBugs.length,
-                  page: this.currentPage()
-                });
-                this.isLoading.set(false);
-                this.isRefreshing.set(false);
-              },
-              error: () => {
-                this.bugs.set(firstPageBugs);
-                this.totalBugs.set(firstPageBugs.length);
-                this.isLoading.set(false);
-                this.isRefreshing.set(false);
-              }
-            });
-          } else {
-            this.bugs.set(firstPageBugs);
-            this.totalBugs.set(total);
-            this.cache.setItem<CachedBugsData>(CACHE_KEY, {
-              bugs: firstPageBugs,
-              total: total,
-              page: this.currentPage()
-            });
-            this.isLoading.set(false);
-            this.isRefreshing.set(false);
-          }
+          const enrichedBugs = res.data.map(bug => this.enrichBugData(bug));
+          this.bugs.set(enrichedBugs);
+          this.totalBugs.set(res.total);
+          
+          this.cache.setItem<CachedBugsData>(CACHE_KEY, {
+            bugs: enrichedBugs,
+            total: res.total,
+            page: this.currentPage(),
+            status: this.statusFilter(),
+            priority: this.priorityFilter(),
+            category: this.categoryFilter()
+          });
         } else {
           if (this.bugs().length === 0) {
             this.error.set(res.message || 'Failed to load bug reports.');
           }
-          this.isLoading.set(false);
-          this.isRefreshing.set(false);
         }
+        this.isLoading.set(false);
+        this.isRefreshing.set(false);
       },
       error: () => {
         if (this.bugs().length === 0) {
@@ -173,33 +194,30 @@ export class AdminBugsComponent implements OnInit {
     if (page < 1 || page > this.totalPages()) return;
     this.currentPage.set(page);
     this.expandedId.set(null);
+    this.fetchBugs();
   }
 
-  // Mobile Sort Options
   sortOptions: DropdownOption[] = [
-    { label: 'Default (None)', value: '' },
     { label: 'Newest First', value: 'created_at:desc' },
     { label: 'Oldest First', value: 'created_at:asc' },
     { label: 'Priority (High-Low)', value: 'priority:desc' },
     { label: 'Priority (Low-High)', value: 'priority:asc' },
+    { label: 'Title (A-Z)', value: 'title:asc' },
     { label: 'Status', value: 'status:asc' }
   ];
 
   selectedSortValue = computed(() => {
-    const col = this.sortState.sortColumn();
-    const dir = this.sortState.sortDirection();
-    return col && dir ? `${String(col)}:${dir}` : '';
+    const col = this.sortColumn();
+    const dir = this.sortDirection();
+    return col && dir ? `${col}:${dir}` : 'created_at:desc';
   });
 
   onMobileSortChange(value: string): void {
-    if (!value) {
-      this.sortState.sortColumn.set(null);
-      this.sortState.sortDirection.set(null);
-      return;
-    }
+    if (!value) return;
     const [col, dir] = value.split(':');
-    this.sortState.sortColumn.set(col as any);
-    this.sortState.sortDirection.set(dir as 'asc' | 'desc');
+    this.sortColumn.set(col);
+    this.sortDirection.set(dir as 'asc' | 'desc');
+    this.fetchBugs();
   }
 
   toggleExpand(bugId: number): void {
@@ -209,11 +227,9 @@ export class AdminBugsComponent implements OnInit {
   private enrichBugData(bug: AdminBugReport): AdminBugReport {
     if (!bug.metadata) return { ...bug, parsedMetadata: null };
     try {
-      // Handle cases where metadata might be double stringified or just a string
       const parsed = typeof bug.metadata === 'string' ? JSON.parse(bug.metadata) : bug.metadata;
       return { ...bug, parsedMetadata: parsed };
     } catch (e) {
-      console.warn('Failed to parse bug metadata', e);
       return { ...bug, parsedMetadata: null };
     }
   }
@@ -223,20 +239,12 @@ export class AdminBugsComponent implements OnInit {
 
     this.updatingId.set(bug.id);
 
-    this.adminService.updateBugStatus(bug.id, newStatus).subscribe({
+    this.adminService.updateBugStatus(bug.id, newStatus)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: (res) => {
         if (res.is_success) {
-          const updatedList = this.bugs().map(b =>
-            b.id === bug.id ? { ...b, status: newStatus } : b
-          );
-          this.bugs.set(updatedList);
-
-          this.cache.setItem<CachedBugsData>(CACHE_KEY, {
-            bugs: updatedList,
-            total: this.totalBugs(),
-            page: this.currentPage()
-          });
-
+          this.fetchBugs(true);
           this.toastService.show(`Bug #${bug.id} status updated to ${newStatus}.`, 'success');
         } else {
           this.toastService.show(res.message || 'Failed to update status.', 'error');
@@ -266,19 +274,12 @@ export class AdminBugsComponent implements OnInit {
   private executeDelete(bug: AdminBugReport): void {
     this.deletingId.set(bug.id);
 
-    this.adminService.deleteBugReport(bug.id).subscribe({
+    this.adminService.deleteBugReport(bug.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: (res) => {
         if (res.is_success) {
-          const updatedList = this.bugs().filter(b => b.id !== bug.id);
-          this.bugs.set(updatedList);
-          this.totalBugs.update(t => t - 1);
-
-          this.cache.setItem<CachedBugsData>(CACHE_KEY, {
-            bugs: updatedList,
-            total: this.totalBugs(),
-            page: this.currentPage()
-          });
-
+          this.fetchBugs(true);
           this.toastService.show(`Bug #${bug.id} deleted successfully.`, 'Success', 'success', 'check');
         } else {
           this.toastService.show('Deletion Failed', res.message || 'Failed to delete bug report.', 'error', 'error');
