@@ -1,0 +1,493 @@
+<div class="min-h-screen flex flex-col bg-[color:var(--color-bg)] text-[color:var(--color-text)] w-full max-w-[100vw] overflow-x-hidden">
+  
+  <!-- Guest Top Bar Header -->
+  <header class="w-full py-6 px-6 md:px-12 border-b border-[color:var(--border-color)] bg-[color:var(--bg-surface)]/90 backdrop-blur-md sticky top-0 z-[100] flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <!-- App Logo style icon -->
+      <app-icon name="logo" size="38" className="text-[color:var(--brand-primary)] shrink-0" [strokeWidth]="2"></app-icon>
+      <div>
+        <h1 class="text-lg sm:text-xl font-black tracking-tight" style="color: var(--text-primary)">Emotra</h1>
+        <p class="text-[10px] sm:text-xs uppercase tracking-widest opacity-40 font-bold">Shared Analysis Result</p>
+      </div>
+    </div>
+    <a routerLink="/" class="px-6 py-2.5 rounded-full font-bold text-xs sm:text-sm transition-all hover:bg-white/5"
+      style="border: 1px solid var(--border-color); color: var(--text-primary)">
+      Visit Website
+    </a>
+  </header>
+
+  <!-- ===================== STATE: LOADING ===================== -->
+  @if (isLoading()) {
+    <div class="flex-1 flex flex-col items-center justify-center p-12 min-h-[60vh]">
+      <app-loading-state message="Loading shared analysis..." subtitle="Retrieving public results metadata"></app-loading-state>
+    </div>
+  }
+
+  <!-- ===================== STATE: ERROR / 404 ===================== -->
+  @if (!isLoading() && error()) {
+    <div class="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center min-h-[60vh]">
+      <div class="w-20 h-20 rounded-3xl flex items-center justify-center mb-6 border border-red-500/20"
+        style="background: rgba(255, 71, 87, 0.08); color: #ff4757">
+        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h3 class="text-2xl font-black tracking-tight mb-2" style="color: var(--text-primary)">Link Expired or Invalid</h3>
+      <p class="text-sm mb-8 leading-relaxed" style="color: var(--text-muted)">
+        {{ error() }}
+      </p>
+      <a routerLink="/" class="btn-primary px-8 py-3.5 text-sm text-center shadow-lg shadow-[color:var(--brand-primary)]/25">
+        Back to Emotra Home
+      </a>
+    </div>
+  }
+
+  <!-- ===================== STATE: RESULTS ===================== -->
+  @if (!isLoading() && !error() && result()) {
+    
+    <!-- Privacy Info Alert -->
+    <div class="px-6 py-5" style="background: rgba(245, 158, 11, 0.04); border-bottom: 1px solid rgba(245, 158, 11, 0.12)">
+      <div class="max-w-7xl mx-auto flex items-center gap-4">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          style="background: rgba(245, 158, 11, 0.12); color: #f59e0b">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <div>
+          <h4 class="text-sm font-bold" style="color: var(--text-primary)">Privacy Enforced View</h4>
+          <p class="text-xs leading-relaxed mt-0.5" style="color: var(--text-muted)">
+            The owner shared these analysis results. All original source media files have been scrubbed to protect privacy.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TEXT RESULTS VIEW ─── -->
+    @if (result()!.type.toLowerCase() === 'text') {
+      <!-- Dominant Emotion Hero -->
+      <section class="px-4 sm:px-8 md:px-12 py-12"
+        style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <app-dominant-emotion-hero [emotionLabel]="result()!.result.combined_final_emotion.label"
+            [confidencePercent]="result()!.result.combined_final_emotion.confidence_percent"
+            [category]="result()!.result.combined_final_emotion.category" [sectionTitle]="'Dominant Emotion'"
+            [showConfidenceBar]="true"
+            [truncationWarning]="result()!.result.input_info.input_was_truncated ? 'Text was truncated at 512 tokens. Results reflect the first 512 tokens only.' : null">
+          </app-dominant-emotion-hero>
+        </div>
+      </section>
+
+      <!-- Source Text Display -->
+      <section class="px-4 sm:px-8 md:px-12 py-12 border-b border-[color:var(--border-color)]" style="background: var(--bg-primary)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <p class="text-[10px] font-bold uppercase tracking-[0.2em] mb-4 opacity-40">Analyzed Text</p>
+          <div class="rounded-2xl p-6 md:p-8 italic font-medium leading-relaxed"
+            style="background: var(--bg-card); border: 1px solid var(--border-color)">
+            "{{ result()!.result.text }}"
+          </div>
+        </div>
+      </section>
+
+      <!-- Emotion Timeline -->
+      <section class="px-4 sm:px-8 md:px-12 py-12"
+        style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <app-analysis-section-header title="Emotion Timeline" subtitle="Visualizations" description="How emotions shifted sentence by sentence"></app-analysis-section-header>
+          <div class="rounded-2xl p-5 sm:p-8 w-full max-w-[calc(100vw-2.5rem)] sm:max-w-full mt-8"
+            style="background: var(--bg-card); border: 1px solid var(--border-color)">
+            <app-emotion-timeline [data]="timelineData()" [dominant]="result()!.result.combined_final_emotion.label" class="block w-full h-[340px] md:h-[380px]"></app-emotion-timeline>
+            <!-- Sentence chips -->
+            <div class="mt-6 flex flex-wrap gap-2">
+              @for (s of result()!.result.sentences_analysis; track s; let i = $index) {
+                <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold"
+                  [style.background]="colorService.getBadgeBg(s.dominant.label)"
+                  [style.color]="colorService.getColor(s.dominant.label)"
+                  [style.border]="colorService.getBadgeBorder(s.dominant.label)">
+                  <span class="opacity-60">S{{ i + 1 }}</span>
+                  <span>{{ s.dominant.label | titlecase }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Emotion Distribution -->
+      <section class="px-4 sm:px-8 md:px-12 py-12"
+        style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <app-analysis-section-header title="Emotion Distribution" subtitle="Distribution" description="Combined confidence scores across all emotions"></app-analysis-section-header>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+            <div class="rounded-2xl p-6 md:p-8" style="background: var(--bg-card); border: 1px solid var(--border-color)">
+              <app-emotion-distribution [data]="distributionData()" viewType="bar" class="block w-full h-[260px]"></app-emotion-distribution>
+            </div>
+            <!-- Insights summary -->
+            <div class="rounded-2xl p-6 md:p-8 flex flex-col items-center justify-center text-center gap-6"
+              style="background: var(--bg-card); border: 1px solid var(--border-color)">
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4 opacity-40">Emotional Profile</p>
+                <h4 class="text-2xl font-black capitalize tracking-tight" [style.color]="colorService.getColor(result()!.result.combined_final_emotion.label)">
+                  {{ result()!.result.combined_final_emotion.label }} Primary
+                </h4>
+              </div>
+              <p class="text-xs leading-relaxed italic" style="color: var(--text-secondary)">
+                The shared text has been calculated with a dominant <strong [style.color]="colorService.getColor(result()!.result.combined_final_emotion.label)">{{ result()!.result.combined_final_emotion.label }}</strong> tone and was processed over {{ result()!.result.sentences_count }} sentence segments.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sentence Breakdown -->
+      <section class="px-4 sm:px-8 md:px-12 py-12 border-b border-[color:var(--border-color)]" style="background: var(--bg-secondary)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <app-analysis-section-header title="Sentence Breakdown" subtitle="Granularity" description="Detailed emotion analysis for each sentence"></app-analysis-section-header>
+          <div class="space-y-4 pr-2 mt-8 max-h-[500px] overflow-y-auto">
+            @for (s of result()!.result.sentences_analysis; track s; let i = $index) {
+              <app-analysis-breakdown-card [index]="i + 1" [emotionLabel]="s.dominant.label"
+                [confidence]="s.dominant.confidence" [probabilities]="s.probabilities" [sentence]="s.sentence"
+                [intensityWeight]="s.intensity_weight">
+              </app-analysis-breakdown-card>
+            }
+          </div>
+        </div>
+      </section>
+    }
+
+    <!-- ─── AUDIO RESULTS VIEW ─── -->
+    @if (result()!.type.toLowerCase() === 'audio') {
+      <!-- Dominant Emotion Hero -->
+      <section class="px-4 sm:px-8 md:px-12 py-12"
+        style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <app-dominant-emotion-hero [emotionLabel]="result()!.result.final_multimodal_emotion.label"
+            [confidencePercent]="result()!.result.final_multimodal_emotion.confidence_percent"
+            [category]="result()!.result.final_multimodal_emotion.category" [sectionTitle]="'Fused Modal Result'"
+            [showConfidenceBar]="true">
+          </app-dominant-emotion-hero>
+        </div>
+      </section>
+
+      <!-- Hiding Media Placeholder Card -->
+      <section class="px-4 sm:px-8 md:px-12 py-12 border-b border-[color:var(--border-color)]" style="background: var(--bg-primary)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <div class="rounded-3xl p-6 sm:p-8 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+              </div>
+              <div>
+                <h4 class="text-sm font-bold" style="color: var(--text-primary)">Original Speech Playback Omitted</h4>
+                <p class="text-xs" style="color: var(--text-muted)">The raw audio file stream has been blocked for data safety constraints.</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-bold uppercase tracking-wider bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg" style="color: var(--text-muted)">
+              Privacy Gate Active
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Transcription Display -->
+      <section class="px-4 sm:px-8 md:px-12 py-12 border-b border-[color:var(--border-color)]" style="background: var(--bg-secondary)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <p class="text-[10px] font-bold uppercase tracking-[0.2em] mb-4 opacity-40">Transcribed Speech</p>
+          <div class="rounded-3xl p-6 sm:p-8 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] italic font-semibold leading-relaxed" style="color: var(--text-primary)">
+            "{{ result()!.result.transcribed_text }}"
+          </div>
+        </div>
+      </section>
+
+      <!-- Emotion Timeline -->
+      <section class="px-4 sm:px-8 md:px-12 py-12 border-b border-[color:var(--border-color)]" style="background: var(--bg-primary)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <app-analysis-section-header title="Emotion Timeline" subtitle="Temporal Logic" description="A chronological journey of sentiments across segments"></app-analysis-section-header>
+          <div class="rounded-2xl p-5 sm:p-8 mt-8 bg-[color:var(--bg-card)] border border-[color:var(--border-color)]">
+            <app-emotion-timeline [data]="timelineData()" [dominant]="result()!.result.final_multimodal_emotion.label" class="block w-full h-[300px] sm:h-[400px]"></app-emotion-timeline>
+          </div>
+        </div>
+      </section>
+
+      <!-- Distribution & Track intersection -->
+      <section class="px-4 sm:px-8 md:px-12 py-12 border-b border-[color:var(--border-color)]" style="background: var(--bg-secondary)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <app-analysis-section-header title="Confidence Distribution" subtitle="Distribution" description="Confidence scores and track mapping"></app-analysis-section-header>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+            <div class="rounded-3xl p-5 sm:p-8 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] flex items-center justify-center">
+              <app-emotion-distribution [data]="distributionData()" viewType="bar" class="block w-full h-[260px] sm:h-[300px]"></app-emotion-distribution>
+            </div>
+            
+            <!-- Tracks Intersection -->
+            <div class="rounded-3xl p-5 sm:p-8 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] flex flex-col justify-center">
+              <div class="mb-4">
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-1 opacity-40">Methodology</p>
+                <h3 class="text-xl font-black tracking-tight" style="color: var(--text-primary)">Track Intersection</h3>
+              </div>
+              <div class="space-y-4">
+                <div class="p-4 rounded-2xl bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] flex items-center justify-between">
+                  <div class="min-w-0">
+                    <p class="text-[9px] font-black uppercase tracking-widest opacity-40 mb-0.5">Audio Dominant</p>
+                    <h4 class="text-base font-bold uppercase truncate" [style.color]="colorService.getColor(getMostFrequentDominantAudio())">
+                      {{ getMostFrequentDominantAudio() }}
+                    </h4>
+                  </div>
+                  <span class="text-[10px] font-bold uppercase opacity-30">Track 01</span>
+                </div>
+                <div class="p-4 rounded-2xl bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] flex items-center justify-between">
+                  <div class="min-w-0">
+                    <p class="text-[9px] font-black uppercase tracking-widest opacity-40 mb-0.5">Text Combined</p>
+                    <h4 class="text-base font-bold uppercase truncate" [style.color]="colorService.getColor(result()!.result.text_emotion.combined_final_emotion.label)">
+                      {{ result()!.result.text_emotion.combined_final_emotion.label }}
+                    </h4>
+                  </div>
+                  <span class="text-[10px] font-bold uppercase opacity-30">Track 02</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Segment Analysis -->
+      <section class="px-4 sm:px-8 md:px-12 py-12 border-b border-[color:var(--border-color)]" style="background: var(--bg-primary)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <app-analysis-section-header title="Segment Analysis" subtitle="Deep Dive" description="Detailed emotion analysis for each audio segment"></app-analysis-section-header>
+          <div class="space-y-4 mt-8 pr-2 max-h-[500px] overflow-y-auto">
+            @for (seg of result()!.result.audio_emotion.timeline; track seg) {
+              <app-analysis-breakdown-card [index]="seg.segment_index" [emotionLabel]="seg.dominant.label"
+                [confidence]="seg.dominant.confidence" [probabilities]="seg.probabilities"
+                [timestampOffset]="seg.timestamp_offset" [intensityWeight]="seg.intensity_weight"
+                [isSpeech]="seg.is_speech">
+              </app-analysis-breakdown-card>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- Collapsible Text Analysis -->
+      <section class="px-4 sm:px-8 md:px-12 py-12" style="background: var(--bg-secondary)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <button (click)="showTextAnalysis.set(!showTextAnalysis())"
+            class="w-full flex items-center justify-between p-5 rounded-2xl font-semibold"
+            style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary)">
+            <span class="font-bold text-sm">{{ showTextAnalysis() ? 'Hide Text Emotion Breakdown' : 'Show Text Emotion Breakdown' }}</span>
+            <svg class="w-5 h-5 transition-transform duration-300" [class.rotate-180]="showTextAnalysis()" style="color: var(--text-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          @if (showTextAnalysis()) {
+            <div class="mt-4 space-y-4">
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start animate-fade-in">
+                <div class="rounded-3xl p-8" style="background: var(--bg-card); border: 1px solid var(--border-color)">
+                  <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4 opacity-40">Global Profile</p>
+                  <app-emotion-distribution [data]="textDistributionData()" viewType="bar" class="block w-full h-[260px]"></app-emotion-distribution>
+                </div>
+                <div class="lg:col-span-2 space-y-4 max-h-[500px] overflow-y-auto">
+                  @for (sent of result()!.result.text_emotion.sentences_analysis; track sent; let i = $index) {
+                    <app-analysis-breakdown-card [index]="i + 1" [emotionLabel]="sent.dominant.label"
+                      [confidence]="sent.dominant.confidence" [probabilities]="sent.probabilities" [sentence]="sent.sentence"
+                      [intensityWeight]="sent.intensity_weight">
+                    </app-analysis-breakdown-card>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- ─── IMAGE RESULTS VIEW ─── -->
+    @if (result()!.type.toLowerCase() === 'image') {
+      <section class="px-4 sm:px-8 md:px-12 py-12"
+        style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <app-dominant-emotion-hero [emotionLabel]="activeEmotionData()!.label"
+            [confidencePercent]="activeEmotionData()!.confidence_percent"
+            [category]="activeEmotionData()!.category" [sectionTitle]="selectedFaceId() === null ? 'Scene Global Emotion' : 'Face #' + selectedFaceId() + ' Emotion'"
+            [showConfidenceBar]="true">
+          </app-dominant-emotion-hero>
+        </div>
+      </section>
+
+      <!-- Media Exclusion Banner -->
+      <section class="px-4 sm:px-8 md:px-12 py-12 border-b border-[color:var(--border-color)]" style="background: var(--bg-primary)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <div class="rounded-3xl p-6 sm:p-8 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+              </div>
+              <div>
+                <h4 class="text-sm font-bold" style="color: var(--text-primary)">Original Image Source Omitted</h4>
+                <p class="text-xs" style="color: var(--text-muted)">The uploaded image file is hidden to maintain user confidentiality.</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-bold uppercase tracking-wider bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg" style="color: var(--text-muted)">
+              Privacy Gate Active
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Face Selection / Distribution Grid -->
+      <section class="px-4 sm:px-8 md:px-12 py-12 border-b border-[color:var(--border-color)]" style="background: var(--bg-secondary)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <app-analysis-section-header title="Image Detections" subtitle="Faces" description="List of detected face structures and scene analysis context"></app-analysis-section-header>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8 items-start">
+            
+            <!-- Selection Panel -->
+            <div class="rounded-3xl p-6 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] space-y-4">
+              <p class="text-[10px] font-bold uppercase tracking-widest opacity-40 mb-2">Detection Contexts</p>
+              
+              <!-- Scene Mode -->
+              <button (click)="selectedFaceId.set(null)" class="w-full p-4 rounded-2xl flex items-center justify-between border transition-all text-left"
+                [style.background]="selectedFaceId() === null ? 'rgba(108,99,255,0.1)' : 'transparent'"
+                [style.borderColor]="selectedFaceId() === null ? 'var(--brand-primary, #6c63ff)' : 'var(--border-color)'">
+                <div>
+                  <h5 class="text-sm font-bold" style="color: var(--text-primary)">Global Scene Context</h5>
+                  <p class="text-xs" style="color: var(--text-muted)">Aggregate background sentiment</p>
+                </div>
+                <span class="text-xs capitalize font-bold" [style.color]="colorService.getColor(result()!.result.scene_emotion.label)">
+                  {{ result()!.result.scene_emotion.label }}
+                </span>
+              </button>
+
+              <!-- Face modes -->
+              @for (face of result()!.result.faces; track face.face_id) {
+                <button (click)="selectedFaceId.set(face.face_id)" class="w-full p-4 rounded-2xl flex items-center justify-between border transition-all text-left"
+                  [style.background]="selectedFaceId() === face.face_id ? 'rgba(108,99,255,0.1)' : 'transparent'"
+                  [style.borderColor]="selectedFaceId() === face.face_id ? 'var(--brand-primary, #6c63ff)' : 'var(--border-color)'">
+                  <div>
+                    <h5 class="text-sm font-bold" style="color: var(--text-primary)">Face Profile #{{ face.face_id }}</h5>
+                    <p class="text-[10px]" style="color: var(--text-muted)">Bounding box coordinates: {{ face.bbox.join(', ') }}</p>
+                  </div>
+                  <span class="text-xs capitalize font-bold" [style.color]="colorService.getColor(face.combined_final_emotion.label)">
+                    {{ face.combined_final_emotion.label }}
+                  </span>
+                </button>
+              }
+            </div>
+
+            <!-- Distribution chart panel -->
+            <div class="lg:col-span-2 rounded-3xl p-6 sm:p-8 bg-[color:var(--bg-card)] border border-[color:var(--border-color)]">
+              <p class="text-[10px] font-bold uppercase tracking-widest opacity-40 mb-6">Confidence Distribution</p>
+              <app-emotion-distribution [data]="distributionData()" viewType="bar" class="block w-full h-[280px]"></app-emotion-distribution>
+            </div>
+            
+          </div>
+        </div>
+      </section>
+    }
+
+    <!-- ─── VIDEO RESULTS VIEW ─── -->
+    @if (result()!.type.toLowerCase() === 'video') {
+      <section class="px-4 sm:px-8 md:px-12 py-12"
+        style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <app-dominant-emotion-hero [emotionLabel]="activeEmotionData()!.label"
+            [confidencePercent]="activeEmotionData()!.confidence_percent"
+            [category]="activeEmotionData()!.category" [sectionTitle]="selectedFaceId() === null ? 'Video Scene Context' : 'Video Face #' + selectedFaceId()"
+            [showConfidenceBar]="true">
+          </app-dominant-emotion-hero>
+        </div>
+      </section>
+
+      <!-- Media Exclusion Banner -->
+      <section class="px-4 sm:px-8 md:px-12 py-12 border-b border-[color:var(--border-color)]" style="background: var(--bg-primary)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <div class="rounded-3xl p-6 sm:p-8 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+              </div>
+              <div>
+                <h4 class="text-sm font-bold" style="color: var(--text-primary)">Original Video Playback Omitted</h4>
+                <p class="text-xs" style="color: var(--text-muted)">The raw video stream file is omitted for data confidentiality reasons.</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-bold uppercase tracking-wider bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg" style="color: var(--text-muted)">
+              Privacy Gate Active
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Video Tracks & Selections -->
+      <section class="px-4 sm:px-8 md:px-12 py-12 border-b border-[color:var(--border-color)]" style="background: var(--bg-secondary)">
+        <div class="max-w-7xl mx-auto w-full min-w-0">
+          <app-analysis-section-header title="Temporal Detections" subtitle="Tracks" description="Select face tracks to inspect frame-by-frame timelines"></app-analysis-section-header>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8 items-start">
+            <div class="rounded-3xl p-6 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] space-y-3">
+              <p class="text-[10px] font-bold uppercase tracking-widest opacity-40 mb-2">Track Lists</p>
+              
+              <!-- Scene Context option -->
+              <button (click)="selectedFaceId.set(null)" class="w-full p-4 rounded-2xl flex items-center justify-between border transition-all text-left"
+                [style.background]="selectedFaceId() === null ? 'rgba(108,99,255,0.1)' : 'transparent'"
+                [style.borderColor]="selectedFaceId() === null ? 'var(--brand-primary, #6c63ff)' : 'var(--border-color)'">
+                <div>
+                  <h5 class="text-sm font-bold" style="color: var(--text-primary)">Global Video Scene</h5>
+                  <p class="text-xs" style="color: var(--text-muted)">Video background average</p>
+                </div>
+                <span class="text-xs capitalize font-bold" [style.color]="colorService.getColor(result()!.result.scene_emotion.label)">
+                  {{ result()!.result.scene_emotion.label }}
+                </span>
+              </button>
+
+              <!-- Face tracks -->
+              @for (face of result()!.result.faces; track face.face_id) {
+                <button (click)="selectedFaceId.set(face.face_id)" class="w-full p-4 rounded-2xl flex items-center justify-between border transition-all text-left"
+                  [style.background]="selectedFaceId() === face.face_id ? 'rgba(108,99,255,0.1)' : 'transparent'"
+                  [style.borderColor]="selectedFaceId() === face.face_id ? 'var(--brand-primary, #6c63ff)' : 'var(--border-color)'">
+                  <div>
+                    <h5 class="text-sm font-bold" style="color: var(--text-primary)">Face Track #{{ face.face_id }}</h5>
+                    <p class="text-[10px]" style="color: var(--text-muted)">Frames seen: {{ face.frames_seen }}</p>
+                  </div>
+                  <span class="text-xs capitalize font-bold" [style.color]="colorService.getColor(face.combined_final_emotion.label)">
+                    {{ face.combined_final_emotion.label }}
+                  </span>
+                </button>
+              }
+            </div>
+
+            <!-- Emotion Distribution for Video Track -->
+            <div class="lg:col-span-2 rounded-3xl p-6 sm:p-8 bg-[color:var(--bg-card)] border border-[color:var(--border-color)]">
+              <p class="text-[10px] font-bold uppercase tracking-widest opacity-40 mb-6">Confidence Distribution</p>
+              <app-emotion-distribution [data]="distributionData()" viewType="bar" class="block w-full h-[280px]"></app-emotion-distribution>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Video timeline logic -->
+      @if (timelineData().length > 0) {
+        <section class="px-4 sm:px-8 md:px-12 py-12 border-b border-[color:var(--border-color)]" style="background: var(--bg-primary)">
+          <div class="max-w-7xl mx-auto w-full min-w-0">
+            <app-analysis-section-header title="Frame Timeline" subtitle="Frames" description=" chronological emotion intensity shift across frame sequence"></app-analysis-section-header>
+            <div class="rounded-2xl p-5 sm:p-8 mt-8 bg-[color:var(--bg-card)] border border-[color:var(--border-color)]">
+              <app-emotion-timeline [data]="timelineData()" [dominant]="activeEmotionData()!.label" class="block w-full h-[300px] sm:h-[400px]"></app-emotion-timeline>
+            </div>
+          </div>
+        </section>
+      }
+    }
+
+    <!-- ─── SHARED COMMON: MODEL INFO & RAW JSON ─── -->
+    <section class="px-6 md:px-12 py-12" style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color)">
+      <div class="max-w-7xl mx-auto w-full min-w-0">
+        <app-model-info-grid [chips]="getModelChips()"></app-model-info-grid>
+      </div>
+    </section>
+  }
+
+  <app-footer-section></app-footer-section>
+</div>

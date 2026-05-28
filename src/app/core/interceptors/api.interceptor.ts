@@ -12,7 +12,8 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
   const isAuthEndpoint = req.url.toLowerCase().includes('/api/auth/login') ||
     req.url.toLowerCase().includes('/api/auth/register') ||
     req.url.toLowerCase().includes('/api/auth/forgot-password') ||
-    req.url.toLowerCase().includes('/api/auth/reset-password');
+    req.url.toLowerCase().includes('/api/auth/reset-password') ||
+    req.url.toLowerCase().includes('/api/analysis/shared/');
 
   let authReq = req;
 

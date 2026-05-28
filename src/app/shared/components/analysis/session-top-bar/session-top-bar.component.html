@@ -6,7 +6,7 @@
         style="background: var(--bg-surface, var(--bg-card)); color: var(--text-secondary); border: 1px solid var(--border-color)">
         Session #{{ sessionId().slice(0, 8) }}
       </span>
-      <button (click)="copySessionId()" class="p-1.5 rounded-lg transition-colors" style="color: var(--text-muted)"
+      <button (click)="copySessionId()" class="p-1.5 rounded-lg transition-colors hover:bg-white/5" style="color: var(--text-muted)"
         title="Copy Session ID">
         @if (!copiedId()) {
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -22,9 +22,118 @@
         }
       </button>
     </div>
-    <button (click)="newAnalysis.emit()" class="shrink-0 px-6 py-2.5 rounded-full font-bold text-sm transition-all"
-      style="border: 1px solid var(--border-color); color: var(--text-primary)">
-      ← New Analysis
-    </button>
+    
+    <div class="flex items-center gap-3 w-full sm:w-auto">
+      @if (isAuthenticated()) {
+        <!-- Sharing Actions -->
+        @if (!isShared()) {
+          <button (click)="openShareModal()" class="shrink-0 px-5 py-2.5 rounded-full font-bold text-sm transition-all flex items-center justify-center gap-2 hover:bg-white/5"
+            style="border: 1px solid var(--border-color); color: var(--text-primary)">
+            <app-icon name="share" size="16" className="shrink-0" [strokeWidth]="2"></app-icon>
+            Share Result
+          </button>
+        } @else {
+          <button (click)="openShareModal()" class="shrink-0 px-5 py-2.5 rounded-full font-bold text-sm transition-all flex items-center justify-center gap-2 hover:bg-white/5"
+            style="border: 1px solid var(--border-color); color: var(--text-primary)">
+            <app-icon name="share" size="16" className="shrink-0" [strokeWidth]="2"></app-icon>
+            Shared Link
+          </button>
+        }
+      }
+
+      <button (click)="newAnalysis.emit()" class="shrink-0 px-6 py-2.5 rounded-full font-bold text-sm transition-all hover:bg-white/5"
+        style="border: 1px solid var(--border-color); color: var(--text-primary)">
+        ← New Analysis
+      </button>
+    </div>
   </div>
 </section>
+
+<!-- Claude-like Share Modal Overlay -->
+@if (isShareModalOpen()) {
+  <div class="fixed inset-0 bg-black/75 z-[999] flex items-center justify-center backdrop-blur-sm modal-overlay" (click)="closeShareModal()">
+    <!-- Modal Card Container -->
+    <div class="modal-container relative w-full max-w-[480px] bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] rounded-[24px] shadow-2xl p-6 overflow-hidden mx-4 text-left" (click)="$event.stopPropagation()">
+      
+      <!-- Close button "X" -->
+      <button (click)="closeShareModal()" class="absolute top-5 right-5 text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)] transition-colors">
+        <app-icon name="close" size="16" [strokeWidth]="2.5"></app-icon>
+      </button>
+
+      <!-- Header Title & Subtitle -->
+      <h3 class="text-lg font-bold tracking-tight mb-1" style="color: var(--text-primary)">
+        {{ isShared() ? 'Analysis shared' : 'Share analysis' }}
+      </h3>
+      <p class="text-xs leading-relaxed mb-6" style="color: var(--text-muted)">
+        {{ isShared() ? 'Source media files are omitted for safety' : 'The original analysis results will be shared.' }}
+      </p>
+
+      <!-- Selection Panel Container -->
+      <div class="border border-[color:var(--border-color)] rounded-2xl overflow-hidden bg-[color:var(--bg-primary)]/40 mb-6">
+        
+        <!-- Keep Private Option -->
+        <div (click)="selectPrivate()" class="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5 transition-all text-left w-full border-b border-[color:var(--border-color)] select-none">
+          <div class="flex items-start gap-3">
+            <div class="mt-0.5 text-[color:var(--text-secondary)]">
+              <app-icon name="lock" size="16" [strokeWidth]="2"></app-icon>
+            </div>
+            <div>
+              <h4 class="text-sm font-bold" style="color: var(--text-primary)">Keep private</h4>
+              <p class="text-xs mt-0.5" style="color: var(--text-muted)">Only you have access</p>
+            </div>
+          </div>
+          @if (selectedOption() === 'private') {
+            <svg class="w-4 h-4 text-[color:var(--brand-primary)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          }
+        </div>
+
+        <!-- Create Public Link Option -->
+        <div (click)="selectPublic()" class="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5 transition-all text-left w-full select-none">
+          <div class="flex items-start gap-3">
+            <div class="mt-0.5 text-[color:var(--text-secondary)]">
+              <app-icon name="globe" size="16" [strokeWidth]="2"></app-icon>
+            </div>
+            <div>
+              <h4 class="text-sm font-bold" style="color: var(--text-primary)">Create public link</h4>
+              <p class="text-xs mt-0.5" style="color: var(--text-muted)">Anyone with the link can view</p>
+            </div>
+          </div>
+          @if (selectedOption() === 'public') {
+            <svg class="w-4 h-4 text-[color:var(--brand-primary)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          }
+        </div>
+
+      </div>
+
+      <!-- Footer Action Area -->
+      @if (selectedOption() === 'private') {
+        <!-- Note + Action button -->
+        <div class="space-y-4">
+          <p class="text-[10px] leading-relaxed" style="color: var(--text-muted)">
+            Don't share personal information or third-party content without permission.
+          </p>
+          <div class="flex justify-end">
+            <button (click)="createShareLink()" class="px-5 py-2.5 rounded-xl font-bold text-sm bg-[color:var(--text-primary)] text-[color:var(--bg-primary)] hover:opacity-90 transition-all select-none">
+              Create share link
+            </button>
+          </div>
+        </div>
+      } @else {
+        <!-- Link Display Row -->
+        <div class="flex items-center justify-between gap-3 p-2 pl-4 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)]/40 w-full animate-fade-in">
+          <span class="text-xs truncate text-[color:var(--text-secondary)] select-all font-mono">
+            {{ getShareUrl() }}
+          </span>
+          <button (click)="copyLink()" class="shrink-0 px-4 py-2 rounded-lg font-bold text-xs bg-[color:var(--text-primary)] text-[color:var(--bg-primary)] hover:opacity-90 transition-all select-none">
+            {{ copiedLink() ? 'Copied!' : 'Copy link' }}
+          </button>
+        </div>
+      }
+
+    </div>
+  </div>
+}

@@ -1,4 +1,4 @@
-import { Component, signal, inject, computed } from '@angular/core';
+import { Component, signal, inject, computed, OnInit } from '@angular/core';
 
 import { AppearanceAndColorsComponent } from './components/appearance-and-colors/appearance-and-colors.component';
 import { AccountSettingsComponent } from './components/account-settings/account-settings.component';
@@ -9,25 +9,27 @@ import { ToastService } from '../../core/services/toast.service';
 import { SegmentedNavComponent } from '../../shared/components/segmented-nav/segmented-nav.component';
 import { NotificationSettingsComponent } from './components/notification-settings/notification-settings.component';
 import { ContactSupportComponent } from './components/contact-support/contact-support.component';
+import { SharedLinksComponent } from './components/shared-links/shared-links.component';
 import { AuthService } from '../../core/services/auth.service';
 
 
 @Component({
   selector: 'app-settings',
-  imports: [AppearanceAndColorsComponent, AccountSettingsComponent, FooterSectionComponent, PageHeaderComponent, SegmentedNavComponent, AlertPreferencesComponent, NotificationSettingsComponent, ContactSupportComponent],
+  imports: [AppearanceAndColorsComponent, AccountSettingsComponent, FooterSectionComponent, PageHeaderComponent, SegmentedNavComponent, AlertPreferencesComponent, NotificationSettingsComponent, ContactSupportComponent, SharedLinksComponent],
   templateUrl: './app-settings.html',
   styleUrl: './app-settings.css'
 })
-export class SettingsComponent {
+export class SettingsComponent implements OnInit {
   private toastService = inject(ToastService);
   private authService = inject(AuthService);
 
   isAdmin = this.authService.isAdmin;
-  activeMainTab = signal<'colors' | 'account' | 'alerts' | 'notifications' | 'support'>('colors');
+  activeMainTab = signal<'colors' | 'account' | 'alerts' | 'notifications' | 'support' | 'shared'>('colors');
 
   private allNavOptions = [
     { label: 'Appearance & Colors', value: 'colors' },
     { label: 'Account', value: 'account' },
+    { label: 'Shared Links', value: 'shared' },
     { label: 'Alerts', value: 'alerts' },
     { label: 'Notifications', value: 'notifications' },
     { 
@@ -47,7 +49,7 @@ export class SettingsComponent {
   ngOnInit() {
     const savedTab = sessionStorage.getItem('emotra_settings_tab');
     
-    if (savedTab === 'colors' || savedTab === 'account' || savedTab === 'alerts' || savedTab === 'notifications' || savedTab === 'support') {
+    if (savedTab === 'colors' || savedTab === 'account' || savedTab === 'alerts' || savedTab === 'notifications' || savedTab === 'support' || savedTab === 'shared') {
       // For admins, only allow colors and notifications
       if (this.isAdmin() && savedTab !== 'colors' && savedTab !== 'notifications') {
         this.activeMainTab.set('colors');
@@ -68,7 +70,7 @@ export class SettingsComponent {
     // Admins can only use the 'colors' or 'notifications' tab
     if (this.isAdmin() && tab !== 'colors' && tab !== 'notifications') return;
 
-    if (tab === 'colors' || tab === 'account' || tab === 'alerts' || tab === 'notifications' || tab === 'support') {
+    if (tab === 'colors' || tab === 'account' || tab === 'alerts' || tab === 'notifications' || tab === 'support' || tab === 'shared') {
       this.activeMainTab.set(tab);
       sessionStorage.setItem('emotra_settings_tab', tab);
     }

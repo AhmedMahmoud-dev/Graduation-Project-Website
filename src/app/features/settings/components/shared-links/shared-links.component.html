@@ -1,0 +1,113 @@
+<div class="space-y-6">
+  <div class="shared-links-header pb-4 border-b border-[color:var(--color-border)]">
+    <div>
+      <h3 class="text-xl font-bold tracking-tight" style="color: var(--text-primary)">Active Share Links</h3>
+      <p class="text-xs" style="color: var(--text-muted)">Manage public links created for your emotion analysis reports.</p>
+    </div>
+    @if (!isLoading() && sharedItems().length > 0) {
+      <button (click)="fetchSharedLinks()" class="refresh-btn" [class.refresh-btn--spinning]="isRefreshing()">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        <span class="refresh-btn__label">Refresh</span>
+      </button>
+    }
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="py-12 flex justify-center">
+      <app-loading-state message="Loading shared links..." subtitle="Retrieving active sharing records"></app-loading-state>
+    </div>
+  }
+
+  <!-- List of Shared Links -->
+  @if (!isLoading() && sharedItems().length > 0) {
+    <div class="space-y-4">
+      @for (item of sharedItems(); track item.share_token) {
+        <div class="rounded-2xl p-5 sm:p-6 border border-[color:var(--border-color)] transition-all duration-300 shared-card"
+          style="background: var(--bg-card); box-shadow: var(--shadow)">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 shared-card-inner">
+            
+            <div class="flex items-center gap-4 min-w-0">
+              <!-- Type Icon -->
+              <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                style="background: rgba(108,99,255,0.12); color: var(--brand-primary, #6c63ff)">
+                @if (item.type.toLowerCase() === 'text') {
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                  </svg>
+                } @else if (item.type.toLowerCase() === 'audio') {
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                } @else if (item.type.toLowerCase() === 'image') {
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                } @else {
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                }
+              </div>
+
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap mb-1">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider"
+                    style="background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border-color)">
+                    {{ item.type }}
+                  </span>
+                  <span class="text-xs font-medium" style="color: var(--text-muted)">
+                    Shared {{ format.formatDate(item.shared_at) }}
+                  </span>
+                </div>
+                <h4 class="text-sm font-bold truncate" style="color: var(--text-primary)">
+                  Token: <span class="font-mono text-xs select-all" style="color: var(--text-secondary)">{{ item.share_token }}</span>
+                </h4>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-2 mt-2 md:mt-0 pt-4 md:pt-0 md:pl-6 md:border-l border-[color:var(--border-color)] shared-actions">
+              <button (click)="openLink(item.share_token)" class="px-4 py-2 rounded-xl bg-white/5 border border-[color:var(--border-color)] text-xs font-bold uppercase tracking-wider transition-all hover:bg-white/10" style="color: var(--text-primary)">
+                Preview
+              </button>
+              <button (click)="copyLink(item)" class="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5"
+                [style.background]="copiedMap()[item.share_token] ? 'rgba(16, 185, 129, 0.12)' : 'var(--bg-secondary)'"
+                [style.border]="copiedMap()[item.share_token] ? '1px solid #10b981' : '1px solid var(--border-color)'"
+                [style.color]="copiedMap()[item.share_token] ? '#10b981' : 'var(--text-secondary)'">
+                @if (copiedMap()[item.share_token]) {
+                  <app-icon name="check" size="14" className="shrink-0" [strokeWidth]="2.5"></app-icon>
+                  Copied
+                } @else {
+                  <app-icon name="copy" size="14" className="shrink-0" [strokeWidth]="2"></app-icon>
+                  Copy URL
+                }
+              </button>
+              <button (click)="revoke(item)" class="p-2 rounded-xl transition-colors text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)] hover:bg-white/5 border border-transparent hover:border-[color:var(--border-color)] btn-revoke" title="Deactivate Link">
+                <app-icon name="unlink" size="16" className="shrink-0" [strokeWidth]="2"></app-icon>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (!isLoading() && sharedItems().length === 0) {
+    <app-empty-state minHeight="40vh">
+      <svg class="w-12 h-12 opacity-40 mb-2" stroke-width="1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" empty-icon>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935-2.186 2.25 2.25 0 00-3.935 2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+      </svg>
+      <ng-container empty-msg>No Shared Links Active</ng-container>
+      <ng-container empty-hint>You haven't generated any public sharing links yet. You can share any analysis report directly from its detail view.</ng-container>
+      <div empty-actions>
+        <a routerLink="/history" class="btn-primary px-8 py-3.5 text-sm text-center">View History logs</a>
+      </div>
+    </app-empty-state>
+  }
+</div>

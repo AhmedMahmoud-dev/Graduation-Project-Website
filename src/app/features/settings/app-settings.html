@@ -25,6 +25,11 @@
           @if (activeMainTab() === 'account') {
             <app-account-settings (passwordChanged)="triggerToast()"></app-account-settings>
           }
+
+          <!-- Shared Links Tab Content -->
+          @if (activeMainTab() === 'shared') {
+            <app-shared-links></app-shared-links>
+          }
           
           <!-- Alerts Tab Content -->
           @if (activeMainTab() === 'alerts') {

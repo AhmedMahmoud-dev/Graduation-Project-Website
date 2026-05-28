@@ -59,6 +59,20 @@
         <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
       }
 
+      <!-- UNLINK -->
+      @case ('unlink') {
+        <path d="M4 15v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5" />
+        <polyline points="16 6 12 2 8 6" />
+        <line x1="12" y1="2" x2="12" y2="11" />
+        <line x1="2" y1="2" x2="22" y2="22" />
+      }
+
+      <!-- LOCK -->
+      @case ('lock') {
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0110 0v4" />
+      }
+
       <!-- SEARCH -->
       @case ('search') {
         <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -67,6 +81,30 @@
       <!-- CLOSE / X -->
       @case ('close') {
         <path d="M18 6L6 18M6 6l12 12" />
+      }
+
+      <!-- LOGO -->
+      @case ('logo') {
+        <path d="M9 3v2M15 3v2M3 9h2M19 9h2M12 19c-3.866 0-7-3.134-7-7s3.134-7 7-7 7 3.134 7 7-7 3.134-7 7z" />
+        <path d="M9 12c.5-1 1.5-1.5 3-1.5s2.5.5 3 1.5M12 6q0 3 -2 5" />
+      }
+
+      <!-- SHARE / EXPORT (Arrow out of box) -->
+      @case ('share') {
+        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+        <polyline points="16 6 12 2 8 6" />
+        <line x1="12" y1="2" x2="12" y2="15" />
+      }
+
+      <!-- COPY -->
+      @case ('copy') {
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+      }
+
+      <!-- CHECK -->
+      @case ('check') {
+        <polyline points="20 6 9 17 4 12" />
       }
 
       @case ('chevron-down') {

@@ -19,6 +19,8 @@ import {
   AnalysisDetails,
   AnalysisType
 } from '../models/analysis-v2.model';
+import { ShareLinkResponseDto, ActiveShareResponseDto, SharedAnalysisDto } from '../models/share-feature.model';
+
 
 @Injectable({
   providedIn: 'root'
@@ -234,5 +236,37 @@ export class AnalysisV2Service {
     } else {
       throw new Error(`Unsupported analysis type: ${details.type}`);
     }
+  }
+
+  /**
+   * Enables a public share link for an analysis.
+   */
+  shareAnalysis(clientId: string): Observable<ApiResponse<ShareLinkResponseDto>> {
+    const url = `${environment.apiUrl}/api/analysis/${clientId}/share`;
+    return this.http.post<ApiResponse<ShareLinkResponseDto>>(url, {});
+  }
+
+  /**
+   * Revokes the active public share link for an analysis.
+   */
+  revokeShare(clientId: string): Observable<ApiResponse<boolean>> {
+    const url = `${environment.apiUrl}/api/analysis/${clientId}/share`;
+    return this.http.delete<ApiResponse<boolean>>(url);
+  }
+
+  /**
+   * Retrieves all currently active share links for the authenticated user.
+   */
+  getSharedAnalyses(): Observable<ApiResponse<ActiveShareResponseDto[]>> {
+    const url = `${environment.apiUrl}/api/analysis/shared`;
+    return this.http.get<ApiResponse<ActiveShareResponseDto[]>>(url);
+  }
+
+  /**
+   * Retrieves the public, scrubbed analysis results by share token (Anonymous).
+   */
+  getSharedAnalysisDetails(shareToken: string): Observable<ApiResponse<SharedAnalysisDto>> {
+    const url = `${environment.apiUrl}/api/analysis/shared/${shareToken}`;
+    return this.http.get<ApiResponse<SharedAnalysisDto>>(url);
   }
 }

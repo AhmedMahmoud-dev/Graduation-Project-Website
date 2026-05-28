@@ -6,11 +6,12 @@ import { AuthService } from '../../../core/services/auth.service';
 import { FeedbackService } from '../../../core/services/feedback.service';
 import { SystemFeedbackUIService } from '../../../core/services/system-feedback-ui.service';
 import { CommonModule } from '@angular/common';
+import { AppIconComponent } from '../app-icon/app-icon.component';
 
 @Component({
   selector: 'app-footer-section',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AppIconComponent],
   templateUrl: './footer.component.html'
 })
 export class FooterSectionComponent implements OnInit {

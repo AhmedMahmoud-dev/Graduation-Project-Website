@@ -17,11 +17,7 @@
     <div (click)="goToHome()" class="flex items-center overflow-hidden whitespace-nowrap cursor-pointer">
       <div class="w-12 h-12 flex items-center justify-center shrink-0">
         <!-- Logo -->
-        <svg class="w-8 h-8 text-[color:var(--brand-primary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 3v2M15 3v2M3 9h2M19 9h2M12 19c-3.866 0-7-3.134-7-7s3.134-7 7-7 7 3.134 7 7-7 3.134-7 7z" />
-          <path d="M9 12c.5-1 1.5-1.5 3-1.5s2.5.5 3 1.5M12 6q0 3 -2 5" />
-        </svg>
+        <app-icon name="logo" size="32" className="text-[color:var(--brand-primary)] shrink-0" [strokeWidth]="2"></app-icon>
       </div>
       <span
         class="font-heading font-extrabold text-xl tracking-tighter text-[color:var(--color-text)] transition-opacity duration-300 ml-1"

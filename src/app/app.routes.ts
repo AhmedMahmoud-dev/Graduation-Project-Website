@@ -22,6 +22,12 @@ export const routes: Routes = [
   // Public Route (Marketing)
   { path: '', component: LandingComponent, pathMatch: 'full', canActivate: [noAdminGuard] },
 
+  // Public Shared Route
+  {
+    path: 'shared-analysis/:shareToken',
+    loadComponent: () => import('./features/shared-analysis/shared-analysis.component').then(m => m.SharedAnalysisComponent)
+  },
+
   // Model Documentation (Public but with App Sidebar Layout)
   {
     path: 'models',

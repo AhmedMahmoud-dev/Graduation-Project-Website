@@ -9,11 +9,12 @@ import { AlertsService } from '../../../core/services/alerts.service';
 import { TooltipComponent } from '../../../shared/components/tooltip/tooltip.component';
 
 import { ThemeService } from '../../../core/services/theme.service';
+import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.component';
 
 @Component({
   selector: 'app-app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule, TooltipComponent],
+  imports: [CommonModule, RouterModule, TooltipComponent, AppIconComponent],
   templateUrl: './app-sidebar.component.html',
   styleUrl: './app-sidebar.component.css'
 })
