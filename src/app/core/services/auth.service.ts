@@ -518,9 +518,7 @@ export class AuthService {
       next: r => {
         if (!this.isAuthenticated()) return;
         if (r.is_success && r.data) {
-          const data = r.data;
-          const items = Array.isArray(data) ? data : (data.items || []);
-          localStorage.setItem('emotra_admin_support', JSON.stringify(items));
+          localStorage.setItem('emotra_admin_support', JSON.stringify(r.data));
         }
       },
       error: () => {}

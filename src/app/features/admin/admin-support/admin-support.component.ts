@@ -118,21 +118,18 @@ export class AdminSupportComponent implements OnInit {
     .subscribe({
       next: (res) => {
         if (res.is_success && res.data) {
-          const items = Array.isArray(res.data) ? res.data : (res.data.items || []);
-          const total = Array.isArray(res.data) ? res.data.length : (res.data.total_count ?? items.length);
-          
-          this.messages.set(items);
-          this.totalMessages.set(total);
+          this.messages.set(res.data);
+          this.totalMessages.set(res.total);
           
           this.cache.setItem<CachedSupportData>(CACHE_KEY, {
-            messages: items,
-            total: total,
+            messages: res.data,
+            total: res.total,
             page: this.currentPage(),
             status: this.statusFilter()
           });
         } else {
           if (this.messages().length === 0) {
-            this.error.set('Failed to load support queue');
+            this.error.set(res.message || 'Failed to load support queue');
           }
         }
         this.isLoading.set(false);

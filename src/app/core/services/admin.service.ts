@@ -13,7 +13,7 @@ import {
   GlobalQuota
 } from '../models/admin.model';
 import { UserQuotaStatus, UpdateUserQuotaLimits } from '../models/quota.model';
-import { AdminSupportReplyRequest, AdminSupportListResponse, AdminSupportReplyResponse } from '../models/support.model';
+import { AdminSupportReplyRequest, AdminSupportReplyResponse, AdminSupportMessage } from '../models/support.model';
 
 @Injectable({
   providedIn: 'root'
@@ -176,7 +176,7 @@ export class AdminService {
     status: string = 'all',
     sortBy: string | null = null,
     sortOrder: string = 'desc'
-  ): Observable<ApiResponse<AdminSupportListResponse>> {
+  ): Observable<PaginatedAdminResponse<AdminSupportMessage[]>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('pageSize', pageSize.toString());
@@ -187,7 +187,7 @@ export class AdminService {
       params = params.set('sortOrder', sortOrder);
     }
 
-    return this.http.get<ApiResponse<AdminSupportListResponse>>(`${this.apiUrl}/support`, { params });
+    return this.http.get<PaginatedAdminResponse<AdminSupportMessage[]>>(`${this.apiUrl}/support`, { params });
   }
 
   /**
