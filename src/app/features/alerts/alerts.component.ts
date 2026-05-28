@@ -41,6 +41,7 @@ export class AlertsComponent implements OnInit {
   isLoading = signal<boolean>(true);
   isLoadingMore = signal<boolean>(false);
   isResolving = signal<number | null>(null);
+  isResolvingAll = signal<boolean>(false);
 
   // Filters
   searchQuery = signal<string>('');
@@ -197,7 +198,7 @@ export class AlertsComponent implements OnInit {
               total: this.totalCount()
             });
 
-            this.toastService.show('Alert Resolved', 'The alert has been marked as read.', 'success', 'check');
+            this.toastService.show('Alert Resolved', res.message || 'The alert has been marked as read.', 'success', 'check');
           } else {
             this.toastService.show('Error', res.message || 'Failed to resolve alert', 'error', 'error');
           }
@@ -206,6 +207,44 @@ export class AlertsComponent implements OnInit {
         error: () => {
           this.toastService.show('Error', 'An unexpected error occurred.', 'error', 'error');
           this.isResolving.set(null);
+        }
+      });
+  }
+
+  resolveAll() {
+    if (this.isResolvingAll() || this.stats().unread_alerts === 0) return;
+
+    this.isResolvingAll.set(true);
+    this.alertService.resolveAllAlerts()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          if (res.is_success) {
+            // Update all local alerts to resolved
+            this.alerts.update(list => list.map(a => ({
+              ...a,
+              resolved: true,
+              resolved_at: a.resolved_at || new Date().toISOString()
+            })));
+
+            // Update stats centrally in the AlertsService
+            this.alertsService.handleAllResolved();
+
+            // Sync caches
+            this.cache.setItem('emotra_alerts_meta', {
+              data: this.alerts(),
+              total: this.totalCount()
+            });
+
+            this.toastService.show('All Resolved', res.message || 'All alerts have been marked as read.', 'success', 'check');
+          } else {
+            this.toastService.show('Error', res.message || 'Failed to resolve all alerts', 'error', 'error');
+          }
+          this.isResolvingAll.set(false);
+        },
+        error: () => {
+          this.toastService.show('Error', 'An unexpected error occurred.', 'error', 'error');
+          this.isResolvingAll.set(false);
         }
       });
   }

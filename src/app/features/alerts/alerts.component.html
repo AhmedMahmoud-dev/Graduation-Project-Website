@@ -66,6 +66,27 @@
               [class.bg-gray-400]="!hideRead()"></span>
             <span class="hidden sm:inline">{{ hideRead() ? 'Show All' : 'Hide Read' }}</span>
           </button>
+
+          <!-- Resolve All Button -->
+          @if (stats().unread_alerts > 0) {
+          <button (click)="resolveAll()" [disabled]="isResolvingAll()"
+            class="shrink-0 inline-flex items-center justify-center gap-2 h-[42px] px-5 rounded-2xl bg-[color:var(--brand-primary)] text-white text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all sm:h-[46px] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+            @if (isResolvingAll()) {
+            <svg class="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+              </path>
+            </svg>
+            } @else {
+            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+            </svg>
+            }
+            <span class="hidden sm:inline">Mark All as Read</span>
+            <span class="sm:hidden">Mark All</span>
+          </button>
+          }
         </div>
       </div>
     </div>

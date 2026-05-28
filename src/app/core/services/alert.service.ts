@@ -40,6 +40,14 @@ export class AlertService {
   }
 
   /**
+   * Marks all unread alerts as resolved.
+   */
+  resolveAllAlerts(): Observable<ApiResponse<any>> {
+    const url = `${environment.apiUrl}/api/alerts/resolve`;
+    return this.http.patch<ApiResponse<any>>(url, {});
+  }
+
+  /**
    * Permanently deletes an alert.
    */
   deleteAlert(id: number): Observable<ApiResponse<boolean>> {

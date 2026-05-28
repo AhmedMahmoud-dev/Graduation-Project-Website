@@ -267,6 +267,19 @@ export class AlertsService {
     });
   }
 
+  handleAllResolved() {
+    this.stats.update(s => {
+      const newStats = {
+        ...s,
+        unread_alerts: 0,
+        critical_alerts: 0,
+        high_alerts: 0
+      };
+      this.updateLocalStorageStats(newStats);
+      return newStats;
+    });
+  }
+
   handleAlertDeleted(item: AlertItem) {
     this.stats.update(s => {
       const newStats = {
