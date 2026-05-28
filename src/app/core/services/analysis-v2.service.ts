@@ -113,13 +113,23 @@ export class AnalysisV2Service {
     return this.http.get<ApiResponse<AnalysisStats>>(url);
   }
 
-  /**
-   * Retrieves a paginated list of analysis summaries for the current user.
-   */
-  getHistory(page: number = 1, limit: number = 10, type?: AnalysisType): Observable<AnalysisHistoryResponse> {
-    let url = `${environment.apiUrl}/api/analysis/history?page=${page}&limit=${limit}`;
+  getHistory(
+    page: number = 1,
+    pageSize: number = 10,
+    type?: AnalysisType,
+    search?: string,
+    sortOrder?: string
+  ): Observable<AnalysisHistoryResponse> {
+    let url = `${environment.apiUrl}/api/analysis/history?page=${page}&pageSize=${pageSize}`;
     if (type) {
       url += `&type=${type}`;
+    }
+    if (search) {
+      url += `&search=${encodeURIComponent(search)}`;
+    }
+    if (sortOrder) {
+      const order = sortOrder === 'oldest' ? 'asc' : 'desc';
+      url += `&sortOrder=${order}`;
     }
     return this.http.get<AnalysisHistoryResponse>(url);
   }
@@ -152,10 +162,15 @@ export class AnalysisV2Service {
   }
 
   /**
-   * Clears all analysis history for the current user.
+   * Clears analysis history for the current user.
+   * @param type Optional analysis type to selectively clear (e.g. 'text', 'audio', etc.)
    */
-  clearHistory(): Observable<ApiResponse<boolean>> {
-    const url = `${environment.apiUrl}/api/analysis/clear`;
+  clearHistory(type?: string): Observable<ApiResponse<boolean>> {
+    let url = `${environment.apiUrl}/api/analysis/clear`;
+    if (type && type !== 'all') {
+      const capitalized = type.charAt(0).toUpperCase() + type.slice(1);
+      url += `?type=${capitalized}`;
+    }
     return this.http.delete<ApiResponse<boolean>>(url);
   }
 

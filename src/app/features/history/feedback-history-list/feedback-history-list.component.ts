@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, input, OnInit, effect, untracked, DestroyRef } from '@angular/core';
+import { Component, inject, signal, computed, input, effect, untracked, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -13,6 +13,7 @@ import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.c
 import { FormattingService } from '../../../core/services/formatting.service';
 import { AppCacheService } from '../../../core/services/app-cache.service';
 import { finalize } from 'rxjs';
+import { LoadMoreComponent } from '../../../shared/components/load-more/load-more.component';
 
 export interface FeedbackListItem {
   id: number;
@@ -32,11 +33,11 @@ export interface FeedbackListItem {
 @Component({
   selector: 'app-feedback-history-list',
   standalone: true,
-  imports: [CommonModule, EmptyStateComponent, LoadingStateComponent, AppIconComponent],
+  imports: [CommonModule, EmptyStateComponent, LoadingStateComponent, AppIconComponent, LoadMoreComponent],
   templateUrl: './feedback-history-list.component.html',
   styleUrl: './feedback-history-list.component.css'
 })
-export class FeedbackHistoryListComponent implements OnInit {
+export class FeedbackHistoryListComponent {
   private feedbackService = inject(FeedbackService);
   private storageService = inject(AnalysisStorageService);
   private toastService = inject(ToastService);
@@ -48,18 +49,12 @@ export class FeedbackHistoryListComponent implements OnInit {
 
   private readonly CACHE_KEY = 'emotra_feedback_history';
 
-  // Initial rehydration logic to prevent ANY flicker
-  private getCachedData() {
-    return this.cache.getItem<any>(this.CACHE_KEY);
-  }
-
-  // State initialized from cache instantly
-  private initialCache = this.getCachedData();
-  isLoading = signal(!this.initialCache);
-  hasError = signal(false);
-  allItems = signal<FeedbackListItem[]>(this.initialCache?.data || []);
-  totalCount = signal(this.initialCache?.total || this.initialCache?.data?.length || 0);
+  // State
+  isLoading = signal(true);
   isLoadingMore = signal<boolean>(false);
+  hasError = signal(false);
+  allItems = signal<FeedbackListItem[]>([]);
+  totalCount = signal<number>(0);
   currentPage = signal<number>(1);
   readonly pageSize = 10;
 
@@ -71,29 +66,13 @@ export class FeedbackHistoryListComponent implements OnInit {
   // Helper for star rendering
   stars = [1, 2, 3, 4, 5];
 
-  // Filtered + sorted list
-  visibleItems = computed(() => {
-    let list = [...this.allItems()];
+  // Filtered + sorted list (now purely server-side, this returns direct list)
+  visibleItems = computed(() => this.allItems());
 
-    // Search
-    const q = this.searchQuery().toLowerCase().trim();
-    if (q) {
-      list = list.filter(item => {
-        const title = item.title.toLowerCase();
-        const comment = (item.comment || '').toLowerCase();
-        const type = item.feedbackType.toLowerCase();
-        return title.includes(q) || comment.includes(q) || type.includes(q);
-      });
-    }
+  filteredCount = computed(() => this.totalCount());
 
-    // Sort
-    list = this.format.sortByDate(list, this.sortOrder() as 'newest' | 'oldest', 'createdAt');
-
-    return list;
-  });
-
-  filteredCount = computed(() => this.visibleItems().length);
-
+  canLoadMore = computed(() => this.allItems().length < this.totalCount());
+  remainingCount = computed(() => this.totalCount() - this.allItems().length);
 
   constructor() {
     // 1. Refresh list in background when feedback modal is closed 
@@ -101,12 +80,22 @@ export class FeedbackHistoryListComponent implements OnInit {
       const isOpen = this.uiService.isOpen();
       untracked(() => {
         if (!isOpen) {
-          this.loadFeedback(true); // silent refresh
+          this.loadFeedback(true, this.currentPage()); // silent refresh of current page
         }
       });
     });
 
-    // 2. Listen for INSTANT updates from the modal to provide "zero-latency" UI
+    // 2. React to search query and sort order changes from parent
+    effect(() => {
+      const search = this.searchQuery();
+      const sort = this.sortOrder();
+      untracked(() => {
+        this.currentPage.set(1);
+        this.loadFeedback(false, 1);
+      });
+    });
+
+    // 3. Listen for INSTANT updates from the modal to provide "zero-latency" UI
     this.uiService.feedbackUpdated$
       .pipe(takeUntilDestroyed())
       .subscribe(updated => {
@@ -130,29 +119,40 @@ export class FeedbackHistoryListComponent implements OnInit {
       });
   }
 
-  ngOnInit() {
-    this.loadFeedback();
-  }
-
   loadFeedback(isSilent: boolean = false, page: number = 1) {
     this.hasError.set(false);
     const isFirstPage = page === 1;
+    const hasSearch = this.searchQuery().trim() !== '';
+    const cacheKey = `${this.CACHE_KEY}_${this.sortOrder()}`;
 
-    if (isFirstPage && !this.allItems().length && !isSilent) {
-      this.isLoading.set(true);
-    } else if (!isFirstPage) {
-      this.isLoadingMore.set(true);
+    if (!isSilent) {
+      if (isFirstPage) {
+        const cached = this.cache.getItem<any>(cacheKey);
+        if (cached && !hasSearch) {
+          this.allItems.set(cached.data || []);
+          this.totalCount.set(cached.total || 0);
+          this.isLoading.set(false);
+        } else {
+          this.allItems.set([]);
+          this.isLoading.set(true);
+        }
+      } else {
+        this.isLoadingMore.set(true);
+      }
     }
 
-    // If silent refresh, we refresh all currently loaded pages at once to keep state in sync
-    const limit = isSilent ? this.currentPage() * this.pageSize : this.pageSize;
-    const pageToRequest = isSilent ? 1 : page;
+    const pageToRequest = page;
+    const limit = this.pageSize;
 
-    this.feedbackService.getMyFeedbackHistory(pageToRequest, limit)
+    this.feedbackService.getMyFeedbackHistory(
+      pageToRequest,
+      limit,
+      this.searchQuery().trim() || undefined,
+      this.sortOrder()
+    )
       .pipe(finalize(() => {
-        if (isFirstPage || isSilent) {
-          if (!isSilent) this.isLoading.set(false);
-        } else {
+        if (!isSilent) {
+          this.isLoading.set(false);
           this.isLoadingMore.set(false);
         }
       }))
@@ -163,22 +163,17 @@ export class FeedbackHistoryListComponent implements OnInit {
             const mappedItems = this.mapToListItems(items);
 
             this.totalCount.set(response.total || mappedItems.length);
-
-            if (isFirstPage || isSilent) {
+            if (isFirstPage) {
               this.allItems.set(mappedItems);
-              if (isFirstPage) {
-                this.currentPage.set(1);
-              }
             } else {
               this.allItems.update(current => [...current, ...mappedItems]);
-              this.currentPage.set(page);
             }
+            this.currentPage.set(page);
 
-            // Update cache (only cache page 1 for initial rehydration)
-            if (isFirstPage || isSilent) {
-              const cacheLimitItems = mappedItems.slice(0, this.pageSize);
-              this.cache.setItem(this.CACHE_KEY, {
-                data: cacheLimitItems,
+            // Update cache (only cache page 1 for initial rehydration when no search active)
+            if (isFirstPage && !hasSearch) {
+              this.cache.setItem(cacheKey, {
+                data: mappedItems,
                 total: response.total
               });
             }
@@ -216,19 +211,20 @@ export class FeedbackHistoryListComponent implements OnInit {
   }
 
   loadMore() {
-    const nextPage = this.currentPage() + 1;
-    this.loadFeedback(false, nextPage);
+    if (this.isLoadingMore()) return;
+    this.currentPage.update(p => p + 1);
+    this.loadFeedback(false, this.currentPage());
   }
 
   retry() {
     this.isLoading.set(true);
     this.hasError.set(false);
-    this.loadFeedback();
+    this.loadFeedback(false, this.currentPage());
   }
 
   navigateToAnalysis(item: FeedbackListItem) {
     if (item.feedbackType === 'analysis' && item.analysisId) {
-      const type = item.analysisType || 'text';
+      const type = (item.analysisType || 'text').toLowerCase();
 
       // We now use the UUID (client_id) directly
       const finalId = item.analysisId;
@@ -287,7 +283,9 @@ export class FeedbackHistoryListComponent implements OnInit {
 
     return entries.map(f => {
       let title = f.feedback_type === 'system' ? 'Platform Experience' : 'Analysis Review';
-      let analysisType: 'text' | 'audio' | 'image' | 'video' | null = f.analysis_type || null;
+      let analysisType: 'text' | 'audio' | 'image' | 'video' | null = f.analysis_type
+        ? (f.analysis_type.toLowerCase() as any)
+        : null;
 
       if (f.feedback_type === 'analysis' && f.analysis_id) {
         // Search in all session types for a match to get metadata like titles

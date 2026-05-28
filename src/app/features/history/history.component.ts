@@ -1,8 +1,9 @@
 import { Component, signal, inject, OnInit, computed, HostListener, effect, untracked, DestroyRef, ViewChild, viewChild } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { AnalysisV2Service } from '../../core/services/analysis-v2.service';
 import { EmotionIconComponent } from '../../shared/components/emotion-icon/emotion-icon.component';
 import { FooterSectionComponent } from '../../shared/components/footer/footer.component';
@@ -18,6 +19,7 @@ import { FormattingService } from '../../core/services/formatting.service';
 import { AppCacheService } from '../../core/services/app-cache.service';
 import { AnalysisHistoryItem, AnalysisType } from '../../core/models/analysis-v2.model';
 import { AlertsService } from '../../core/services/alerts.service';
+import { LoadMoreComponent } from '../../shared/components/load-more/load-more.component';
 
 type FilterType = 'all' | 'text' | 'audio' | 'image' | 'video' | 'feedback';
 type SortOrder = 'newest' | 'oldest';
@@ -33,7 +35,7 @@ interface HistoryPersistedState {
 @Component({
   selector: 'app-history',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, EmotionIconComponent, AppIconComponent, FooterSectionComponent, PageHeaderComponent, EmptyStateComponent, SegmentedNavComponent, LoadingStateComponent, DropdownMenuComponent, FeedbackHistoryListComponent],
+  imports: [CommonModule, FormsModule, RouterLink, EmotionIconComponent, AppIconComponent, FooterSectionComponent, PageHeaderComponent, EmptyStateComponent, SegmentedNavComponent, LoadingStateComponent, DropdownMenuComponent, FeedbackHistoryListComponent, LoadMoreComponent],
   templateUrl: './app-history.html',
   styleUrls: ['./app-history.css']
 })
@@ -68,8 +70,9 @@ export class HistoryComponent implements OnInit {
   isSortOpen = signal<boolean>(false);
 
   // Backend state
-  private currentPage = signal<number>(1);
-  private _serverTotal = signal<number>(0);
+  currentPage = signal<number>(1);
+  pageSize = signal<number>(10);
+  _serverTotal = signal<number>(0);
   private _loadedItems = signal<AnalysisHistoryItem[]>([]);
   hasAnyHistory = signal<boolean>(false);
 
@@ -90,12 +93,6 @@ export class HistoryComponent implements OnInit {
 
     return false;
   }
-
-  // Derived arrays mapping to what HTML expects without touching HTML
-  allSessions = computed(() => {
-    // Used by HTML just to check if total > 0 via length
-    return new Array(this._serverTotal());
-  });
 
   hasAnyData = computed(() => this.hasAnyHistory() || this.hasFeedbackCache());
   isWholeHistoryEmpty = computed(() => !this.hasAnyHistory() && !this.hasFeedbackCache());
@@ -152,35 +149,23 @@ export class HistoryComponent implements OnInit {
   });
 
   filteredCount = computed(() => {
-    const q = this.searchQuery().toLowerCase().trim();
-    if (q) return this.visibleSessions().length;
     return this._serverTotal();
   });
 
-  enhancedSessions = computed(() => {
-    // HTML uses this length for 'Load X More Logs' calculations
-    const q = this.searchQuery().toLowerCase().trim();
-    if (q) {
-      const unloaded = Math.max(0, this._serverTotal() - this._loadedItems().length);
-      return new Array(this.visibleSessions().length + unloaded) as unknown[];
+  canLoadMore = computed(() => this._loadedItems().length < this._serverTotal());
+  remainingCount = computed(() => this._serverTotal() - this._loadedItems().length);
+
+  clearAllButtonLabel = computed(() => {
+    const type = this.filterType();
+    if (type === 'all' || type === 'feedback') {
+      return 'Clear All';
     }
-    return new Array(this._serverTotal()) as unknown[];
+    const capitalized = type.charAt(0).toUpperCase() + type.slice(1);
+    return `Clear ${capitalized}`;
   });
 
   visibleSessions = computed(() => {
-    let list = [...this._loadedItems()];
-
-    // Maintain search and sort behaviors client-side on loaded chunk to not break features
-    const q = this.searchQuery().toLowerCase().trim();
-    if (q) {
-      list = list.filter(item => {
-        const inputStr = item.summary_text || '';
-        const emotion = item.dominant_emotion?.toLowerCase() || '';
-        return inputStr.toLowerCase().includes(q) || emotion.includes(q);
-      });
-    }
-
-    list = this.format.sortByDate(list, this.sortOrder(), 'timestamp');
+    const list = this._loadedItems();
 
     return list.map(s => {
       const rawCat = s.emotion_category?.toLowerCase() || 'neutral';
@@ -217,21 +202,38 @@ export class HistoryComponent implements OnInit {
     return this._serverTotal();
   });
 
+  // Debounced search query
+  debouncedSearchQuery = signal<string>('');
+
   constructor() {
     // 1. Restore state from previous session if exists
     this.rehydrateFromSession();
 
-    // 2. Automatically refetch when filter type changes
+    // 2. Debounce search query changes
+    toObservable(this.searchQuery)
+      .pipe(
+        debounceTime(500),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(val => {
+        this.debouncedSearchQuery.set(val);
+      });
+
+    // 3. Combined reactive effect for filters, sorting, and debounced search query
     effect(() => {
       const type = this.filterType();
+      const sort = this.sortOrder();
+      const search = this.debouncedSearchQuery();
+
       untracked(() => {
-        if (type === 'feedback') return; // Feedback tab has its own component
+        if (type === 'feedback') return; // Feedback tab handles its own queries
         this.currentPage.set(1);
         this.fetchPage();
       });
     });
 
-    // 3. Persist state changes back to session storage
+    // 4. Persist state changes back to session storage
     effect(() => {
       this.persistState();
     });
@@ -248,26 +250,33 @@ export class HistoryComponent implements OnInit {
 
   fetchPage() {
     const isFirstPage = this.currentPage() === 1;
-    const cacheKey = `emotra_history_meta_${this.filterType()}`;
+    const hasSearch = this.searchQuery().trim() !== '';
+    const cacheKey = `emotra_history_meta_${this.filterType()}_${this.sortOrder()}`;
 
     if (isFirstPage) {
-      const parsed = this.cache.getItem<any>(cacheKey);
-      if (parsed) {
-        const totalCount = parsed.total || 0;
-        this._serverTotal.set(totalCount);
-
-        if (totalCount > 0) {
-          this.hasAnyHistory.set(true);
-        } else if (this.filterType() === 'all' && !this.searchQuery().trim()) {
-          this.hasAnyHistory.set(false);
-        }
-
-        if (parsed.data) {
-          this._loadedItems.set(parsed.data);
-        }
-        this.isLoading.set(false); // Skip initial spinner
-      } else {
+      if (hasSearch) {
+        this._loadedItems.set([]);
         this.isLoading.set(true);
+      } else {
+        const parsed = this.cache.getItem<any>(cacheKey);
+        if (parsed) {
+          const totalCount = parsed.total || 0;
+          this._serverTotal.set(totalCount);
+
+          if (totalCount > 0) {
+            this.hasAnyHistory.set(true);
+          } else if (this.filterType() === 'all') {
+            this.hasAnyHistory.set(false);
+          }
+
+          if (parsed.data) {
+            this._loadedItems.set(parsed.data);
+          }
+          this.isLoading.set(false); // Skip initial spinner
+        } else {
+          this._loadedItems.set([]);
+          this.isLoading.set(true);
+        }
       }
     } else {
       this.isLoadingMore.set(true);
@@ -276,7 +285,13 @@ export class HistoryComponent implements OnInit {
     const typeStr = this.filterType() === 'all' ? undefined : this.filterType();
     const capitalizedType = typeStr ? (typeStr.charAt(0).toUpperCase() + typeStr.slice(1)) as AnalysisType : undefined;
 
-    this.analysisV2Service.getHistory(this.currentPage(), 10, capitalizedType)
+    this.analysisV2Service.getHistory(
+      this.currentPage(),
+      this.pageSize(),
+      capitalizedType,
+      this.searchQuery().trim() || undefined,
+      this.sortOrder()
+    )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
@@ -284,8 +299,7 @@ export class HistoryComponent implements OnInit {
             const totalCount = res.total || 0;
             this._serverTotal.set(totalCount);
 
-            // Update global history state: if we see items, definitely has history. 
-            // If we see 0 items on 'All' view with no search, then history is truly empty.
+            // Update global history state
             if (totalCount > 0) {
               this.hasAnyHistory.set(true);
             } else if (this.filterType() === 'all' && !this.searchQuery().trim()) {
@@ -295,9 +309,11 @@ export class HistoryComponent implements OnInit {
             if (res.data) {
               if (isFirstPage) {
                 this._loadedItems.set(res.data);
-                this.cache.setItem(cacheKey, { data: res.data, total: totalCount });
+                if (!hasSearch) {
+                  this.cache.setItem(cacheKey, { data: res.data, total: totalCount });
+                }
               } else {
-                this._loadedItems.update(arr => [...arr, ...res.data!]);
+                this._loadedItems.update(items => [...items, ...res.data!]);
               }
             }
           }
@@ -307,12 +323,12 @@ export class HistoryComponent implements OnInit {
         error: (err) => {
           this.isLoading.set(false);
           this.isLoadingMore.set(false);
-          // No toast on page load
         }
       });
   }
 
   loadMore() {
+    if (this.isLoadingMore()) return;
     this.currentPage.update(p => p + 1);
     this.fetchPage();
   }
@@ -382,11 +398,27 @@ export class HistoryComponent implements OnInit {
   }
 
   deleteAllLogs() {
+    const activeType = this.filterType();
+    let title = 'Permanent Wipe';
+    let msg = 'This will delete EVERY session in your history. This action is irreversible.';
+    let successMsg = 'All logs have been permanently removed';
+    let confirmLabel = 'Wipe Everything';
+    let expectedValue = 'DELETE';
+
+    if (activeType !== 'all' && activeType !== 'feedback') {
+      const capitalized = activeType.charAt(0).toUpperCase() + activeType.slice(1);
+      title = `Clear ${capitalized} History`;
+      msg = `This will delete EVERY ${activeType} analysis session in your history. This action is irreversible.`;
+      successMsg = `All ${activeType} analysis logs have been removed`;
+      confirmLabel = `Clear ${capitalized}`;
+      expectedValue = `DELETE ${activeType.toUpperCase()}`;
+    }
+
     this.toastService.confirm(
-      'Permanent Wipe',
-      'This will delete EVERY session in your history. This action is irreversible.',
+      title,
+      msg,
       () => {
-        this.analysisV2Service.clearHistory()
+        this.analysisV2Service.clearHistory(activeType)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: (res) => {
@@ -394,15 +426,23 @@ export class HistoryComponent implements OnInit {
                 // 1. Update UI
                 this._loadedItems.set([]);
                 this._serverTotal.set(0);
-                this.hasAnyHistory.set(false);
 
-                // 2. Wipe ALL relevant caches
-                this.wipeAllCaches();
+                if (activeType === 'all' || activeType === 'feedback') {
+                  this.hasAnyHistory.set(false);
+                  this.wipeAllCaches();
+                } else {
+                  this.invalidateCacheOnClearType(activeType);
+                }
 
-                // 3. Reset alert stats
+                // 2. Reset alert stats
                 this.alertsService.fetchStats();
 
-                this.toastService.show('History Cleared', 'All logs have been permanently removed', 'success', 'trash');
+                const isNoHistory = res.message?.toLowerCase().includes('no history') || res.message?.toLowerCase().includes('empty');
+                const toastType = isNoHistory ? 'warning' : 'success';
+                const toastIcon = isNoHistory ? 'warning' : 'trash';
+                const toastTitle = isNoHistory ? 'No Logs Cleared' : 'History Cleared';
+
+                this.toastService.show(toastTitle, res.message || successMsg, toastType, toastIcon);
               } else {
                 this.toastService.show('Error', res.message || 'Failed to clear history', 'error', 'error');
               }
@@ -413,9 +453,9 @@ export class HistoryComponent implements OnInit {
       {
         icon: 'warning',
         type: 'error',
-        confirmLabel: 'Wipe Everything',
+        confirmLabel: confirmLabel,
         requireInput: true,
-        expectedValue: 'DELETE'
+        expectedValue: expectedValue
       }
     );
   }
@@ -466,6 +506,18 @@ export class HistoryComponent implements OnInit {
         this.cache.setItem('emotra_alerts_meta', alertsCache);
       }
     }
+  }
+
+  private invalidateCacheOnClearType(type: string) {
+    const typeStr = type.toLowerCase();
+    this.cache.removeItem(`emotra_history_meta_${typeStr}`);
+    this.cache.removeItem('emotra_history_meta_all');
+    this.cache.removeItem(`emotra_${typeStr}_sessions`);
+    this.cache.removeItem('emotra_stats');
+    this.cache.removeItem('emotra_alerts_meta');
+    this.cache.removeItem('emotra_feedback_history');
+    this.cache.removeItem('emotra_feedback');
+    this.cache.clear('emotra_analysis_detail_');
   }
 
   private wipeAllCaches() {

@@ -160,14 +160,23 @@ export class FeedbackService {
     );
   }
 
-  /**
-   * Retrieves the unified history of ALL feedback submitted by the current user.
-   * Includes both Analysis and System feedback with pagination.
-   */
-  getMyFeedbackHistory(page: number = 1, limit: number = 10): Observable<UnifiedFeedbackHistoryResponse> {
-    const params = new HttpParams()
+  getMyFeedbackHistory(
+    page: number = 1,
+    pageSize: number = 10,
+    search?: string,
+    sortOrder?: string
+  ): Observable<UnifiedFeedbackHistoryResponse> {
+    let params = new HttpParams()
       .set('page', page.toString())
-      .set('limit', limit.toString());
+      .set('pageSize', pageSize.toString());
+
+    if (search) {
+      params = params.set('search', search);
+    }
+    if (sortOrder) {
+      const order = sortOrder === 'oldest' ? 'asc' : 'desc';
+      params = params.set('sortOrder', order);
+    }
 
     const url = `${this.baseUrl}/api/system-feedback/me`;
     return this.http.get<UnifiedFeedbackHistoryResponse>(url, { params });

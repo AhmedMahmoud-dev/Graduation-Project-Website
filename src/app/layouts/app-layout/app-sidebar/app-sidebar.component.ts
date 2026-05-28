@@ -92,7 +92,7 @@ export class AppSidebarComponent {
   appNavItems = [
     { label: 'Dashboard', path: '/dashboard', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>') },
     { label: 'Analysis', path: '/analysis', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>') },
-    { label: 'History', path: '/history', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>') },
+    { label: 'History', path: '/history', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="12" x2="16" y2="14"></line></svg>') },
     { label: 'Compare', path: '/compare', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M13 6h3a2 2 0 0 1 2 2v7"></path><path d="M11 18H8a2 2 0 0 1-2-2V9"></path></svg>') },
     { label: 'Alerts', path: '/alerts', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>') },
     { label: 'Back to Landing', path: '/', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>') },
@@ -118,7 +118,7 @@ export class AppSidebarComponent {
         </svg>
       `)
     },
-    { label: 'How It Works', href: '#how-it-works', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>') },
+    { label: 'How It Works', href: '#how-it-works', icon: this.sanitizer.bypassSecurityTrustHtml('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>') },
     {
       label: 'Success Stories',
       href: '#testimonials',

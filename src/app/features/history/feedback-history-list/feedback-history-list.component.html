@@ -201,27 +201,15 @@
   </div>
   }
 
-  <!-- Load More Control -->
-  @if (totalCount() > allItems().length) {
-  <div class="pt-8 flex justify-center">
-    <button (click)="loadMore()" [disabled]="isLoadingMore()"
-      class="group relative flex items-center gap-3 px-8 py-4 rounded-2xl bg-[color:var(--bg-card)] border border-[color:var(--border-color)] hover:border-[color:var(--brand-primary)] transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
-      <span class="text-xs font-black uppercase tracking-widest text-[color:var(--text-primary)]">
-        @if (isLoadingMore()) {
-        Loading...
-        } @else if (searchQuery().trim()) {
-        Search Older Reviews
-        } @else {
-        Load <span class="text-[color:var(--brand-primary)]">{{ totalCount() - allItems().length }}</span> More Reviews
-        }
-      </span>
-      @if (!isLoadingMore()) {
-      <app-icon name="chevron-down"
-        className="w-4 h-4 text-[color:var(--brand-primary)]"
-        [strokeWidth]="3"></app-icon>
-      }
-    </button>
-  </div>
+  <!-- Pagination Control -->
+  @if (canLoadMore()) {
+  <app-load-more
+    [isLoadingMore]="isLoadingMore()"
+    [searchQuery]="searchQuery()"
+    [remainingCount]="remainingCount()"
+    label="Reviews"
+    (loadMore)="loadMore()">
+  </app-load-more>
   }
 </div>
 }

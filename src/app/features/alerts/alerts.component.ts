@@ -17,12 +17,12 @@ import { EmptyStateComponent } from '../../shared/components/empty-state/empty-s
 import { DropdownMenuComponent, DropdownOption } from '../../shared/components/dropdown-menu/dropdown-menu.component';
 import { FooterSectionComponent } from '../../shared/components/footer/footer.component';
 import { LoadingStateComponent } from '../../shared/components/loading-state/loading-state.component';
-import { AppIconComponent } from "../../shared/components/app-icon/app-icon.component";
+import { LoadMoreComponent } from '../../shared/components/load-more/load-more.component';
 
 @Component({
   selector: 'app-alerts',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, EmptyStateComponent, DropdownMenuComponent, FooterSectionComponent, LoadingStateComponent, AppIconComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, EmptyStateComponent, DropdownMenuComponent, FooterSectionComponent, LoadingStateComponent, LoadMoreComponent],
   templateUrl: './alerts.component.html',
   styleUrl: './alerts.component.css'
 })
@@ -94,6 +94,7 @@ export class AlertsComponent implements OnInit {
   });
 
   canLoadMore = computed(() => this.alerts().length < this.totalCount());
+  remainingCount = computed(() => this.totalCount() - this.alerts().length);
 
   ngOnInit() {
     this.fetchData();
