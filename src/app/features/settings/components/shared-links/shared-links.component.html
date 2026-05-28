@@ -71,9 +71,9 @@
 
             <!-- Actions -->
             <div class="flex items-center gap-2 mt-2 md:mt-0 pt-4 md:pt-0 md:pl-6 md:border-l border-[color:var(--border-color)] shared-actions">
-              <button (click)="openLink(item.share_token)" class="px-4 py-2 rounded-xl bg-white/5 border border-[color:var(--border-color)] text-xs font-bold uppercase tracking-wider transition-all hover:bg-white/10" style="color: var(--text-primary)">
+              <a [href]="getShareUrl(item.share_token)" target="_blank" class="px-4 py-2 rounded-xl bg-white/5 border border-[color:var(--border-color)] text-xs font-bold uppercase tracking-wider transition-all hover:bg-white/10 flex items-center justify-center" style="color: var(--text-primary); text-decoration: none;">
                 Preview
-              </button>
+              </a>
               <button (click)="copyLink(item)" class="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5"
                 [style.background]="copiedMap()[item.share_token] ? 'rgba(16, 185, 129, 0.12)' : 'var(--bg-secondary)'"
                 [style.border]="copiedMap()[item.share_token] ? '1px solid #10b981' : '1px solid var(--border-color)'"

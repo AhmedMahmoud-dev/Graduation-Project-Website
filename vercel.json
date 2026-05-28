@@ -4,10 +4,16 @@
       "src": "/text/(.*)",
       "dest": "http://16.171.68.186/$1"
     },
-
     {
       "src": "/audio/(.*)",
       "dest": "http://13.51.255.179:8001/$1"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
