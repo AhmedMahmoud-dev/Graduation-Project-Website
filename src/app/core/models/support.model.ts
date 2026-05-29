@@ -1,3 +1,5 @@
+import { ApiResponse } from './api-response.model';
+
 // User's own support message with optional reply
 export interface SupportMessage {
   id: number;
@@ -7,6 +9,12 @@ export interface SupportMessage {
   created_at: string;
   reply: string | null;
   replied_at: string | null;
+}
+
+export interface SupportPagedResponse extends ApiResponse<SupportMessage[]> {
+  page: number;
+  page_size: number;
+  total: number;
 }
 
 // Response when submitting a new message

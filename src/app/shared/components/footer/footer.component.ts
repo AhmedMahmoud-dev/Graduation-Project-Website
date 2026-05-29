@@ -28,6 +28,10 @@ export class FooterSectionComponent implements OnInit {
   hasFeedback = signal(false);
   isAdmin = computed(() => this.currentUser()?.roles?.includes('ADMIN'));
 
+  get showFeedbackLink(): boolean {
+    return !this.router.url.includes('/shared-analysis/');
+  }
+
   ngOnInit() {
     this.checkFeedbackStatus();
 

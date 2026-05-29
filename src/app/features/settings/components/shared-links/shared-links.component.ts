@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AnalysisV2Service } from '../../../../core/services/analysis-v2.service';
@@ -9,11 +9,13 @@ import { ActiveShareResponseDto } from '../../../../core/models/share-feature.mo
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
 import { AppIconComponent } from '../../../../shared/components/app-icon/app-icon.component';
+import { LoadMoreComponent } from '../../../../shared/components/load-more/load-more.component';
+import { TooltipComponent } from '../../../../shared/components/tooltip/tooltip.component';
 
 @Component({
   selector: 'app-shared-links',
   standalone: true,
-  imports: [CommonModule, RouterLink, EmptyStateComponent, LoadingStateComponent, AppIconComponent],
+  imports: [CommonModule, RouterLink, EmptyStateComponent, LoadingStateComponent, AppIconComponent, LoadMoreComponent, TooltipComponent],
   templateUrl: './shared-links.component.html',
   styleUrl: './shared-links.component.css'
 })
@@ -27,42 +29,78 @@ export class SharedLinksComponent implements OnInit {
 
   sharedItems = signal<ActiveShareResponseDto[]>([]);
   isLoading = signal<boolean>(true);
+  isLoadingMore = signal<boolean>(false);
   isRefreshing = signal<boolean>(false);
   copiedMap = signal<Record<string, boolean>>({});
+  isMobile = signal<boolean>(false);
+
+  totalCount = signal<number>(0);
+  currentPage = signal<number>(1);
+  readonly pageSize = 10;
+
+  canLoadMore = computed(() => this.sharedItems().length < this.totalCount());
+  remainingCount = computed(() => this.totalCount() - this.sharedItems().length);
 
   ngOnInit() {
     this.fetchSharedLinks();
+    this.isMobile.set(window.innerWidth < 768);
   }
 
-  fetchSharedLinks() {
-    const cached = this.cache.getItem<ActiveShareResponseDto[]>(this.CACHE_KEY);
-    if (cached) {
-      this.sharedItems.set(cached);
-      this.isLoading.set(false);
-      this.isRefreshing.set(true);
+  @HostListener('window:resize')
+  onResize() {
+    this.isMobile.set(window.innerWidth < 768);
+  }
+
+  fetchSharedLinks(isLoadMore: boolean = false) {
+    if (isLoadMore) {
+      this.isLoadingMore.set(true);
     } else {
-      this.isLoading.set(true);
-      this.isRefreshing.set(false);
+      const cached = this.cache.getItem<ActiveShareResponseDto[]>(this.CACHE_KEY);
+      if (cached) {
+        this.sharedItems.set(cached);
+        this.isLoading.set(false);
+        this.isRefreshing.set(true);
+      } else {
+        this.isLoading.set(true);
+        this.isRefreshing.set(false);
+      }
+      this.currentPage.set(1);
     }
 
-    this.analysisV2Service.getSharedAnalyses().subscribe({
+    this.analysisV2Service.getSharedAnalyses(this.currentPage(), this.pageSize).subscribe({
       next: (res) => {
         if (res.is_success && res.data) {
-          this.sharedItems.set(res.data);
-          this.cache.setItem(this.CACHE_KEY, res.data);
+          this.totalCount.set(res.total);
+          if (isLoadMore) {
+            this.sharedItems.update(prev => [...prev, ...res.data!]);
+          } else {
+            this.sharedItems.set(res.data);
+            this.cache.setItem(this.CACHE_KEY, res.data);
+          }
         } else {
-          this.sharedItems.set([]);
-          this.cache.setItem(this.CACHE_KEY, []);
+          if (!isLoadMore) {
+            this.sharedItems.set([]);
+            this.cache.setItem(this.CACHE_KEY, []);
+            this.totalCount.set(0);
+          }
         }
         this.isLoading.set(false);
         this.isRefreshing.set(false);
+        this.isLoadingMore.set(false);
       },
       error: () => {
         this.isLoading.set(false);
         this.isRefreshing.set(false);
+        this.isLoadingMore.set(false);
         this.toastService.show('Error', 'Failed to retrieve shared analyses.', 'error', 'error');
       }
     });
+  }
+
+  loadMore() {
+    if (this.isLoadingMore()) return;
+    this.currentPage.update(p => p + 1);
+    this.fetchSharedLinks(true);
   }
 
   getShareUrl(shareToken: string): string {

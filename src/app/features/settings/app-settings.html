@@ -1,54 +1,88 @@
 <div class="min-h-screen flex flex-col bg-[color:var(--color-bg)] transition-colors duration-300">
-      <!-- Header Section -->
-      <app-page-header title="Settings" [hasNav]="true"
-        description="Personalize your experience by customizing the application theme and emotion colors.">
+  
+  <!-- Mobile Header (Segmented Nav - Hidden on Desktop) -->
+  <div class="lg:hidden">
+    <app-page-header title="Settings" [hasNav]="true"
+      description="Personalize your experience by customizing the application theme and emotion colors.">
+      
+      <div nav class="mb-6 w-full">
+        <app-segmented-nav 
+          [options]="navOptions()" 
+          [selectedValue]="activeMainTab()" 
+          (selectedValueChange)="setActiveTab($event)">
+        </app-segmented-nav>
+      </div>
+    </app-page-header>
+  </div>
+
+  <!-- Main Grid Layout -->
+  <section class="pt-6 lg:pt-28 pb-8 lg:pb-16 px-4 md:px-12 bg-[color:var(--color-bg)] flex-1">
+    <div class="max-w-7xl mx-auto">
+      
+      <!-- Desktop Settings Header -->
+      <h1 class="hidden lg:block text-3xl font-bold tracking-tight text-[color:var(--text-primary)] mb-8 font-heading">Settings</h1>
+
+      <!-- Responsive Grid Layout (1 column on mobile, 4 columns on desktop) -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-12">
         
-        <div nav class="mb-6 w-full lg:w-max">
-          <app-segmented-nav 
-            [options]="navOptions()" 
-            [selectedValue]="activeMainTab()" 
-            (selectedValueChange)="setActiveTab($event)">
-          </app-segmented-nav>
-        </div>
-      </app-page-header>
+        <!-- Left Column: Desktop Navigation Sidebar (Hidden on mobile) -->
+        <aside class="hidden lg:block lg:col-span-1">
+          <nav class="space-y-1 sticky top-24">
+            @for (option of navOptions(); track option.value) {
+              <a 
+                [routerLink]="['/settings', option.value]"
+                routerLinkActive="sidebar-link-active"
+                [routerLinkActiveOptions]="{ exact: true }"
+                class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] transition-all duration-200"
+              >
+                <span>{{ option.label }}</span>
+              </a>
+            }
+          </nav>
+        </aside>
 
-      <!-- Main Content Section -->
-      <section class="py-12 px-4 md:px-12 bg-[color:var(--color-bg)] flex-1">
-        <div class="max-w-7xl mx-auto">
-          
-          <!-- Appearance & Colors Tab Content -->
-          @if (activeMainTab() === 'colors') {
-            <app-appearance-and-colors (settingsChanged)="triggerToast()"></app-appearance-and-colors>
-          }
+        <!-- Right Column: Content Area (Full width on mobile, 3 columns on desktop) -->
+        <main class="col-span-1 lg:col-span-3">
 
-          <!-- Account Tab Content -->
-          @if (activeMainTab() === 'account') {
-            <app-account-settings (passwordChanged)="triggerToast()"></app-account-settings>
-          }
+          <!-- Active Subpage Content Renderer -->
+          <div class="transition-all duration-300">
+            <!-- Appearance & Colors Tab Content -->
+            @if (activeMainTab() === 'colors') {
+              <app-appearance-and-colors (settingsChanged)="triggerToast()"></app-appearance-and-colors>
+            }
 
-          <!-- Shared Links Tab Content -->
-          @if (activeMainTab() === 'shared') {
-            <app-shared-links></app-shared-links>
-          }
-          
-          <!-- Alerts Tab Content -->
-          @if (activeMainTab() === 'alerts') {
-            <app-alert-preferences (settingsChanged)="triggerToast()"></app-alert-preferences>
-          }
+            <!-- Account Tab Content -->
+            @if (activeMainTab() === 'account') {
+              <app-account-settings (passwordChanged)="triggerToast()"></app-account-settings>
+            }
 
-          <!-- Notifications Tab Content -->
-          @if (activeMainTab() === 'notifications') {
-            <app-notification-settings></app-notification-settings>
-          }
+            <!-- Shared Links Tab Content -->
+            @if (activeMainTab() === 'shared') {
+              <app-shared-links></app-shared-links>
+            }
+            
+            <!-- Alerts Tab Content -->
+            @if (activeMainTab() === 'alerts') {
+              <app-alert-preferences (settingsChanged)="triggerToast()"></app-alert-preferences>
+            }
 
-          <!-- Support Tab Content -->
-          @if (activeMainTab() === 'support') {
-            <app-contact-support></app-contact-support>
-          }
-        </div>
-      </section>
+            <!-- Notifications Tab Content -->
+            @if (activeMainTab() === 'notifications') {
+              <app-notification-settings></app-notification-settings>
+            }
 
-      @if (!isAdmin()) {
-        <app-footer-section></app-footer-section>
-      }
+            <!-- Support Tab Content -->
+            @if (activeMainTab() === 'support') {
+              <app-contact-support [initialTab]="activeSupportTab()"></app-contact-support>
+            }
+          </div>
+        </main>
+
+      </div>
+    </div>
+  </section>
+
+  @if (!isAdmin()) {
+    <app-footer-section></app-footer-section>
+  }
 </div>

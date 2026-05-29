@@ -13,9 +13,16 @@ export interface ActiveShareResponseDto {
   timestamp: string;
 }
 
+export interface SharedAnalysesPagedResponse extends ApiResponse<ActiveShareResponseDto[]> {
+  page: number;
+  page_size: number;
+  total: number;
+}
+
 export interface SharedAnalysisDto {
   client_id: string;
   type: 'Text' | 'Audio' | 'Image' | 'Video';
   timestamp: string;
   result: any;
 }
+

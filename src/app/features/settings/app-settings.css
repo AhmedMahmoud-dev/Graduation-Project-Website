@@ -2,5 +2,10 @@
   display: block;
 }
 
+.sidebar-link-active {
+  color: var(--text-primary) !important;
+  background-color: var(--bg-hover) !important;
+}
+
 
 

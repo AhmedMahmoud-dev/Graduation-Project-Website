@@ -4,7 +4,7 @@
         <app-segmented-nav 
             [options]="navOptions()" 
             [selectedValue]="activeView()" 
-            (selectedValueChange)="activeView.set($any($event))">
+            (selectedValueChange)="setActiveView($any($event))">
         </app-segmented-nav>
     </div>
 
@@ -89,21 +89,20 @@
                     <div class="header-info">
                         <h3 class="subject-text">{{ msg.subject }}</h3>
                         <div class="meta-info">
-                            <span>ID: #{{ msg.id }}</span>
-                            <span class="dot"></span>
                             <span>{{ formatDate(msg.created_at) }}</span>
                         </div>
                     </div>
 
-                    <!-- Status Badge -->
+                    <!-- Status Badge: only show when not replied -->
+                    @if (msg.status !== 'replied') {
                     <div class="badge-wrapper">
                         <span class="status-badge"
                             [class.status-badge--pending]="msg.status === 'open' || msg.status === 'pending'"
-                            [class.status-badge--closed]="msg.status === 'closed'"
-                            [class.status-badge--replied]="msg.status === 'replied'">
-                            {{ (msg.status === 'open' || msg.status === 'pending') ? 'Pending' : (msg.status === 'replied' ? 'Replied' : 'Closed') }}
+                            [class.status-badge--closed]="msg.status === 'closed'">
+                            {{ (msg.status === 'open' || msg.status === 'pending') ? 'Pending' : 'Closed' }}
                         </span>
                     </div>
+                    }
                 </div>
 
                 <div class="history-card__content">
@@ -119,7 +118,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                                 </svg>
                             </div>
-                            <span class="support-label">Support Response</span>
+                            <span class="support-label">Response</span>
                         </div>
                         <span class="reply-date">{{ formatDate(msg.replied_at) }}</span>
                     </div>
@@ -131,6 +130,18 @@
             </div>
             }
         </div>
+
+        @if (canLoadMore()) {
+        <div class="mt-8">
+            <app-load-more
+                [isLoadingMore]="isLoadingMore()"
+                [searchQuery]="''"
+                [remainingCount]="remainingCount()"
+                label="Messages"
+                (loadMore)="loadMore()">
+            </app-load-more>
+        </div>
+        }
         }
     </div>
     }

@@ -105,7 +105,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/compare/compare/compare.component').then(m => m.CompareComponent)
       },
       { path: 'alerts', component: AlertsComponent },
-      { path: 'settings', component: SettingsComponent }
+      { path: 'settings', redirectTo: 'settings/colors', pathMatch: 'full' },
+      { path: 'settings/support', redirectTo: 'settings/support/form', pathMatch: 'full' },
+      { path: 'settings/support/:tab', component: SettingsComponent },
+      { path: 'settings/:subPage', component: SettingsComponent }
     ]
   },
 

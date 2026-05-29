@@ -19,7 +19,7 @@ import {
   AnalysisDetails,
   AnalysisType
 } from '../models/analysis-v2.model';
-import { ShareLinkResponseDto, ActiveShareResponseDto, SharedAnalysisDto } from '../models/share-feature.model';
+import { ShareLinkResponseDto, ActiveShareResponseDto, SharedAnalysisDto, SharedAnalysesPagedResponse } from '../models/share-feature.model';
 
 
 @Injectable({
@@ -257,9 +257,9 @@ export class AnalysisV2Service {
   /**
    * Retrieves all currently active share links for the authenticated user.
    */
-  getSharedAnalyses(): Observable<ApiResponse<ActiveShareResponseDto[]>> {
-    const url = `${environment.apiUrl}/api/analysis/shared`;
-    return this.http.get<ApiResponse<ActiveShareResponseDto[]>>(url);
+  getSharedAnalyses(page: number = 1, pageSize: number = 10): Observable<SharedAnalysesPagedResponse> {
+    const url = `${environment.apiUrl}/api/analysis/shared?page=${page}&pageSize=${pageSize}`;
+    return this.http.get<SharedAnalysesPagedResponse>(url);
   }
 
   /**

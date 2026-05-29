@@ -20,6 +20,7 @@
   white-space: nowrap;
   pointer-events: none;
   z-index: 50;
+  text-transform: none;
 
   /* Transition & visibility logic */
   opacity: 0;

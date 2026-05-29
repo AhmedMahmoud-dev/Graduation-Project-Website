@@ -47,7 +47,7 @@ export class SessionTopBarComponent implements OnInit, OnDestroy {
   }
 
   private checkSharingStatus() {
-    this.analysisV2Service.getSharedAnalyses().subscribe({
+    this.analysisV2Service.getSharedAnalyses(1, 50).subscribe({
       next: (res) => {
         if (res.is_success && res.data) {
           // Update the cache so the settings page has the latest list instantly
