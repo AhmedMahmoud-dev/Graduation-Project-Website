@@ -1,6 +1,6 @@
 <div
   class="w-fit max-w-full mx-auto bg-[color:var(--bg-secondary)] rounded-2xl border border-[color:var(--border-color)] shadow-sm overflow-hidden">
-  <div class="flex items-center gap-2 p-1.5 overflow-x-auto no-scrollbar">
+  <div class="flex items-center gap-2 p-1.5 overflow-x-auto no-scrollbar" (scroll)="onScroll($event)">
     @for (option of options; track option.value) {
     <button #navButton (click)="selectOption(option, navButton)"
       class="px-5 md:px-8 py-2 md:py-2.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest md:tracking-[0.15em] transition-all flex items-center justify-center gap-2 shrink-0 whitespace-nowrap outline-none flex-none border border-transparent"

@@ -23,48 +23,81 @@ export class SegmentedNavComponent implements AfterViewInit, OnChanges {
 
   @ViewChildren('navButton') navButtons!: QueryList<ElementRef<HTMLButtonElement>>;
 
+  private scrollTargetValue: string | null = null;
+  private static savedScrollPositions = new Map<string, number>();
+
+  private getCacheKey(): string {
+    return this.options.map(o => o.value).join(',');
+  }
+
+  onScroll(event: Event) {
+    const target = event.target as HTMLElement;
+    if (target && this.options.length > 0) {
+      SegmentedNavComponent.savedScrollPositions.set(this.getCacheKey(), target.scrollLeft);
+    }
+  }
+
   ngAfterViewInit() {
-    this.scrollToActive();
+    const cachedScroll = SegmentedNavComponent.savedScrollPositions.get(this.getCacheKey());
+    const parent = this.navButtons.first?.nativeElement.parentElement;
+    if (parent && cachedScroll !== undefined) {
+      parent.scrollLeft = cachedScroll;
+      this.scrollToActive('auto');
+    } else {
+      this.scrollToActive('smooth');
+    }
   }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['selectedValue'] && !changes['selectedValue'].firstChange) {
-      this.scrollToActive();
+      const newValue = changes['selectedValue'].currentValue;
+      if (this.scrollTargetValue === newValue) {
+        this.scrollTargetValue = null;
+      } else {
+        this.scrollTargetValue = null;
+        this.scrollToActive('smooth');
+      }
     }
   }
 
   selectOption(option: SegmentedNavOption, element: HTMLButtonElement) {
     if (option.disabled) return;
     if (this.selectedValue !== option.value) {
+      this.scrollTargetValue = option.value;
       this.selectedValue = option.value;
       this.selectedValueChange.emit(option.value);
-      this.scrollToElement(element);
+      this.scrollToElement(element, 'smooth');
     }
   }
 
-  private scrollToActive() {
+  private scrollToActive(behavior: ScrollBehavior = 'smooth') {
     // Small timeout to ensure view is updated and QueryList is populated
     setTimeout(() => {
       const activeButton = this.navButtons.find((btn, index) =>
         this.options[index].value === this.selectedValue
       );
       if (activeButton) {
-        this.scrollToElement(activeButton.nativeElement);
+        this.scrollToElement(activeButton.nativeElement, behavior);
       }
     }, 50);
   }
 
-  private scrollToElement(element: HTMLElement) {
+  private scrollToElement(element: HTMLElement, behavior: ScrollBehavior = 'smooth') {
     const parent = element.parentElement;
     if (!parent) return;
 
-    // Calculate the position to center the element horizontally within its scrollable container
-    // without triggering vertical page scrolling
-    const scrollLeft = element.offsetLeft - (parent.clientWidth / 2) + (element.clientWidth / 2);
+    // Calculate position using getBoundingClientRect to avoid offsetParent issues
+    const parentRect = parent.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    const scrollLeft = parent.scrollLeft + (elementRect.left - parentRect.left) - (parentRect.width / 2) + (elementRect.width / 2);
+
+    if (this.options.length > 0) {
+      SegmentedNavComponent.savedScrollPositions.set(this.getCacheKey(), scrollLeft);
+    }
 
     parent.scrollTo({
       left: scrollLeft,
-      behavior: 'smooth'
+      behavior
     });
   }
 }
