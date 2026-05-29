@@ -269,22 +269,24 @@ export class AuthService {
       'emotra_public_testimonials'
     ];
 
+    const keysToDelete: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && key.startsWith('emotra_') && !retainKeys.includes(key)) {
-        localStorage.removeItem(key);
-        i--; // Adjust index after removal
+        keysToDelete.push(key);
       }
     }
+    keysToDelete.forEach(k => localStorage.removeItem(k));
 
     // Clear Session Storage
+    const sessionKeysToDelete: string[] = [];
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
       if (key && key.startsWith('emotra_') && key !== 'emotra_ban_details') {
-        sessionStorage.removeItem(key);
-        i--;
+        sessionKeysToDelete.push(key);
       }
     }
+    sessionKeysToDelete.forEach(k => sessionStorage.removeItem(k));
 
     this.currentUser.set(null);
   }
