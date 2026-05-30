@@ -13,6 +13,7 @@ import { AlertsService } from './alerts.service';
 import { AlertService } from './alert.service';
 import { AdminService } from './admin.service';
 import { QuotaStore } from '../stores/quota.store';
+import { AppCacheService } from './app-cache.service';
 
 @Injectable({
   providedIn: 'root'
@@ -27,6 +28,7 @@ export class AuthService {
   private alertService = inject(AlertService);
   private adminService = inject(AdminService);
   private quotaStore = inject(QuotaStore);
+  private appCache = inject(AppCacheService);
 
   private isBrowser = isPlatformBrowser(this.platformId);
 
@@ -139,6 +141,69 @@ export class AuthService {
           }
 
           // Both need SignalR
+          this.alertsService.initSignalR(user.token);
+        }
+      }),
+      catchError(err => this.handleHttpError(err))
+    );
+  }
+
+  /**
+   * Login user with Google
+   * POST /api/auth/google
+   */
+  loginWithGoogle(idToken: string): Observable<ApiResponse<AuthUser>> {
+    const url = `${environment.apiUrl}/api/auth/google`;
+    const payload = { id_token: idToken };
+
+    return this.http.post<ApiResponse<AuthUser>>(url, payload).pipe(
+      tap(res => {
+        if (res.is_success && res.data) {
+          const user = res.data;
+
+          // Check if user is banned
+          if (user.ban_reason) {
+            this.storeBanDetails({
+              ban_reason: user.ban_reason,
+              ban_expires_at: user.ban_expires_at,
+              is_permanent: !!user.is_permanent
+            });
+            return;
+          }
+
+          const isAdmin = user.roles?.includes('ADMIN');
+          this.saveAuth(user);
+          this.colorSettingsService.syncWithBackend();
+
+          if (!isAdmin) {
+            this.prefetchHistoryMeta();
+            this.alertsService.fetchStats();
+            this.alertsService.fetchSettings();
+            this.quotaStore.loadQuota();
+
+            // Alerts prefetch using AppCacheService (to avoid raw localStorage calls)
+            this.alertService.getAlerts(1, 10).pipe(takeUntil(this.logout$)).subscribe({
+              next: r => {
+                if (!this.isAuthenticated()) return;
+                if (r.is_success && r.data) {
+                  this.appCache.setItem('emotra_alerts_meta', {
+                    data: r.data.items,
+                    total: r.data.total_count
+                  });
+                }
+              }
+            });
+            this.alertService.getStats().pipe(takeUntil(this.logout$)).subscribe({
+              next: r => {
+                if (!this.isAuthenticated()) return;
+                if (r.is_success && r.data) this.appCache.setItem('emotra_alerts_stats', r.data);
+              }
+            });
+          } else {
+            this.prefetchAdminData();
+          }
+
+          // Initialize SignalR
           this.alertsService.initSignalR(user.token);
         }
       }),

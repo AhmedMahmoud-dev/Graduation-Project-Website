@@ -26,6 +26,7 @@ export interface AuthUser {
   ban_reason: string | null;
   ban_expires_at: string | null;
   is_permanent: boolean | null;
+  has_password: boolean;
 }
 
 export interface BanDetails {

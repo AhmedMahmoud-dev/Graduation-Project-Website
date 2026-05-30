@@ -10,4 +10,5 @@ export const environment = {
   videoApiUrl: "http://127.0.0.1:8004",
   tokenKey: "emotra_token",
   userKey: "emotra_user",
+  googleClientId: '646135089281-gimlot69h8vu6lr6ajj7log9pmev244i.apps.googleusercontent.com'
 };

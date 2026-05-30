@@ -65,58 +65,22 @@
 
 
 
-    @if (!passwordResetStep()) {
-    <div class="p-5 sm:p-6 bg-[color:var(--color-bg)] rounded-3xl border border-[color:var(--color-border)] mb-8">
-      <p class="text-sm text-[color:var(--color-text-muted)] leading-relaxed mb-6 font-medium">To change your password,
-        we'll send a secure validation code to your email.</p>
-      <button (click)="sendResetCode()" [disabled]="isResetLoading()"
-        class="w-full sm:w-auto px-6 py-3 bg-[color:var(--color-primary)] text-white font-bold rounded-2xl hover:opacity-90 transition-all shadow-md shadow-[color:var(--color-primary)]/10 disabled:opacity-50 flex items-center justify-center gap-2">
-        @if (!isResetLoading()) {
-        <span>Send Reset Code</span>
-        }
-        @if (isResetLoading()) {
-        <svg class="animate-spin h-5 w-5 text-current" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-          </path>
-        </svg>
-        }
-      </button>
-    </div>
+    @if (authService.currentUser()?.has_password === false) {
+      <div class="p-5 sm:p-6 bg-[color:var(--color-bg)] rounded-3xl border border-[color:var(--color-border)] mb-8">
+        <p class="text-sm text-[color:var(--color-text-muted)] leading-relaxed font-semibold">Your account is managed by Google. Sign in using the Google button.</p>
+      </div>
     } @else {
-    <div class="space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
-      <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl mb-4">
-        <p class="text-xs text-amber-600 dark:text-amber-400 font-bold">Code sent! Check your inbox for the 6-digit
-          confirmation key.</p>
-      </div>
-
-      <div>
-        <label
-          class="block text-xs font-black uppercase tracking-widest text-[color:var(--color-text-muted)] mb-3">Confirmation
-          Code</label>
-        <input type="text" [(ngModel)]="resetCode"
-          class="w-full px-5 py-4 bg-[color:var(--color-bg)] border border-[color:var(--color-border)] rounded-2xl text-[color:var(--color-text)] font-mono text-xl tracking-[0.2em] sm:tracking-[0.5em] text-center focus:ring-2 focus:ring-[color:var(--color-primary)] outline-none"
-          maxlength="6" placeholder="000000">
-      </div>
-
-      <div>
-        <label class="block text-xs font-black uppercase tracking-widest text-[color:var(--color-text-muted)] mb-3">New
-          Password</label>
-        <input type="password" [(ngModel)]="newPassword"
-          class="w-full px-5 py-4 bg-[color:var(--color-bg)] border border-[color:var(--color-border)] rounded-2xl text-[color:var(--color-text)] font-bold focus:ring-2 focus:ring-[color:var(--color-primary)] outline-none"
-          placeholder="••••••••">
-      </div>
-
-      <div class="pt-4 flex flex-col sm:flex-row gap-3">
-        <button (click)="confirmPasswordReset()"
-          [disabled]="isResetLoading() || resetCode.length < 6 || newPassword.length < 6"
-          class="w-full sm:flex-1 py-3 bg-[color:var(--color-primary)] text-white font-bold rounded-2xl hover:opacity-90 transition-all shadow-lg disabled:opacity-50">
+      @if (!passwordResetStep()) {
+      <div class="p-5 sm:p-6 bg-[color:var(--color-bg)] rounded-3xl border border-[color:var(--color-border)] mb-8">
+        <p class="text-sm text-[color:var(--color-text-muted)] leading-relaxed mb-6 font-medium">To change your password,
+          we'll send a secure validation code to your email.</p>
+        <button (click)="sendResetCode()" [disabled]="isResetLoading()"
+          class="w-full sm:w-auto px-6 py-3 bg-[color:var(--color-primary)] text-white font-bold rounded-2xl hover:opacity-90 transition-all shadow-md shadow-[color:var(--color-primary)]/10 disabled:opacity-50 flex items-center justify-center gap-2">
           @if (!isResetLoading()) {
-          <span>Update Password</span>
+          <span>Send Reset Code</span>
           }
           @if (isResetLoading()) {
-          <svg class="animate-spin h-5 w-5 mx-auto text-current" fill="none" viewBox="0 0 24 24">
+          <svg class="animate-spin h-5 w-5 text-current" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor"
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
@@ -124,12 +88,54 @@
           </svg>
           }
         </button>
-        <button (click)="passwordResetStep.set(false)"
-          class="w-full sm:w-auto px-6 py-3 bg-[color:var(--color-bg)] text-[color:var(--color-text-muted)] font-bold rounded-2xl border border-[color:var(--color-border)] hover:bg-[color:var(--color-border)] hover:text-[color:var(--color-text)] transition-all">
-          Cancel
-        </button>
       </div>
-    </div>
+      } @else {
+      <div class="space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
+        <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl mb-4">
+          <p class="text-xs text-amber-600 dark:text-amber-400 font-bold">Code sent! Check your inbox for the 6-digit
+            confirmation key.</p>
+        </div>
+
+        <div>
+          <label
+            class="block text-xs font-black uppercase tracking-widest text-[color:var(--color-text-muted)] mb-3">Confirmation
+            Code</label>
+          <input type="text" [(ngModel)]="resetCode"
+            class="w-full px-5 py-4 bg-[color:var(--color-bg)] border border-[color:var(--color-border)] rounded-2xl text-[color:var(--color-text)] font-mono text-xl tracking-[0.2em] sm:tracking-[0.5em] text-center focus:ring-2 focus:ring-[color:var(--color-primary)] outline-none"
+            maxlength="6" placeholder="000000">
+        </div>
+
+        <div>
+          <label class="block text-xs font-black uppercase tracking-widest text-[color:var(--color-text-muted)] mb-3">New
+            Password</label>
+          <input type="password" [(ngModel)]="newPassword"
+            class="w-full px-5 py-4 bg-[color:var(--color-bg)] border border-[color:var(--color-border)] rounded-2xl text-[color:var(--color-text)] font-bold focus:ring-2 focus:ring-[color:var(--color-primary)] outline-none"
+            placeholder="••••••••">
+        </div>
+
+        <div class="pt-4 flex flex-col sm:flex-row gap-3">
+          <button (click)="confirmPasswordReset()"
+            [disabled]="isResetLoading() || resetCode.length < 6 || newPassword.length < 6"
+            class="w-full sm:flex-1 py-3 bg-[color:var(--color-primary)] text-white font-bold rounded-2xl hover:opacity-90 transition-all shadow-lg disabled:opacity-50">
+            @if (!isResetLoading()) {
+            <span>Update Password</span>
+            }
+            @if (isResetLoading()) {
+            <svg class="animate-spin h-5 w-5 mx-auto text-current" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+              </path>
+            </svg>
+            }
+          </button>
+          <button (click)="passwordResetStep.set(false)"
+            class="w-full sm:w-auto px-6 py-3 bg-[color:var(--color-bg)] text-[color:var(--color-text-muted)] font-bold rounded-2xl border border-[color:var(--color-border)] hover:bg-[color:var(--color-border)] hover:text-[color:var(--color-text)] transition-all">
+            Cancel
+          </button>
+        </div>
+      </div>
+      }
     }
   </div>
 </div>

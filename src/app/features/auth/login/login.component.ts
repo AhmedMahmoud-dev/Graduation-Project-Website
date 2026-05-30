@@ -6,16 +6,17 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { PasswordInputComponent } from '../../../shared/components/form/password-input/password-input.component';
 import { FormFieldErrorComponent } from '../../../shared/components/form/form-field-error/form-field-error.component';
-import { TooltipComponent } from '../../../shared/components/tooltip/tooltip.component';
 import { FormattingService } from '../../../core/services/formatting.service';
 import { CommonModule } from '@angular/common';
 import { BanDetails } from '../../../core/models/api-response.model';
+import { environment } from '../../../../environments/environment';
+import { GoogleButtonComponent } from '../../../shared/components/form/google-button/google-button.component';
 
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterModule, PasswordInputComponent, FormFieldErrorComponent, TooltipComponent, CommonModule],
+  imports: [ReactiveFormsModule, RouterModule, PasswordInputComponent, FormFieldErrorComponent, CommonModule, GoogleButtonComponent],
   templateUrl: './app-login.html',
   styleUrl: './app-login.css'
 })
@@ -25,7 +26,6 @@ export class LoginComponent implements OnInit {
   private router = inject(Router);
   private toastService = inject(ToastService);
   protected format = inject(FormattingService);
-
 
   banDetails = signal<BanDetails | null>(null);
   accountDeleted = signal(false);
@@ -93,5 +93,44 @@ export class LoginComponent implements OnInit {
     } else {
       this.loginForm.markAllAsTouched();
     }
+  }
+
+  handleGoogleCredential(idToken: string) {
+    this.isLoading = true;
+    this.loginForm.disable();
+
+    this.authService.loginWithGoogle(idToken).subscribe({
+      next: (res) => {
+        if (res.data?.ban_reason) {
+          this.isLoading = false;
+          this.loginForm.enable();
+          const details: BanDetails = {
+            ban_reason: res.data.ban_reason,
+            ban_expires_at: res.data.ban_expires_at,
+            is_permanent: !!res.data.is_permanent
+          };
+          this.banDetails.set(details);
+          return;
+        }
+
+        this.toastService.show(res.message || 'Welcome Back', 'Redirecting to your dashboard...', 'success', 'check');
+        const isAdmin = res.data?.roles?.includes('ADMIN');
+        this.router.navigate([isAdmin ? '/admin/dashboard' : '/dashboard']);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.loginForm.enable();
+
+        if (err.status === 403 && err.error?.data?.ban_reason) {
+          const details: BanDetails = err.error.data;
+          this.authService.storeBanDetails(details);
+          this.banDetails.set(details);
+          this.authService.clearBanDetails();
+          return;
+        }
+
+        this.toastService.show('Google Login Failed', err.message || 'Authentication failed. Please try again.', 'error', 'error');
+      }
+    });
   }
 }

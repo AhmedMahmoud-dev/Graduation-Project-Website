@@ -6,6 +6,9 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FormFieldErrorComponent } from '../../../shared/components/form/form-field-error/form-field-error.component';
 import { PasswordInputComponent } from '../../../shared/components/form/password-input/password-input.component';
+import { environment } from '../../../../environments/environment';
+import { BanDetails } from '../../../core/models/api-response.model';
+import { GoogleButtonComponent } from '../../../shared/components/form/google-button/google-button.component';
 
 
 function passwordMatchValidator(): ValidatorFn {
@@ -30,7 +33,7 @@ function passwordMatchValidator(): ValidatorFn {
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterModule, FormFieldErrorComponent, PasswordInputComponent],
+  imports: [ReactiveFormsModule, RouterModule, FormFieldErrorComponent, PasswordInputComponent, GoogleButtonComponent],
   templateUrl: './app-register.html',
   styleUrl: './app-register.css'
 })
@@ -40,6 +43,7 @@ export class RegisterComponent implements OnInit {
   private router = inject(Router);
   private toastService = inject(ToastService);
 
+  banDetails = signal<BanDetails | null>(null);
 
   ngOnInit() {
   }
@@ -49,8 +53,7 @@ export class RegisterComponent implements OnInit {
     last_name: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(6)]],
-    confirmPassword: ['', [Validators.required]],
-    terms: [false, [Validators.requiredTrue]]
+    confirmPassword: ['', [Validators.required]]
   }, { validators: passwordMatchValidator() });
 
   isLoading = false;
@@ -94,5 +97,44 @@ export class RegisterComponent implements OnInit {
     } else {
       this.registerForm.markAllAsTouched();
     }
+  }
+
+  handleGoogleCredential(idToken: string) {
+    this.isLoading = true;
+    this.registerForm.disable();
+
+    this.authService.loginWithGoogle(idToken).subscribe({
+      next: (res) => {
+        if (res.data?.ban_reason) {
+          this.isLoading = false;
+          this.registerForm.enable();
+          const details: BanDetails = {
+            ban_reason: res.data.ban_reason,
+            ban_expires_at: res.data.ban_expires_at,
+            is_permanent: !!res.data.is_permanent
+          };
+          this.banDetails.set(details);
+          return;
+        }
+
+        this.toastService.show(res.message || 'Welcome Back', 'Redirecting to your dashboard...', 'success', 'check');
+        const isAdmin = res.data?.roles?.includes('ADMIN');
+        this.router.navigate([isAdmin ? '/admin/dashboard' : '/dashboard']);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.registerForm.enable();
+
+        if (err.status === 403 && err.error?.data?.ban_reason) {
+          const details: BanDetails = err.error.data;
+          this.authService.storeBanDetails(details);
+          this.banDetails.set(details);
+          this.authService.clearBanDetails();
+          return;
+        }
+
+        this.toastService.show('Google Login Failed', err.message || 'Authentication failed. Please try again.', 'error', 'error');
+      }
+    });
   }
 }
