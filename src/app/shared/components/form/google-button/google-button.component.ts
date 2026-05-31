@@ -18,7 +18,8 @@ export class GoogleButtonComponent implements AfterViewInit {
   constructor(private ngZone: NgZone) {}
 
   ngAfterViewInit() {
-    this.initGoogleButton();
+    // Google Sign-In is currently disabled (Coming Soon)
+    // this.initGoogleButton();
   }
 
   private initGoogleButton(): void {
