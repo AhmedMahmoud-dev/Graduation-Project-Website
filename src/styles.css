@@ -460,26 +460,7 @@
     background: rgba(255, 255, 255, 0.05);
   }
 
-  /* Force Google Sign-In button and all intermediate wrapper elements to be responsive */
-  .google-iframe-container,
-  .google-iframe-container * {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
 
-  /* Hover and active states for custom Google button wrapper */
-  .group:hover .google-btn {
-    background-color: var(--bg-hover) !important;
-  }
-  
-  [data-theme="dark"] .group:hover .google-btn {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-  }
-
-  .group:active .google-btn {
-    transform: scale(0.98);
-  }
 
   .divider-text {
     color: var(--text-muted);

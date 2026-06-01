@@ -1,5 +1,6 @@
-import { Component, ElementRef, AfterViewInit, Output, EventEmitter, ViewChild, NgZone, input } from '@angular/core';
+import { Component, ElementRef, AfterViewInit, Output, EventEmitter, ViewChild, NgZone, input, OnDestroy, effect } from '@angular/core';
 import { environment } from '../../../../../environments/environment';
+import { ThemeService } from '../../../../core/services/theme.service';
 
 declare const google: any;
 
@@ -9,22 +10,48 @@ declare const google: any;
   templateUrl: './google-button.component.html',
   styleUrls: []
 })
-export class GoogleButtonComponent implements AfterViewInit {
+export class GoogleButtonComponent implements AfterViewInit, OnDestroy {
   disabled = input(false);
   @Output() credential = new EventEmitter<string>();
 
   @ViewChild('googleBtnContainer', { static: true }) googleBtnContainer!: ElementRef;
 
-  constructor(private ngZone: NgZone) {}
+  private resizeListener?: () => void;
+  private resizeTimeout: any;
+
+  constructor(
+    private ngZone: NgZone,
+    private themeService: ThemeService
+  ) {
+    // Re-render the Google button when the theme changes
+    effect(() => {
+      const theme = this.themeService.resolvedTheme();
+      this.ngZone.run(() => {
+        if (typeof google !== 'undefined' && google?.accounts?.id) {
+          this.renderGoogleButton();
+        }
+      });
+    });
+  }
 
   ngAfterViewInit() {
     this.initGoogleButton();
+  }
+
+  ngOnDestroy() {
+    if (this.resizeListener) {
+      window.removeEventListener('resize', this.resizeListener);
+    }
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout);
+    }
   }
 
   private initGoogleButton(): void {
     // If the GIS library is already loaded (cached), initialize immediately
     if (typeof google !== 'undefined' && google?.accounts?.id) {
       this.renderGoogleButton();
+      this.setupResizeListener();
       return;
     }
 
@@ -42,7 +69,10 @@ export class GoogleButtonComponent implements AfterViewInit {
     const interval = setInterval(() => {
       if (typeof google !== 'undefined' && google?.accounts?.id) {
         clearInterval(interval);
-        this.ngZone.run(() => this.renderGoogleButton());
+        this.ngZone.run(() => {
+          this.renderGoogleButton();
+          this.setupResizeListener();
+        });
       }
     }, 100);
 
@@ -51,6 +81,18 @@ export class GoogleButtonComponent implements AfterViewInit {
   }
 
   private renderGoogleButton(): void {
+    const element = this.googleBtnContainer.nativeElement;
+    if (!element) return;
+
+    // Clear previous rendering
+    element.innerHTML = '';
+
+    // Calculate dynamic responsive width (Google limits width between 250px and 400px)
+    const rawWidth = element.clientWidth || 320;
+    const buttonWidth = Math.min(Math.max(rawWidth, 250), 400);
+
+    const isDark = this.themeService.resolvedTheme() === 'dark';
+
     google.accounts.id.initialize({
       client_id: environment.googleClientId,
       callback: (response: any) => {
@@ -63,9 +105,30 @@ export class GoogleButtonComponent implements AfterViewInit {
     });
 
     google.accounts.id.renderButton(
-      this.googleBtnContainer.nativeElement,
-      { theme: 'outline', size: 'large', width: 400 }
+      element,
+      { 
+        theme: isDark ? 'filled_black' : 'outline', 
+        size: 'large', 
+        width: buttonWidth,
+        text: 'continue_with',
+        shape: 'rectangular',
+        logo_alignment: 'center'
+      }
     );
   }
-}
 
+  private setupResizeListener(): void {
+    if (this.resizeListener) return;
+
+    this.resizeListener = () => {
+      if (this.resizeTimeout) {
+        clearTimeout(this.resizeTimeout);
+      }
+      this.resizeTimeout = setTimeout(() => {
+        this.ngZone.run(() => this.renderGoogleButton());
+      }, 250);
+    };
+
+    window.addEventListener('resize', this.resizeListener);
+  }
+}
