@@ -129,7 +129,8 @@ export class LoginComponent implements OnInit {
           return;
         }
 
-        this.toastService.show('Google Login Failed', err.message || 'Authentication failed. Please try again.', 'error', 'error');
+        const errMsg = err.message || 'This email is registered using a password. Please sign in with your email and password.';
+        this.toastService.show('Google Login Failed', errMsg, 'error', 'error');
       }
     });
   }

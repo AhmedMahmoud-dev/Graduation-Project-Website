@@ -90,7 +90,8 @@ export class RegisterComponent implements OnInit {
             this.validationErrors.set(err.validationErrors);
             this.toastService.show('Form Errors', err.message || 'Please correct the highlighted errors.', 'error', 'error');
           } else {
-            this.toastService.show('Error', err.message || 'Registration failed.', 'error', 'error');
+            const errMsg = err.message || 'This email is already registered using Google Sign-In. Please sign in using Google.';
+            this.toastService.show('Error', errMsg, 'error', 'error');
           }
         }
       });
@@ -133,7 +134,8 @@ export class RegisterComponent implements OnInit {
           return;
         }
 
-        this.toastService.show('Google Login Failed', err.message || 'Authentication failed. Please try again.', 'error', 'error');
+        const errMsg = err.message || 'This email is registered using a password. Please sign in with your email and password.';
+        this.toastService.show('Google Login Failed', errMsg, 'error', 'error');
       }
     });
   }
