@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, DestroyRef, computed, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, inject, signal, OnInit, DestroyRef, computed, Input, OnChanges, SimpleChanges, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -7,20 +7,19 @@ import { ToastService } from '../../../../core/services/toast.service';
 import { FormattingService } from '../../../../core/services/formatting.service';
 import { AlertsService } from '../../../../core/services/alerts.service';
 import { Router } from '@angular/router';
-import { SupportMessage, SupportPagedResponse } from '../../../../core/models/support.model';
+import { SupportMessage } from '../../../../core/models/support.model';
 import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
-import { SegmentedNavComponent, SegmentedNavOption } from '../../../../shared/components/segmented-nav/segmented-nav.component';
-import { LoadMoreComponent } from '../../../../shared/components/load-more/load-more.component';
+import { ChatBubble, ChatMessageGroup, flattenUserSupportMessages, groupMessagesByDate } from '../../../../core/utils/support-chat.util';
 
 @Component({
   selector: 'app-contact-support',
   standalone: true,
-  imports: [CommonModule, FormsModule, LoadingStateComponent, EmptyStateComponent, SegmentedNavComponent, LoadMoreComponent],
+  imports: [CommonModule, FormsModule, LoadingStateComponent, EmptyStateComponent],
   templateUrl: './contact-support.component.html',
   styleUrls: ['./contact-support.component.css']
 })
-export class ContactSupportComponent implements OnInit, OnChanges {
+export class ContactSupportComponent implements OnInit, OnChanges, AfterViewChecked {
   private supportService = inject(SupportService);
   private toastService = inject(ToastService);
   private formattingService = inject(FormattingService);
@@ -29,57 +28,52 @@ export class ContactSupportComponent implements OnInit, OnChanges {
   private router = inject(Router);
 
   @Input() initialTab: 'form' | 'history' = 'form';
+  @ViewChild('chatContainer') private chatContainer!: ElementRef;
 
   messages = signal<SupportMessage[]>([]);
+  chatGroups = signal<ChatMessageGroup[]>([]);
   isLoading = signal(false);
   isLoadingMore = signal(false);
   isSending = signal(false);
-  subject = signal('');
-  message = signal('');
-  activeView = signal<'form' | 'history'>('form');
+  newMessage = signal('');
 
   totalCount = signal<number>(0);
   currentPage = signal<number>(1);
-  readonly pageSize = 10;
+  readonly pageSize = 15; // Load larger batches for a more seamless scroll history
 
   canLoadMore = computed(() => this.messages().length < this.totalCount());
   remainingCount = computed(() => this.totalCount() - this.messages().length);
-
-  navOptions = signal<SegmentedNavOption[]>([
-    { label: 'Send Message', value: 'form' },
-    { label: 'My Messages', value: 'history' }
-  ]);
+  
+  private shouldScrollToBottom = false;
 
   ngOnInit() {
-    // Apply initial tab from route
-    this.activeView.set(this.initialTab);
     this.loadMessages();
     this.setupRealTimeListener();
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['initialTab'] && !changes['initialTab'].firstChange) {
-      this.activeView.set(changes['initialTab'].currentValue);
-    }
+    // Both views are unified into a single chat window, so tab changes are ignored
   }
 
-  setActiveView(tab: 'form' | 'history') {
-    this.activeView.set(tab);
-    this.router.navigate(['/settings/support', tab], { replaceUrl: true });
+  ngAfterViewChecked() {
+    if (this.shouldScrollToBottom) {
+      this.scrollToBottom();
+      this.shouldScrollToBottom = false;
+    }
   }
 
   private setupRealTimeListener() {
     this.alertsService.alert$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((alert) => {
-        // If we get a support reply alert, reload the message history instantly
         if (alert.type === 'support_reply' || alert.type === 'SupportReply') {
-          this.loadMessages();
+          // Reload messages and scroll to bottom for real-time replies
+          this.loadMessages(false, true);
         }
       });
   }
 
-  loadMessages(isLoadMore: boolean = false) {
+  loadMessages(isLoadMore: boolean = false, forceScrollToBottom: boolean = false) {
     if (isLoadMore) {
       this.isLoadingMore.set(true);
     } else {
@@ -91,14 +85,33 @@ export class ContactSupportComponent implements OnInit, OnChanges {
       next: (res) => {
         if (res.is_success && res.data) {
           this.totalCount.set(res.total);
+          
           if (isLoadMore) {
+            // Keep current scroll height offset before content prepend
+            const el = this.chatContainer?.nativeElement;
+            const previousScrollHeight = el ? el.scrollHeight : 0;
+            const previousScrollTop = el ? el.scrollTop : 0;
+
             this.messages.update(prev => [...prev, ...res.data!]);
+            this.updateChatGroups();
+
+            // Maintain scroll position after prepending older messages
+            setTimeout(() => {
+              if (el) {
+                el.scrollTop = previousScrollTop + (el.scrollHeight - previousScrollHeight);
+              }
+            }, 50);
           } else {
             this.messages.set(res.data);
+            this.updateChatGroups();
+            this.shouldScrollToBottom = true;
           }
         }
         this.isLoading.set(false);
         this.isLoadingMore.set(false);
+        if (forceScrollToBottom) {
+          this.shouldScrollToBottom = true;
+        }
       },
       error: () => {
         this.isLoading.set(false);
@@ -107,34 +120,43 @@ export class ContactSupportComponent implements OnInit, OnChanges {
     });
   }
 
+  private updateChatGroups() {
+    const flat = flattenUserSupportMessages(this.messages());
+    const grouped = groupMessagesByDate(flat);
+    this.chatGroups.set(grouped);
+  }
+
   loadMore() {
-    if (this.isLoadingMore()) return;
+    if (this.isLoadingMore() || !this.canLoadMore()) return;
     this.currentPage.update(p => p + 1);
     this.loadMessages(true);
   }
 
-  submitMessage() {
-    const sub = this.subject().trim();
-    const msg = this.message().trim();
-
-    if (!sub || !msg) {
-      this.toastService.show('Missing Fields', 'Please enter both a subject and a message.', 'warning', 'info');
-      return;
+  onScroll(event: Event): void {
+    const el = event.target as HTMLElement;
+    // When user scrolls to top, load older messages automatically
+    if (el.scrollTop === 0 && this.canLoadMore() && !this.isLoadingMore()) {
+      this.loadMore();
     }
+  }
+
+  submitMessage() {
+    const text = this.newMessage().trim();
+    if (!text || this.isSending()) return;
 
     this.isSending.set(true);
-    this.supportService.submitMessage({ subject: sub, message: msg }).subscribe({
+    
+    // Automatically generate a clean subject name under the hood
+    const subject = `Support Ticket #${Date.now().toString().slice(-6)}`;
+    
+    this.supportService.submitMessage({ subject, message: text }).subscribe({
       next: (res) => {
         this.isSending.set(false);
-        this.toastService.show('Message Sent', 'Your support request has been submitted successfully.', 'success', 'check');
+        this.newMessage.set('');
         
-        // Clear form
-        this.subject.set('');
-        this.message.set('');
-        
-        // Reload history and switch view
-        this.loadMessages();
-        this.setActiveView('history');
+        // Reload history (getting page 1) and force scroll to the bottom to see new message
+        this.currentPage.set(1);
+        this.loadMessages(false, true);
       },
       error: (err) => {
         this.isSending.set(false);
@@ -144,7 +166,19 @@ export class ContactSupportComponent implements OnInit, OnChanges {
     });
   }
 
+  scrollToBottom(): void {
+    try {
+      if (this.chatContainer) {
+        const el = this.chatContainer.nativeElement;
+        el.scrollTop = el.scrollHeight;
+      }
+    } catch (err) {
+      console.error('Scroll error:', err);
+    }
+  }
+
   formatDate(dateStr: string | null): string {
     return this.formattingService.formatDate(dateStr);
   }
 }
+

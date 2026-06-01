@@ -1,292 +1,254 @@
-<div class="admin-support">
-
-    <!-- Loading -->
+<div class="admin-support flex overflow-hidden animate-in fade-in duration-500 bg-[color:var(--bg-surface)]">
+    
+    <!-- Loading Screen -->
     @if (isLoading()) {
-    <app-loading-state message="Loading Support Queue..." subtitle="Fetching pending inquiries" size="md"
-        [fullPage]="true">
-    </app-loading-state>
+        <div class="flex-1 flex items-center justify-center">
+            <app-loading-state message="Loading Support Queue..." subtitle="Fetching conversations" size="md"></app-loading-state>
+        </div>
     }
 
-    <!-- Error -->
+    <!-- Error Screen -->
     @if (!isLoading() && error()) {
-    <app-empty-state [isFullPage]="true">
-        <svg empty-icon xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        <span empty-msg>Failed to Load Support Queue</span>
-        <span empty-hint>{{ error() }}</span>
-        <button empty-actions (click)="fetchMessages()" class="action-btn action-btn--primary">
-            Try Again
-        </button>
-    </app-empty-state>
+        <div class="flex-1 flex items-center justify-center p-8">
+            <app-empty-state>
+                <svg empty-icon xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span empty-msg>Failed to Load Support Queue</span>
+                <span empty-hint>{{ error() }}</span>
+                <button empty-actions (click)="fetchMessages()" class="action-btn action-btn--primary">Try Again</button>
+            </app-empty-state>
+        </div>
     }
 
-    <!-- Content -->
+    <!-- Main Content Layout -->
     @if (!isLoading() && !error()) {
+        
+        <!-- 1. LEFT SIDEBAR: Contacts List -->
+        <div class="contacts-sidebar flex flex-col w-full md:w-[350px] lg:w-[400px] border-r border-[color:var(--border-color)] bg-[color:var(--bg-surface)] flex-shrink-0"
+             [class.hidden-mobile]="selectedUserId() !== null">
+            
+            <!-- Sidebar Header -->
+            <div class="p-6 border-b border-[color:var(--border-color)] bg-[color:var(--bg-card)] space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-black text-[color:var(--text-primary)]">Inquiries Queue</h2>
+                    <button (click)="fetchMessages()" class="refresh-btn flex items-center justify-center p-2 rounded-xl bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] hover:bg-[color:var(--bg-card)] transition-colors" [class.refresh-btn--spinning]="isRefreshing()">
+                        <svg class="w-4 h-4 text-[color:var(--text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+                </div>
 
-    <!-- Header Section -->
-    <section class="admin-header-section">
-        <app-page-header title="Support Queue" subtitle="ADMIN PANEL"
-            [description]="totalMessages() + ' inquiries matching filters'">
-            <div actions class="flex items-center gap-3">
-                <button (click)="fetchMessages()" class="refresh-btn" [class.refresh-btn--spinning]="isRefreshing()">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    <span class="refresh-btn__label">Refresh</span>
-                </button>
+                <!-- Filter Dropdown & Search Bar -->
+                <div class="flex items-center gap-2">
+                    <div class="flex-1 relative">
+                        <input type="text" 
+                               [ngModel]="searchQuery()" 
+                               (ngModelChange)="searchQuery.set($event)"
+                               placeholder="Search user or message..."
+                               class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] outline-none text-xs font-medium focus:border-[color:var(--color-primary)] transition-all">
+                        <svg class="absolute left-3.5 top-3 w-4 h-4 text-[color:var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <div class="w-36 flex-shrink-0">
+                        <app-dropdown-menu [options]="statusOptions" [selectedValue]="statusFilter()" (selectedValueChange)="updateStatusFilter($event)" placeholder="Status"></app-dropdown-menu>
+                    </div>
+                </div>
             </div>
-        </app-page-header>
-    </section>
 
-    <!-- Content Section -->
-    <section class="admin-content-section">
-
-        <!-- Toolbar Row -->
-        <div class="flex items-center gap-4 mb-8 relative z-[10]">
-            <div class="w-full md:w-48">
-                <app-dropdown-menu [options]="statusOptions" [selectedValue]="statusFilter()"
-                    (selectedValueChange)="updateStatusFilter($event)" placeholder="Filter by Status">
-                </app-dropdown-menu>
-            </div>
-        </div>
-
-        @if (messages().length === 0) {
-        <app-empty-state minHeight="40vh">
-            <svg empty-icon fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <ng-container empty-msg>No matching inquiries!</ng-container>
-            <ng-container empty-hint>Try adjusting your status filter.</ng-container>
-        </app-empty-state>
-        } @else {
-        <!-- Desktop Table -->
-        <div class="table-wrapper hide-mobile">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th (click)="onSortChange('subject')"
-                            class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
-                            <div class="flex items-center gap-1">
-                                Subject
-                                <span class="text-[10px]" [class.opacity-0]="sortColumn() !== 'subject'"
-                                    [class.group-hover:opacity-50]="sortColumn() !== 'subject'"
-                                    [class.text-[color:var(--brand-primary)]]="sortColumn() === 'subject'">
-                                    {{ sortColumn() === 'subject' && sortDirection() === 'desc' ?
-                                    '▼' : '▲' }}
-                                </span>
-                            </div>
-                        </th>
-                        <th (click)="onSortChange('created_at')"
-                            class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
-                            <div class="flex items-center gap-1">
-                                Date
-                                <span class="text-[10px]" [class.opacity-0]="sortColumn() !== 'created_at'"
-                                    [class.group-hover:opacity-50]="sortColumn() !== 'created_at'"
-                                    [class.text-[color:var(--brand-primary)]]="sortColumn() === 'created_at'">
-                                    {{ sortColumn() === 'created_at' && sortDirection() === 'desc' ?
-                                    '▼' : '▲' }}
-                                </span>
-                            </div>
-                        </th>
-                        <th (click)="onSortChange('status')"
-                            class="cursor-pointer select-none group hover:text-[color:var(--text-primary)] transition-colors">
-                            <div class="flex items-center gap-1">
-                                Status
-                                <span class="text-[10px]" [class.opacity-0]="sortColumn() !== 'status'"
-                                    [class.group-hover:opacity-50]="sortColumn() !== 'status'"
-                                    [class.text-[color:var(--brand-primary)]]="sortColumn() === 'status'">
-                                    {{ sortColumn() === 'status' && sortDirection() === 'desc' ? '▼'
-                                    : '▲' }}
-                                </span>
-                            </div>
-                        </th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (msg of messages(); track msg.id) {
-                    <tr [class.row--expanded]="expandedMessageId() === msg.id">
-                        <td>
-                            <div class="user-cell">
-                                <div class="user-avatar">{{ msg.user_name.charAt(0) }}</div>
-                                <div class="user-info">
-                                    <span class="user-name">{{ msg.user_name }}</span>
-                                    <span class="user-email-table">{{ msg.user_email }}</span>
+            <!-- Contacts Scroll Area -->
+            <div class="contacts-list flex-1 overflow-y-auto divide-y divide-[color:var(--border-color)]">
+                @if (groupedUsers().length === 0) {
+                    <div class="p-8">
+                        <app-empty-state minHeight="25vh">
+                            <svg empty-icon fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span empty-msg class="text-xs">No active chats found</span>
+                            <span empty-hint class="text-[10px]">Try adjusting your status or search filters.</span>
+                        </app-empty-state>
+                    </div>
+                } @else {
+                    @for (user of groupedUsers(); track user.userId) {
+                        <div (click)="selectUser(user.userId)" 
+                             class="contact-card flex items-center justify-between p-5 cursor-pointer hover:bg-[color:var(--bg-card)] transition-all relative border-l-4 border-transparent"
+                             [class.contact-card--active]="selectedUserId() === user.userId"
+                             [class.contact-card--pending]="user.isPending">
+                            
+                            <div class="flex items-center gap-3 min-w-0 flex-1">
+                                <!-- Avatar -->
+                                <div class="contact-avatar relative flex items-center justify-center w-11 h-11 rounded-full bg-[color:var(--brand-primary)] text-[color:var(--color-surface)] font-extrabold text-xs uppercase flex-shrink-0">
+                                    {{ user.userName.charAt(0) }}
+                                    <span
+                                        class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[color:var(--bg-surface)]"
+                                        [style.background]="!user.isActive ? 'var(--color-danger)' : (user.isOnline ? 'var(--color-success)' : 'var(--color-text-muted)')"
+                                        [title]="!user.isActive ? 'Banned' : (user.isOnline ? 'Online now' : 'Offline')">
+                                    </span>
+                                </div>
+                                
+                                <!-- Info snippet -->
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-baseline justify-between mb-1">
+                                        <h4 class="contact-name text-xs font-bold font-sans truncate pr-2" [class.text-[color:var(--color-primary)]]="selectedUserId() === user.userId">
+                                            {{ user.userName }}
+                                        </h4>
+                                        <span class="contact-time text-[9px] font-bold text-[color:var(--text-muted)] flex-shrink-0">
+                                            {{ format.formatDate(user.lastMessageTime) }}
+                                        </span>
+                                    </div>
+                                    <p class="contact-snippet text-[10px] font-semibold truncate" [class.text-[color:var(--text-muted)]]="!user.isPending" [class.text-[color:var(--text-primary)]]="user.isPending">
+                                        {{ user.lastMessageText }}
+                                    </p>
                                 </div>
                             </div>
-                        </td>
-                        <td><span class="font-bold text-[color:var(--text-primary)]">{{ msg.subject }}</span></td>
-                        <td><span class="text-[color:var(--text-secondary)]">{{ format.formatDate(msg.created_at)
-                                }}</span></td>
-                        <td>
-                            <span class="status-badge"
-                                [class.status-badge--pending]="msg.status === 'open' || msg.status === 'pending'"
-                                [class.status-badge--success]="msg.status === 'replied'">
-                                {{ (msg.status === 'open' || msg.status === 'pending') ? 'Pending' : 'Replied' }}
-                            </span>
-                        </td>
-                        <td>
-                            <button (click)="toggleMessage(msg.id)" class="expand-btn"
-                                [class.expand-btn--active]="expandedMessageId() === msg.id">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                    <path d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                        </td>
-                    </tr>
-                    @if (expandedMessageId() === msg.id) {
-                    <tr>
-                        <td colspan="5" class="p-0 border-none">
-                            <div class="detail-panel">
-                                <div class="detail-grid">
-                                    <div class="detail-section">
-                                        <h4 class="detail-label">Message Content</h4>
-                                        <div class="detail-text">{{ msg.message }}</div>
-                                    </div>
-
-                                    <div class="detail-section">
-                                        <h4 class="detail-label">{{ msg.status === 'replied' ? 'Response Sent' :
-                                            'Compose Reply' }}</h4>
-
-                                        @if (msg.status !== 'replied') {
-                                        <div class="reply-container">
-                                            <textarea [ngModel]="replyText()[msg.id]"
-                                                (ngModelChange)="updateReplyText(msg.id, $event)"
-                                                placeholder="Type your response here..." rows="4"
-                                                class="reply-textarea"></textarea>
-                                            <div class="flex justify-end mt-4">
-                                                <button (click)="submitReply(msg.id)"
-                                                    [disabled]="isReplying() === msg.id || !replyText()[msg.id]"
-                                                    class="action-btn action-btn--primary">
-                                                    @if (isReplying() === msg.id) {
-                                                    <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
-                                                        <circle class="opacity-25" cx="12" cy="12" r="10"
-                                                            stroke="currentColor" stroke-width="4"></circle>
-                                                        <path class="opacity-75" fill="currentColor"
-                                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                                        </path>
-                                                    </svg>
-                                                    Sending...
-                                                    } @else {
-                                                    Submit Reply
-                                                    }
-                                                </button>
-                                            </div>
-                                        </div>
-                                        } @else {
-                                        <div class="replied-success-box">
-                                            <div class="success-icon">
-                                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                                    stroke-width="3">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <p class="success-title">Message Handled</p>
-                                                <p class="success-subtitle">Replied on {{
-                                                    format.formatDate(msg.replied_at) }}</p>
-                                            </div>
-                                        </div>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                    }
-                    }
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Mobile View -->
-        <div class="mobile-sort hide-desktop">
-            <label>Sort by:</label>
-            <div class="select-wrapper" style="z-index: 5;">
-                <app-dropdown-menu [options]="sortOptions" [selectedValue]="selectedSortValue()"
-                    (selectedValueChange)="onMobileSortChange($event)">
-                </app-dropdown-menu>
-            </div>
-        </div>
-
-        <div class="mobile-cards hide-desktop">
-            @for (msg of messages(); track msg.id) {
-            <div class="mobile-card">
-                <div class="mobile-card__header">
-                    <div class="user-cell">
-                        <div class="user-avatar">{{ msg.user_name.charAt(0) }}</div>
-                        <div class="user-info">
-                            <span class="user-name">{{ msg.user_name }}</span>
-                            <span class="user-email-mobile">{{ msg.user_email }}</span>
                         </div>
-                    </div>
-                    <span class="status-badge"
-                        [class.status-badge--pending]="msg.status === 'open' || msg.status === 'pending'"
-                        [class.status-badge--success]="msg.status === 'replied'">
-                        {{ (msg.status === 'open' || msg.status === 'pending') ? 'Pending' : 'Replied' }}
-                    </span>
-                </div>
-
-                <div class="mobile-card__body">
-                    <div class="mobile-card__stat">
-                        <span class="text-secondary">Subject</span>
-                        <span class="text-primary font-bold">{{ msg.subject }}</span>
-                    </div>
-                    <div class="mobile-card__stat">
-                        <span class="text-secondary">Received</span>
-                        <span class="text-primary font-bold">{{ format.formatDate(msg.created_at) }}</span>
-                    </div>
-                </div>
-
-                <button (click)="toggleMessage(msg.id)" class="mobile-expand-btn"
-                    [class.mobile-expand-btn--active]="expandedMessageId() === msg.id">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M19 9l-7 7-7-7" />
-                    </svg>
-                    {{ expandedMessageId() === msg.id ? 'Hide Details' : 'View & Reply' }}
-                </button>
-
-                @if (expandedMessageId() === msg.id) {
-                <div class="mobile-detail">
-                    <div class="detail-section">
-                        <h4 class="detail-label">Message</h4>
-                        <div class="detail-text">{{ msg.message }}</div>
-                    </div>
-
-                    @if (msg.status !== 'replied') {
-                    <div class="detail-section mt-2">
-                        <h4 class="detail-label">Your Reply</h4>
-                        <textarea [ngModel]="replyText()[msg.id]" (ngModelChange)="updateReplyText(msg.id, $event)"
-                            placeholder="Type response..." rows="3" class="reply-textarea"></textarea>
-                        <button (click)="submitReply(msg.id)"
-                            [disabled]="isReplying() === msg.id || !replyText()[msg.id]"
-                            class="action-btn action-btn--primary w-full mt-3">
-                            {{ isReplying() === msg.id ? 'Sending...' : 'Submit Reply' }}
-                        </button>
-                    </div>
-                    } @else {
-                    <div class="replied-success-box mt-2">
-                        <p class="success-title">Replied on {{ format.formatDate(msg.replied_at) }}</p>
-                    </div>
                     }
-                </div>
                 }
             </div>
+
+            <!-- Sidebar Pagination -->
+            @if (totalPages() > 1) {
+                <div class="p-4 border-t border-[color:var(--border-color)] bg-[color:var(--bg-surface)] flex justify-center">
+                    <app-pagination [currentPage]="currentPage()" [pageSize]="pageSize()" [totalItems]="totalMessages()" (pageChange)="goToPage($event)"></app-pagination>
+                </div>
             }
         </div>
-        <app-pagination
-            [currentPage]="currentPage()"
-            [pageSize]="pageSize()"
-            [totalItems]="totalMessages()"
-            (pageChange)="goToPage($event)">
-        </app-pagination>
-        }
-    </section>
+
+        <!-- 2. RIGHT PANEL: Chat Area -->
+        <div class="chat-main-pane flex flex-col flex-1 bg-[color:var(--bg-surface)]"
+             [class.hidden-mobile]="selectedUserId() === null">
+            
+            @if (selectedUserId() === null) {
+                <!-- Empty State (No Chat Selected) -->
+                <div class="flex-1 flex flex-col items-center justify-center p-8 bg-[color:var(--bg-surface)]">
+                    <div class="chat-placeholder-icon w-24 h-24 rounded-full bg-[color:var(--bg-card)] border border-[color:var(--border-color)] flex items-center justify-center mb-6">
+                        <svg class="w-10 h-10 text-[color:var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-sm font-bold font-sans text-[color:var(--text-primary)]">Select a Conversation</h3>
+                    <p class="text-[10px] font-bold text-[color:var(--text-muted)] mt-1">Choose a user from the list to start replying.</p>
+                </div>
+            } @else {
+                <!-- Active Chat View -->
+                <div class="flex flex-col h-full overflow-hidden">
+                    
+                    <!-- Header -->
+                    <div class="chat-header px-6 py-4 flex items-center justify-between border-b border-[color:var(--border-color)] bg-[color:var(--bg-card)]">
+                        <div class="flex items-center gap-3">
+                            <!-- Mobile Back Button -->
+                            <button (click)="closeChat()" class="mobile-back-btn md:hidden p-2 rounded-xl bg-[color:var(--bg-surface)] hover:bg-[color:var(--bg-card)] transition-colors mr-1">
+                                <svg class="w-4 h-4 text-[color:var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                            
+                            <div class="contact-avatar relative flex items-center justify-center w-10 h-10 rounded-full bg-[color:var(--brand-primary)] text-[color:var(--color-surface)] font-extrabold text-xs uppercase">
+                                {{ activeUser()?.userName?.charAt(0) }}
+                                @if (activeUser(); as actUser) {
+                                    <span
+                                        class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[color:var(--bg-surface)]"
+                                        [style.background]="!actUser.isActive ? 'var(--color-danger)' : (actUser.isOnline ? 'var(--color-success)' : 'var(--color-text-muted)')"
+                                        [title]="!actUser.isActive ? 'Banned' : (actUser.isOnline ? 'Online now' : 'Offline')">
+                                    </span>
+                                }
+                            </div>
+                            <div class="min-w-0">
+                                <h3 class="text-xs font-bold font-sans text-[color:var(--text-primary)] truncate">{{ activeUser()?.userName }}</h3>
+                                <p class="text-[9px] font-bold text-[color:var(--text-muted)] truncate">{{ activeUser()?.userEmail }}</p>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <span class="status-badge"
+                                  [class.status-badge--pending]="activeUser()?.isPending"
+                                  [class.status-badge--success]="!activeUser()?.isPending">
+                                {{ activeUser()?.isPending ? 'Pending' : 'Replied' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Scrollable Message Body -->
+                    <div #adminChatContainer class="chat-messages-area flex-1 overflow-y-auto px-6 py-6 space-y-6">
+                        
+                        @for (group of activeChatGroups(); track group.dateLabel) {
+                            <div class="date-group-wrapper space-y-4">
+                                
+                                <!-- Date Badge Separator -->
+                                <div class="flex justify-center my-4">
+                                    <span class="date-badge px-4 py-1.5 rounded-full text-[10px] font-bold font-sans uppercase tracking-widest text-[color:var(--text-muted)] bg-[color:var(--bg-card)] border border-[color:var(--border-color)] shadow-sm">
+                                        {{ group.dateLabel }}
+                                    </span>
+                                </div>
+                                
+                                <!-- Group Messages -->
+                                @for (msg of group.messages; track msg.timestamp + msg.id + msg.sender) {
+                                    <div class="message-row flex" [class.justify-end]="msg.sender === 'admin'">
+                                        <div class="message-bubble relative max-w-[85%] sm:max-w-[70%] px-4 py-3 rounded-[1.5rem] shadow-sm text-sm"
+                                            [class.message-bubble--sent]="msg.sender === 'admin'"
+                                            [class.message-bubble--received]="msg.sender === 'user'">
+                                            
+                                            <!-- Subject (for User questions reference) -->
+                                            @if (msg.sender === 'user' && msg.subject && msg.subject.startsWith('Support Ticket') === false) {
+                                                <div class="text-[9px] font-black uppercase tracking-widest text-[color:var(--color-primary)] mb-1 opacity-70">
+                                                    {{ msg.subject }}
+                                                </div>
+                                            }
+
+                                            <!-- Content -->
+                                            <div class="message-text break-words leading-relaxed font-semibold">
+                                                {{ msg.content }}
+                                            </div>
+                                            
+                                            <!-- Footer / Time -->
+                                            <div class="message-footer flex items-center justify-end gap-1 mt-1.5 text-[9px] font-bold select-none opacity-70">
+                                                <span>{{ msg.formattedTime }}</span>
+                                                @if (msg.sender === 'admin') {
+                                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Chat Bottom Input Bar -->
+                    <div class="chat-footer border-t border-[color:var(--border-color)] bg-[color:var(--bg-card)] px-6 py-5">
+                        <div class="flex items-center gap-3">
+                            <input type="text" 
+                                   [ngModel]="newMessageText()" 
+                                   (ngModelChange)="newMessageText.set($event)"
+                                   (keydown.enter)="submitReply()"
+                                   [placeholder]="activeUser()?.isPending ? 'Type response to user...' : 'All messages are replied. No pending inquiries.'"
+                                   [disabled]="isSendingReply() || !activeUser()?.isPending"
+                                   class="flex-1 px-5 py-4 rounded-2xl bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] outline-none focus:border-[color:var(--color-primary)] text-sm font-medium transition-all disabled:opacity-50 disabled:bg-[color:var(--bg-card)] disabled:cursor-not-allowed">
+                            
+                            <button (click)="submitReply()"
+                                    [disabled]="isSendingReply() || !newMessageText().trim() || !activeUser()?.isPending"
+                                    class="btn-send flex items-center justify-center w-12 h-12 rounded-2xl bg-[color:var(--color-primary)] text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                                @if (isSendingReply()) {
+                                    <svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                } @else {
+                                    <svg class="w-5 h-5 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                    </svg>
+                                }
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            }
+        </div>
+
     }
+
 </div>

@@ -1,148 +1,128 @@
-<div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-    <!-- Tab Toggle -->
-    <div class="mb-2 w-full sm:w-max">
-        <app-segmented-nav 
-            [options]="navOptions()" 
-            [selectedValue]="activeView()" 
-            (selectedValueChange)="setActiveView($any($event))">
-        </app-segmented-nav>
-    </div>
-
-    <!-- Send Message View -->
-    @if (activeView() === 'form') {
-    <div
-        class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-[2.5rem] p-8 md:p-12 shadow-sm">
-        <div class="max-w-2xl">
-            <h2 class="text-2xl font-black mb-2 text-[color:var(--text-primary)]">Contact Support</h2>
-            <p class="text-[color:var(--text-muted)] font-medium mb-8">Need help? Send us a message and our team will
-                get back to you.</p>
-
-            <div class="space-y-6">
-                <!-- Subject -->
-                <div class="space-y-2">
-                    <label
-                        class="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-muted)] ml-1">Subject</label>
-                    <input type="text" [ngModel]="subject()" (ngModelChange)="subject.set($event)"
-                        placeholder="What is this regarding?"
-                        class="w-full px-6 py-4 rounded-2xl bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] outline-none focus:border-[color:var(--color-primary)] transition-all text-sm font-medium">
+<div class="chat-viewport animate-in fade-in duration-500">
+    <!-- Chat Wrapper -->
+    <div class="chat-card overflow-hidden flex flex-col border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] rounded-3xl">
+        
+        <!-- Chat Header -->
+        <div class="chat-header px-6 py-5 flex items-center justify-between border-b border-[color:var(--border-color)] bg-[color:var(--bg-surface)]">
+            <div class="flex items-center gap-3">
+                <div class="chat-avatar relative flex items-center justify-center w-11 h-11 rounded-full bg-[color:var(--brand-primary)] text-[color:var(--color-surface)] font-extrabold text-xs uppercase flex-shrink-0">
+                    S
                 </div>
-
-                <!-- Message -->
-                <div class="space-y-2">
-                    <label
-                        class="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-muted)] ml-1">Message</label>
-                    <textarea [ngModel]="message()" (ngModelChange)="message.set($event)"
-                        placeholder="Describe your issue or question in detail..." rows="6"
-                        class="w-full px-6 py-4 rounded-2xl bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] outline-none focus:border-[color:var(--color-primary)] transition-all text-sm font-medium resize-none"></textarea>
-                    <p class="text-[10px] font-bold text-[color:var(--text-muted)] opacity-50 ml-1">
-                        Be as detailed as possible. Our team typically replies within 24 hours.
-                    </p>
+                <div>
+                    <h3 class="text-sm font-bold font-sans text-[color:var(--text-primary)]">Emotra Support</h3>
                 </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold font-sans uppercase tracking-widest text-[color:var(--text-muted)] bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] px-4 py-1.5 rounded-full">
+                    {{ totalCount() }} inquiries
+                </span>
+            </div>
+        </div>
 
-                <!-- Submit -->
-                <div class="pt-4">
-                    <button (click)="submitMessage()" [disabled]="isSending() || !subject() || !message()"
-                        class="btn-primary w-full sm:w-max px-12 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center gap-3">
-                        @if (isSending()) {
-                        <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-                            </circle>
-                            <path class="opacity-75" fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                            </path>
-                        </svg>
-                        Sending...
-                        } @else {
-                        Send Message
-                        }
+        <!-- Scrollable Messages Area -->
+        <div #chatContainer (scroll)="onScroll($event)" class="chat-messages-area flex-1 overflow-y-auto px-6 py-6 space-y-6">
+            
+            <!-- Loading Indicator for Older Messages -->
+            @if (isLoadingMore()) {
+                <div class="flex justify-center py-2">
+                    <span class="text-[10px] font-bold text-[color:var(--text-muted)] animate-pulse uppercase tracking-wider">Loading older messages...</span>
+                </div>
+            } @else if (canLoadMore()) {
+                <div class="flex justify-center pb-4">
+                    <button (click)="loadMore()" class="text-[10px] font-black uppercase tracking-widest text-[color:var(--color-primary)] hover:underline bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] px-4 py-2 rounded-full shadow-sm">
+                        Load Older Messages ({{ remainingCount() }} left)
                     </button>
                 </div>
-            </div>
-        </div>
-    </div>
-    }
+            }
 
-    <!-- History View -->
-    @if (activeView() === 'history') {
-    <div class="history-container">
-        @if (isLoading()) {
-        <div class="py-12 bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-[2.5rem]">
-            <app-loading-state message="Loading history..."
-                subtitle="Fetching your support conversations"></app-loading-state>
-        </div>
-        } @else if (messages().length === 0) {
-        <div class="bg-[color:var(--bg-card)] border border-[color:var(--border-color)] rounded-[2.5rem] p-12">
-            <app-empty-state minHeight="30vh">
-                <svg empty-icon fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                <ng-container empty-msg>No messages yet</ng-container>
-                <ng-container empty-hint>Send us a message and we'll get back to you.</ng-container>
-            </app-empty-state>
-        </div>
-        } @else {
-        <div class="history-grid">
-            @for (msg of messages(); track msg.id) {
-            <div class="history-card shadow-sm">
-                <div class="history-card__header">
-                    <div class="header-info">
-                        <h3 class="subject-text">{{ msg.subject }}</h3>
-                        <div class="meta-info">
-                            <span>{{ formatDate(msg.created_at) }}</span>
+            @if (isLoading() && messages().length === 0) {
+                <div class="py-12">
+                    <app-loading-state message="Initializing chat..." subtitle="Connecting to Support Desk"></app-loading-state>
+                </div>
+            } @else if (chatGroups().length === 0) {
+                <app-empty-state minHeight="40vh">
+                    <svg empty-icon fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <ng-container empty-msg>Welcome to Emotra Support</ng-container>
+                    <ng-container empty-hint>Send a message below to start a conversation with our team.</ng-container>
+                </app-empty-state>
+            } @else {
+                <!-- Message Groups by Date -->
+                @for (group of chatGroups(); track group.dateLabel) {
+                    <div class="date-group-wrapper space-y-4">
+                        <!-- Date Badge Separator -->
+                        <div class="flex justify-center my-4">
+                            <span class="date-badge px-4 py-1.5 rounded-full text-[10px] font-bold font-sans uppercase tracking-widest text-[color:var(--text-muted)] bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] shadow-sm">
+                                {{ group.dateLabel }}
+                            </span>
                         </div>
-                    </div>
+                        
+                        <!-- Group Messages -->
+                        @for (msg of group.messages; track msg.timestamp + msg.id + msg.sender) {
+                            <div class="message-row flex" [class.justify-end]="msg.sender === 'user'">
+                                <div class="message-bubble relative max-w-[85%] sm:max-w-[70%] px-4 py-3 rounded-[1.5rem] shadow-sm text-sm"
+                                    [class.message-bubble--sent]="msg.sender === 'user'"
+                                    [class.message-bubble--received]="msg.sender === 'admin'">
+                                    
+                                    <!-- Subject label for tickets -->
+                                    @if (msg.sender === 'user' && msg.subject && msg.subject.startsWith('Support Ticket') === false) {
+                                        <div class="text-[9px] font-black uppercase tracking-widest text-white/90 mb-1">
+                                            {{ msg.subject }}
+                                        </div>
+                                    }
 
-                    <!-- Status Badge: only show when not replied -->
-                    @if (msg.status !== 'replied') {
-                    <div class="badge-wrapper">
-                        <span class="status-badge"
-                            [class.status-badge--pending]="msg.status === 'open' || msg.status === 'pending'"
-                            [class.status-badge--closed]="msg.status === 'closed'">
-                            {{ (msg.status === 'open' || msg.status === 'pending') ? 'Pending' : 'Closed' }}
-                        </span>
-                    </div>
-                    }
-                </div>
-
-                <div class="history-card__content">
-                    <p class="message-preview">{{ msg.message }}</p>
-                </div>
-
-                @if (msg.status === 'replied' && msg.reply) {
-                <div class="reply-box">
-                    <div class="reply-box__header">
-                        <div class="flex items-center gap-2">
-                            <div class="support-icon">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                                </svg>
+                                    <!-- Message Content -->
+                                    <div class="message-text break-words leading-relaxed font-semibold">
+                                        {{ msg.content }}
+                                    </div>
+                                    
+                                    <!-- Timestamp & Read indicator -->
+                                    <div class="message-footer flex items-center justify-end gap-1 mt-1.5 text-[9px] font-bold select-none opacity-70">
+                                        <span>{{ msg.formattedTime }}</span>
+                                        @if (msg.sender === 'user') {
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        }
+                                    </div>
+                                </div>
                             </div>
-                            <span class="support-label">Response</span>
-                        </div>
-                        <span class="reply-date">{{ formatDate(msg.replied_at) }}</span>
+                        }
                     </div>
-                    <div class="reply-body">
-                        {{ msg.reply }}
-                    </div>
-                </div>
                 }
-            </div>
             }
         </div>
 
-        @if (canLoadMore()) {
-        <div class="mt-8">
-            <app-load-more
-                [isLoadingMore]="isLoadingMore()"
-                [searchQuery]="''"
-                [remainingCount]="remainingCount()"
-                label="Messages"
-                (loadMore)="loadMore()">
-            </app-load-more>
+        <!-- Chat Input Footer -->
+        <div class="chat-footer border-t border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-6 py-5">
+            <div class="flex items-center gap-3">
+                <input type="text" 
+                    [ngModel]="newMessage()" 
+                    (ngModelChange)="newMessage.set($event)"
+                    (keydown.enter)="submitMessage()"
+                    placeholder="Type a message..."
+                    [disabled]="isSending()"
+                    class="flex-1 px-5 py-4 rounded-2xl bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] outline-none focus:border-[color:var(--color-primary)] text-sm font-medium transition-all">
+                
+                <button (click)="submitMessage()"
+                    [disabled]="isSending() || !newMessage().trim()"
+                    class="btn-send flex items-center justify-center w-12 h-12 rounded-2xl bg-[color:var(--color-primary)] text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                    @if (isSending()) {
+                        <svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    } @else {
+                        <svg class="w-5 h-5 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                    }
+                </button>
+            </div>
         </div>
-        }
-        }
+
     </div>
-    }
 </div>

@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, computed, DestroyRef } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, DestroyRef, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -6,12 +6,13 @@ import { AdminService } from '../../../core/services/admin.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FormattingService } from '../../../core/services/formatting.service';
 import { AdminSupportMessage } from '../../../core/models/support.model';
+import { AdminUser } from '../../../core/models/admin.model';
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
-import { PageHeaderComponent } from '../../../shared/components/layout/page-header/page-header.component';
 import { AppCacheService } from '../../../core/services/app-cache.service';
 import { DropdownMenuComponent, DropdownOption } from '../../../shared/components/dropdown-menu/dropdown-menu.component';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { ChatBubble, ChatMessageGroup, flattenAdminSupportMessages, groupMessagesByDate } from '../../../core/utils/support-chat.util';
 
 interface CachedSupportData {
   messages: AdminSupportMessage[];
@@ -20,46 +21,61 @@ interface CachedSupportData {
   status: string;
 }
 
+export interface UserChatSummary {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  lastMessageText: string;
+  lastMessageTime: string;
+  isPending: boolean;
+  isActive: boolean;
+  isOnline: boolean;
+  tickets: AdminSupportMessage[];
+}
+
 const CACHE_KEY = 'emotra_admin_support_v2';
 
 @Component({
   selector: 'app-admin-support',
   standalone: true,
-  imports: [CommonModule, FormsModule, LoadingStateComponent, EmptyStateComponent, PageHeaderComponent, DropdownMenuComponent, PaginationComponent],
+  imports: [CommonModule, FormsModule, LoadingStateComponent, EmptyStateComponent, DropdownMenuComponent, PaginationComponent],
   templateUrl: './admin-support.component.html',
   styleUrls: ['./admin-support.component.css']
 })
-export class AdminSupportComponent implements OnInit {
+export class AdminSupportComponent implements OnInit, AfterViewChecked {
   private adminService = inject(AdminService);
   private toastService = inject(ToastService);
   protected format = inject(FormattingService);
   private cache = inject(AppCacheService);
   private destroyRef = inject(DestroyRef);
 
+  @ViewChild('adminChatContainer') private adminChatContainer!: ElementRef;
+
   // State Signals
   messages = signal<AdminSupportMessage[]>([]);
+  usersList = signal<AdminUser[]>([]);
   statusFilter = signal<string>('all');
   
   // Sorting State
   sortColumn = signal<string | null>('created_at');
   sortDirection = signal<'asc' | 'desc'>('desc');
 
-  // Pagination State
+  // Pagination State (Sidebar Contacts)
   currentPage = signal<number>(1);
-  pageSize = signal<number>(10);
+  pageSize = signal<number>(50); // Fetch a larger pool to group contacts
   totalMessages = signal<number>(0);
-
-  totalPages = computed(() => Math.ceil(this.totalMessages() / this.pageSize()) || 1);
-  pendingMessagesCount = computed(() => this.messages().filter(m => m.status === 'open' || m.status === 'pending').length);
 
   isLoading = signal(true);
   error = signal<string | null>(null);
   isRefreshing = signal<boolean>(false);
 
-  // Interaction State
-  expandedMessageId = signal<number | null>(null);
-  isReplying = signal<number | null>(null);
-  replyText = signal<Record<number, string>>({});
+  // Split Screen / Active Chat State
+  selectedUserId = signal<string | null>(null);
+  newMessageText = signal<string>('');
+  isSendingReply = signal<boolean>(false);
+  searchQuery = signal<string>('');
+
+  private shouldScrollToBottom = false;
 
   statusOptions: DropdownOption[] = [
     { label: 'All Statuses', value: 'all' },
@@ -67,19 +83,78 @@ export class AdminSupportComponent implements OnInit {
     { label: 'Replied', value: 'replied' }
   ];
 
+  // Group tickets by user and compute user summaries for the sidebar
+  groupedUsers = computed<UserChatSummary[]>(() => {
+    const msgs = this.messages();
+    const query = this.searchQuery().toLowerCase().trim();
+    const userMap = new Map<string, AdminSupportMessage[]>();
+    const usersData = this.usersList();
+
+    msgs.forEach(m => {
+      const id = m.user_id;
+      if (!userMap.has(id)) {
+        userMap.set(id, []);
+      }
+      userMap.get(id)!.push(m);
+    });
+
+    const summaries: UserChatSummary[] = [];
+    userMap.forEach((tickets, userId) => {
+      // Find matching user info to get ban and online status
+      const matchingUser = usersData.find(u => u.id === userId);
+      const isActive = matchingUser ? matchingUser.is_active : true;
+      const isOnline = matchingUser ? matchingUser.is_online : false;
+
+      // Sort user tickets chronologically (oldest first for chat flow)
+      const sortedTickets = [...tickets].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      const latestTicket = sortedTickets[sortedTickets.length - 1];
+      const isPending = sortedTickets.some(t => t.status === 'open' || t.status === 'pending');
+
+      const matchesSearch = 
+        latestTicket.user_name.toLowerCase().includes(query) || 
+        latestTicket.user_email.toLowerCase().includes(query) ||
+        latestTicket.message.toLowerCase().includes(query);
+
+      if (!query || matchesSearch) {
+        summaries.push({
+          userId,
+          userName: latestTicket.user_name,
+          userEmail: latestTicket.user_email,
+          lastMessageText: latestTicket.message,
+          lastMessageTime: latestTicket.created_at,
+          isPending,
+          isActive,
+          isOnline,
+          tickets: sortedTickets
+        });
+      }
+    });
+
+    // Sort contacts by latest message timestamp (newest activity at top)
+    return summaries.sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
+  });
+
+  // Get active selected user details
+  activeUser = computed<UserChatSummary | null>(() => {
+    const id = this.selectedUserId();
+    if (!id) return null;
+    return this.groupedUsers().find(u => u.userId === id) || null;
+  });
+
+  // Flatten and group active conversation messages into date buckets
+  activeChatGroups = computed<ChatMessageGroup[]>(() => {
+    const user = this.activeUser();
+    if (!user) return [];
+    const flat = flattenAdminSupportMessages(user.tickets);
+    return groupMessagesByDate(flat);
+  });
+
+  totalPages = computed(() => Math.ceil(this.totalMessages() / this.pageSize()) || 1);
+  pendingMessagesCount = computed(() => this.messages().filter(m => m.status === 'open' || m.status === 'pending').length);
+
   updateStatusFilter(status: string) {
     this.statusFilter.set(status);
     this.currentPage.set(1);
-    this.fetchMessages();
-  }
-
-  onSortChange(column: string) {
-    if (this.sortColumn() === column) {
-      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
-    } else {
-      this.sortColumn.set(column);
-      this.sortDirection.set('desc');
-    }
     this.fetchMessages();
   }
 
@@ -97,6 +172,13 @@ export class AdminSupportComponent implements OnInit {
     }
   }
 
+  ngAfterViewChecked() {
+    if (this.shouldScrollToBottom) {
+      this.scrollToBottom();
+      this.shouldScrollToBottom = false;
+    }
+  }
+
   fetchMessages(isBackground: boolean = false) {
     if (!isBackground) {
       if (this.messages().length === 0) {
@@ -106,6 +188,17 @@ export class AdminSupportComponent implements OnInit {
       }
     }
     this.error.set(null);
+
+    // Fetch user details to get real-time online/ban status in support contacts
+    this.adminService.getUsers(1, 1000)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (userRes) => {
+          if (userRes.is_success && userRes.data) {
+            this.usersList.set(userRes.data);
+          }
+        }
+      });
 
     this.adminService.getSupportMessages(
       this.currentPage(),
@@ -127,6 +220,11 @@ export class AdminSupportComponent implements OnInit {
             page: this.currentPage(),
             status: this.statusFilter()
           });
+
+          // Trigger scrolling in case current active chat received new messages
+          if (this.selectedUserId()) {
+            this.shouldScrollToBottom = true;
+          }
         } else {
           if (this.messages().length === 0) {
             this.error.set(res.message || 'Failed to load support queue');
@@ -145,68 +243,69 @@ export class AdminSupportComponent implements OnInit {
     });
   }
 
-  goToPage(page: number) {
-    if (page < 1 || page > this.totalPages()) return;
-    this.currentPage.set(page);
-    this.expandedMessageId.set(null);
-    this.fetchMessages();
+  selectUser(userId: string) {
+    this.selectedUserId.set(userId);
+    this.newMessageText.set('');
+    this.shouldScrollToBottom = true;
   }
 
-  toggleMessage(id: number) {
-    if (this.expandedMessageId() === id) {
-      this.expandedMessageId.set(null);
-    } else {
-      this.expandedMessageId.set(id);
-    }
+  closeChat() {
+    this.selectedUserId.set(null);
   }
 
-  submitReply(id: number) {
-    const reply = this.replyText()[id]?.trim();
-    if (!reply) return;
+  submitReply() {
+    const user = this.activeUser();
+    if (!user || !user.isPending) return;
 
-    this.isReplying.set(id);
-    this.adminService.replyToSupportMessage(id, { message: reply })
+    const reply = this.newMessageText().trim();
+    if (!reply || this.isSendingReply()) return;
+
+    // Find the latest pending (open/pending) support ticket to reply to.
+    // Fall back to replying to the latest ticket overall if there are no pending tickets.
+    const pendingTickets = user.tickets.filter(t => t.status === 'open' || t.status === 'pending');
+    const targetTicket = pendingTickets.length > 0 
+      ? pendingTickets[pendingTickets.length - 1] 
+      : user.tickets[user.tickets.length - 1];
+
+    if (!targetTicket) return;
+
+    this.isSendingReply.set(true);
+    this.adminService.replyToSupportMessage(targetTicket.id, { message: reply })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
       next: (res) => {
         if (res.is_success) {
           this.toastService.show('Reply Sent', 'Your response has been sent to the user.', 'success', 'check');
+          this.newMessageText.set('');
+          
+          // Re-fetch all messages in background
           this.fetchMessages(true);
-          this.expandedMessageId.set(null);
+          this.shouldScrollToBottom = true;
         }
-        this.isReplying.set(null);
+        this.isSendingReply.set(false);
       },
       error: () => {
-        this.isReplying.set(null);
+        this.isSendingReply.set(false);
       }
     });
   }
 
-  updateReplyText(id: number, text: string) {
-    const current = { ...this.replyText() };
-    current[id] = text;
-    this.replyText.set(current);
+  scrollToBottom(): void {
+    try {
+      if (this.adminChatContainer) {
+        const el = this.adminChatContainer.nativeElement;
+        el.scrollTop = el.scrollHeight;
+      }
+    } catch (err) {
+      console.error('Scroll error:', err);
+    }
   }
 
-  // Mobile Sorting Support
-  sortOptions: DropdownOption[] = [
-    { label: 'Newest First', value: 'created_at:desc' },
-    { label: 'Oldest First', value: 'created_at:asc' },
-    { label: 'Subject (A-Z)', value: 'subject:asc' },
-    { label: 'Status', value: 'status:asc' }
-  ];
-
-  selectedSortValue = computed(() => {
-    const col = this.sortColumn();
-    const dir = this.sortDirection();
-    return col && dir ? `${String(col)}:${dir}` : 'created_at:desc';
-  });
-
-  onMobileSortChange(value: string): void {
-    if (!value) return;
-    const [col, dir] = value.split(':');
-    this.sortColumn.set(col);
-    this.sortDirection.set(dir as 'asc' | 'desc');
+  goToPage(page: number) {
+    if (page < 1 || page > this.totalPages()) return;
+    this.currentPage.set(page);
+    this.selectedUserId.set(null);
     this.fetchMessages();
   }
 }
+

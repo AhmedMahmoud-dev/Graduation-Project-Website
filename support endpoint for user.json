@@ -1,0 +1,101 @@
+{
+  "is_success": true,
+  "message": "Success",
+  "data": [
+    {
+      "id": 17,
+      "subject": "nothing",
+      "message": "just test the support queue message, and that's it.",
+      "status": "replied",
+      "created_at": "2026-06-01T13:57:49.1521915",
+      "reply": "hey, hello, it's working, all good.",
+      "replied_at": "2026-06-01T13:58:13.4366914"
+    },
+    {
+      "id": 16,
+      "subject": "string",
+      "message": "string",
+      "status": "pending",
+      "created_at": "2026-05-27T17:50:48.3510048",
+      "reply": null,
+      "replied_at": null
+    },
+    {
+      "id": 14,
+      "subject": "just test the contact support....",
+      "message": "how are you emotra admin? all good? hope it is",
+      "status": "replied",
+      "created_at": "2026-05-25T18:58:38.506743",
+      "reply": "all good Ahmed Mahmoud Thanks for asking, what can i help you with?",
+      "replied_at": "2026-05-25T18:59:29.1858414"
+    },
+    {
+      "id": 13,
+      "subject": "test",
+      "message": "hello admin",
+      "status": "replied",
+      "created_at": "2026-05-08T12:53:16.3008012",
+      "reply": "Hello Ahmed Mahmoud",
+      "replied_at": "2026-05-08T12:55:21.9445887"
+    },
+    {
+      "id": 12,
+      "subject": "test",
+      "message": "test",
+      "status": "replied",
+      "created_at": "2026-05-06T13:05:42.4632499",
+      "reply": "test message again, ....",
+      "replied_at": "2026-05-06T13:06:05.1524744"
+    },
+    {
+      "id": 11,
+      "subject": "test",
+      "message": "test for support messages",
+      "status": "replied",
+      "created_at": "2026-05-06T13:04:42.5924033",
+      "reply": "your message is here.",
+      "replied_at": "2026-05-06T13:05:16.5106651"
+    },
+    {
+      "id": 10,
+      "subject": "Perfect Website",
+      "message": "I am just contact the admin to say that this website is impressive, and i love it, it's very good website i can understand my emotions now in a perfect way, and i can see everything change in my emotions, love it....",
+      "status": "replied",
+      "created_at": "2026-05-04T14:58:28.1522279",
+      "reply": "Emotra happy to hear that, hope you enjoy everything in the website. EMOTRA ADMIN",
+      "replied_at": "2026-05-04T14:59:35.0013511"
+    },
+    {
+      "id": 9,
+      "subject": "test",
+      "message": "there's a problem i want to solve",
+      "status": "replied",
+      "created_at": "2026-05-01T20:33:26.3422452",
+      "reply": "the problem is solved",
+      "replied_at": "2026-05-01T20:33:48.0724767"
+    },
+    {
+      "id": 7,
+      "subject": "password reset",
+      "message": "I can't reset my password, I must wait 30 day to reset my password can you help me to reset it now",
+      "status": "replied",
+      "created_at": "2026-05-01T17:32:15.6968981",
+      "reply": "ok, contact us again in 2 days, Emotra Admin",
+      "replied_at": "2026-05-01T17:35:11.6522335"
+    },
+    {
+      "id": 6,
+      "subject": "1234",
+      "message": "teas",
+      "status": "replied",
+      "created_at": "2026-05-01T17:24:24.4231385",
+      "reply": "...",
+      "replied_at": "2026-05-01T17:35:56.3319031"
+    }
+  ],
+  "status_code": 200,
+  "timestamp": "2026-06-01T19:09:36.6963803Z",
+  "total": 15,
+  "page": 1,
+  "page_size": 10
+}
