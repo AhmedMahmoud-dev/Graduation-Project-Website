@@ -18,8 +18,7 @@ export class GoogleButtonComponent implements AfterViewInit {
   constructor(private ngZone: NgZone) {}
 
   ngAfterViewInit() {
-    // Google Sign-In is currently disabled (Coming Soon)
-    // this.initGoogleButton();
+    this.initGoogleButton();
   }
 
   private initGoogleButton(): void {
@@ -29,22 +28,26 @@ export class GoogleButtonComponent implements AfterViewInit {
       return;
     }
 
-    // Otherwise wait for the script to finish loading
-    const gsiScript = document.querySelector('script[src*="accounts.google.com/gsi/client"]') as HTMLScriptElement;
-
-    if (gsiScript) {
-      gsiScript.addEventListener('load', () => {
-        this.ngZone.run(() => this.renderGoogleButton());
-      });
-    } else {
-      // Fallback: dynamically inject the script if missing from DOM
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      script.onload = () => this.ngZone.run(() => this.renderGoogleButton());
-      document.head.appendChild(script);
+    // Otherwise, ensure the script tag exists in DOM
+    let gsiScript = document.querySelector('script[src*="accounts.google.com/gsi/client"]') as HTMLScriptElement;
+    if (!gsiScript) {
+      gsiScript = document.createElement('script');
+      gsiScript.src = 'https://accounts.google.com/gsi/client';
+      gsiScript.async = true;
+      gsiScript.defer = true;
+      document.head.appendChild(gsiScript);
     }
+
+    // Poll every 100ms to check if the global 'google' object is fully loaded and initialized
+    const interval = setInterval(() => {
+      if (typeof google !== 'undefined' && google?.accounts?.id) {
+        clearInterval(interval);
+        this.ngZone.run(() => this.renderGoogleButton());
+      }
+    }, 100);
+
+    // Stop polling after 10 seconds to prevent resource leaks if script loading is blocked (e.g. by ad blockers)
+    setTimeout(() => clearInterval(interval), 10000);
   }
 
   private renderGoogleButton(): void {
