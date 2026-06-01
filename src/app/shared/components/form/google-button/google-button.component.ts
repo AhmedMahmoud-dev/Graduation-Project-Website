@@ -8,13 +8,24 @@ declare const google: any;
   selector: 'app-google-button',
   standalone: true,
   templateUrl: './google-button.component.html',
-  styleUrls: []
+  styles: [`
+    .help-box {
+      animation: fadeIn 0.2s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  `]
 })
 export class GoogleButtonComponent implements AfterViewInit, OnDestroy {
   disabled = input(false);
   @Output() credential = new EventEmitter<string>();
 
   @ViewChild('googleBtnContainer', { static: true }) googleBtnContainer!: ElementRef;
+
+  scriptFailedToLoad = false;
+  showHelp = false;
 
   private resizeListener?: () => void;
   private resizeTimeout: any;
@@ -47,9 +58,14 @@ export class GoogleButtonComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  toggleHelp() {
+    this.showHelp = !this.showHelp;
+  }
+
   private initGoogleButton(): void {
     // If the GIS library is already loaded (cached), initialize immediately
     if (typeof google !== 'undefined' && google?.accounts?.id) {
+      this.scriptFailedToLoad = false;
       this.renderGoogleButton();
       this.setupResizeListener();
       return;
@@ -62,7 +78,20 @@ export class GoogleButtonComponent implements AfterViewInit, OnDestroy {
       gsiScript.src = 'https://accounts.google.com/gsi/client';
       gsiScript.async = true;
       gsiScript.defer = true;
+      
+      gsiScript.onerror = () => {
+        this.ngZone.run(() => {
+          this.scriptFailedToLoad = true;
+        });
+      };
+      
       document.head.appendChild(gsiScript);
+    } else {
+      gsiScript.addEventListener('error', () => {
+        this.ngZone.run(() => {
+          this.scriptFailedToLoad = true;
+        });
+      });
     }
 
     // Poll every 100ms to check if the global 'google' object is fully loaded and initialized
@@ -70,6 +99,7 @@ export class GoogleButtonComponent implements AfterViewInit, OnDestroy {
       if (typeof google !== 'undefined' && google?.accounts?.id) {
         clearInterval(interval);
         this.ngZone.run(() => {
+          this.scriptFailedToLoad = false;
           this.renderGoogleButton();
           this.setupResizeListener();
         });
@@ -77,7 +107,14 @@ export class GoogleButtonComponent implements AfterViewInit, OnDestroy {
     }, 100);
 
     // Stop polling after 10 seconds to prevent resource leaks if script loading is blocked (e.g. by ad blockers)
-    setTimeout(() => clearInterval(interval), 10000);
+    setTimeout(() => {
+      clearInterval(interval);
+      if (typeof google === 'undefined' || !google?.accounts?.id) {
+        this.ngZone.run(() => {
+          this.scriptFailedToLoad = true;
+        });
+      }
+    }, 10000);
   }
 
   private renderGoogleButton(): void {
