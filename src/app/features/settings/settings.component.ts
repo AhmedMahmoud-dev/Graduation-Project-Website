@@ -42,15 +42,14 @@ export class SettingsComponent implements OnInit {
 
   isAdmin = this.authService.isAdmin;
   activeMainTab = signal<'colors' | 'account' | 'alerts' | 'notifications' | 'support' | 'shared'>('colors');
-  activeSupportTab = signal<'form' | 'history'>('form');
 
   private allNavOptions = [
     { label: 'Appearance & Colors', value: 'colors' },
     { label: 'Account', value: 'account' },
+    { label: 'Support', value: 'support' },
     { label: 'Shared Links', value: 'shared' },
     { label: 'Alerts', value: 'alerts' },
     { label: 'Notifications', value: 'notifications' },
-    { label: 'Support', value: 'support' }
   ];
 
   navOptions = computed(() => {
@@ -65,14 +64,8 @@ export class SettingsComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(params => {
         const subPage = params.get('subPage');
-        const tab = params.get('tab');
 
-        if (tab) {
-          // We are on settings/support/:tab
-          this.activeMainTab.set('support');
-          this.activeSupportTab.set(tab === 'history' ? 'history' : 'form');
-          sessionStorage.setItem('emotra_settings_tab', 'support');
-        } else if (subPage) {
+        if (subPage) {
           if (this.isValidTab(subPage)) {
             // Guard admin access
             if (this.isAdmin() && subPage !== 'colors' && subPage !== 'notifications') {

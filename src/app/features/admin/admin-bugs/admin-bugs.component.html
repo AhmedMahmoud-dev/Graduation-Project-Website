@@ -44,6 +44,7 @@
   <section class="admin-content-section">
 
     <!-- Toolbar Row -->
+    @if (bugs().length > 0) {
     <div class="flex flex-wrap items-center gap-4 mb-8 relative z-[10]">
       <div class="w-full md:w-48">
         <app-dropdown-menu [options]="statusOptions" [selectedValue]="statusFilter()"
@@ -61,6 +62,7 @@
         </app-dropdown-menu>
       </div>
     </div>
+    }
 
     <!-- Empty State -->
     @if (bugs().length === 0) {

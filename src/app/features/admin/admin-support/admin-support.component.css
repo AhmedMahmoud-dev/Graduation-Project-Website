@@ -1,5 +1,6 @@
 .admin-support {
     height: calc(100vh - 64px);
+    height: calc(100dvh - 64px);
     width: 100%;
     position: fixed;
     top: 64px;

@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, DestroyRef, computed, Input, OnChanges, SimpleChanges, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, inject, signal, OnInit, DestroyRef, computed, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -6,7 +6,6 @@ import { SupportService } from '../../../../core/services/support.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { FormattingService } from '../../../../core/services/formatting.service';
 import { AlertsService } from '../../../../core/services/alerts.service';
-import { Router } from '@angular/router';
 import { SupportMessage } from '../../../../core/models/support.model';
 import { LoadingStateComponent } from '../../../../shared/components/loading-state/loading-state.component';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state.component';
@@ -19,15 +18,13 @@ import { ChatBubble, ChatMessageGroup, flattenUserSupportMessages, groupMessages
   templateUrl: './contact-support.component.html',
   styleUrls: ['./contact-support.component.css']
 })
-export class ContactSupportComponent implements OnInit, OnChanges, AfterViewChecked {
+export class ContactSupportComponent implements OnInit, AfterViewChecked {
   private supportService = inject(SupportService);
   private toastService = inject(ToastService);
   private formattingService = inject(FormattingService);
   private alertsService = inject(AlertsService);
   private destroyRef = inject(DestroyRef);
-  private router = inject(Router);
 
-  @Input() initialTab: 'form' | 'history' = 'form';
   @ViewChild('chatContainer') private chatContainer!: ElementRef;
 
   messages = signal<SupportMessage[]>([]);
@@ -49,10 +46,6 @@ export class ContactSupportComponent implements OnInit, OnChanges, AfterViewChec
   ngOnInit() {
     this.loadMessages();
     this.setupRealTimeListener();
-  }
-
-  ngOnChanges(changes: SimpleChanges) {
-    // Both views are unified into a single chat window, so tab changes are ignored
   }
 
   ngAfterViewChecked() {

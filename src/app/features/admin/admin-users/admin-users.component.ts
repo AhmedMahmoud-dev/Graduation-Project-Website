@@ -295,6 +295,8 @@ export class AdminUsersComponent implements OnInit {
     { label: 'Oldest First', value: 'created_at:asc' },
     { label: 'Name (A-Z)', value: 'first_name:asc' },
     { label: 'Name (Z-A)', value: 'first_name:desc' },
+    { label: 'Email (A-Z)', value: 'email:asc' },
+    { label: 'Email (Z-A)', value: 'email:desc' },
     { label: 'Analyses (High-Low)', value: 'total_analyses:desc' },
     { label: 'Status', value: 'is_active:asc' }
   ];

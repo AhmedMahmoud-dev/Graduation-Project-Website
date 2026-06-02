@@ -106,8 +106,6 @@ export const routes: Routes = [
       },
       { path: 'alerts', component: AlertsComponent },
       { path: 'settings', redirectTo: 'settings/colors', pathMatch: 'full' },
-      { path: 'settings/support', redirectTo: 'settings/support/form', pathMatch: 'full' },
-      { path: 'settings/support/:tab', component: SettingsComponent },
       { path: 'settings/:subPage', component: SettingsComponent }
     ]
   },

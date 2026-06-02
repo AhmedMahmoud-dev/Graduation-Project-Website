@@ -160,6 +160,11 @@ export class AdminSupportComponent implements OnInit, AfterViewChecked {
 
   totalPages = computed(() => Math.ceil(this.totalMessages() / this.pageSize()) || 1);
   pendingMessagesCount = computed(() => this.messages().filter(m => m.status === 'open' || m.status === 'pending').length);
+  hasAnyChats = computed(() => {
+    if (this.messages().length > 0) return true;
+    if (this.searchQuery().trim() !== '' || this.statusFilter() !== 'all') return true;
+    return false;
+  });
 
   updateStatusFilter(status: string) {
     this.statusFilter.set(status);
@@ -179,6 +184,14 @@ export class AdminSupportComponent implements OnInit, AfterViewChecked {
     } else {
       this.fetchMessages(false);
     }
+
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      const savedChatUserId = sessionStorage.getItem('emotra_active_support_chat');
+      if (savedChatUserId) {
+        this.selectedUserId.set(savedChatUserId);
+        this.shouldScrollToBottom = true;
+      }
+    }
   }
 
   ngAfterViewChecked() {
@@ -190,7 +203,7 @@ export class AdminSupportComponent implements OnInit, AfterViewChecked {
 
   fetchMessages(isBackground: boolean = false) {
     if (!isBackground) {
-      if (this.messages().length === 0) {
+      if (this.messages().length === 0 && this.isLoading()) {
         this.isLoading.set(true);
       } else {
         this.isRefreshing.set(true);
@@ -256,10 +269,16 @@ export class AdminSupportComponent implements OnInit, AfterViewChecked {
     this.selectedUserId.set(userId);
     this.newMessageText.set('');
     this.shouldScrollToBottom = true;
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      sessionStorage.setItem('emotra_active_support_chat', userId);
+    }
   }
 
   closeChat() {
     this.selectedUserId.set(null);
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      sessionStorage.removeItem('emotra_active_support_chat');
+    }
   }
 
   submitReply() {
@@ -314,6 +333,9 @@ export class AdminSupportComponent implements OnInit, AfterViewChecked {
     if (page < 1 || page > this.totalPages()) return;
     this.currentPage.set(page);
     this.selectedUserId.set(null);
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      sessionStorage.removeItem('emotra_active_support_chat');
+    }
     this.fetchMessages();
   }
 
@@ -409,6 +431,9 @@ export class AdminSupportComponent implements OnInit, AfterViewChecked {
                 this.toastService.show('Chat Deleted', 'The conversation history has been permanently removed.', 'success');
                 if (this.selectedUserId() === userId) {
                   this.selectedUserId.set(null);
+                  if (typeof window !== 'undefined' && window.sessionStorage) {
+                    sessionStorage.removeItem('emotra_active_support_chat');
+                  }
                 }
                 this.fetchMessages(true);
               } else {

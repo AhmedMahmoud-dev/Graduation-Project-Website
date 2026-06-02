@@ -123,22 +123,35 @@ export class SharedLinksComponent implements OnInit {
   }
 
   revoke(item: ActiveShareResponseDto) {
-    this.analysisV2Service.revokeShare(item.client_id).subscribe({
-      next: (res) => {
-        if (res.is_success) {
-          // Remove the revoked link from local state and cache immediately
-          const updated = this.sharedItems().filter(x => x.client_id !== item.client_id);
-          this.sharedItems.set(updated);
-          this.cache.setItem(this.CACHE_KEY, updated);
-          
-          this.fetchSharedLinks();
-        } else {
-          this.toastService.show('Error', res.message || 'Failed to deactivate share link.', 'error', 'error');
-        }
+    this.toastService.confirm(
+      'Deactivate Share Link?',
+      'Are you sure you want to deactivate this shared link? Anyone with this link will no longer be able to access the analysis report.',
+      () => {
+        this.analysisV2Service.revokeShare(item.client_id).subscribe({
+          next: (res) => {
+            if (res.is_success) {
+              // Remove the revoked link from local state and cache immediately
+              const updated = this.sharedItems().filter(x => x.client_id !== item.client_id);
+              this.sharedItems.set(updated);
+              this.cache.setItem(this.CACHE_KEY, updated);
+              
+              this.fetchSharedLinks();
+              this.toastService.show('Success', 'Share link deactivated successfully.', 'success', 'check');
+            } else {
+              this.toastService.show('Error', res.message || 'Failed to deactivate share link.', 'error', 'error');
+            }
+          },
+          error: () => {
+            this.toastService.show('Error', 'Failed to deactivate share link.', 'error', 'error');
+          }
+        });
       },
-      error: () => {
-        this.toastService.show('Error', 'Failed to deactivate share link.', 'error', 'error');
+      {
+        confirmLabel: 'Deactivate',
+        cancelLabel: 'Cancel',
+        type: 'warning',
+        icon: 'warning'
       }
-    });
+    );
   }
 }
