@@ -199,6 +199,13 @@ export class AdminService {
   }
 
   /**
+   * 7.3 Delete Support Chat history for a specific user
+   */
+  deleteSupportChat(userId: string): Observable<ApiResponse<boolean>> {
+    return this.http.delete<ApiResponse<boolean>>(`${this.apiUrl}/support/user/${userId}`);
+  }
+
+  /**
    * 8.1 Get Global Quota Defaults
    * Retrieve the current system-wide default limits.
    */

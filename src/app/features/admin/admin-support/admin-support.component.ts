@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, computed, DestroyRef, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, DestroyRef, ViewChild, ElementRef, AfterViewChecked, HostListener } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -74,6 +74,15 @@ export class AdminSupportComponent implements OnInit, AfterViewChecked {
   newMessageText = signal<string>('');
   isSendingReply = signal<boolean>(false);
   searchQuery = signal<string>('');
+
+  // Context Menu State
+  contextMenu = signal<{
+    isOpen: boolean;
+    x: number;
+    y: number;
+    type: 'contact' | 'chat';
+    targetUserId?: string;
+  }>({ isOpen: false, x: 0, y: 0, type: 'contact' });
 
   private shouldScrollToBottom = false;
 
@@ -306,6 +315,113 @@ export class AdminSupportComponent implements OnInit, AfterViewChecked {
     this.currentPage.set(page);
     this.selectedUserId.set(null);
     this.fetchMessages();
+  }
+
+  onContactContextMenu(event: MouseEvent, userId: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const menuWidth = 192; // 12rem = 192px
+    const menuHeight = 50; // Approximate height of menu
+    let x = event.clientX;
+    let y = event.clientY;
+
+    if (x + menuWidth > window.innerWidth) {
+      x = window.innerWidth - menuWidth - 12;
+    }
+    if (y + menuHeight > window.innerHeight) {
+      y = window.innerHeight - menuHeight - 12;
+    }
+
+    this.contextMenu.set({
+      isOpen: true,
+      x,
+      y,
+      type: 'contact',
+      targetUserId: userId
+    });
+  }
+
+  onChatContextMenu(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.selectedUserId() === null) return;
+
+    const menuWidth = 192;
+    const menuHeight = 50; // Approximate height of menu
+    let x = event.clientX;
+    let y = event.clientY;
+
+    if (x + menuWidth > window.innerWidth) {
+      x = window.innerWidth - menuWidth - 12;
+    }
+    if (y + menuHeight > window.innerHeight) {
+      y = window.innerHeight - menuHeight - 12;
+    }
+
+    this.contextMenu.set({
+      isOpen: true,
+      x,
+      y,
+      type: 'chat'
+    });
+  }
+
+  closeContextMenu() {
+    this.contextMenu.update(c => ({ ...c, isOpen: false }));
+  }
+
+  @HostListener('document:click')
+  onDocumentClick() {
+    this.closeContextMenu();
+  }
+
+  @HostListener('document:contextmenu', ['$event'])
+  onDocumentContextMenu(event: MouseEvent) {
+    // Unhandled right clicks bubble up here; close any custom context menus
+    this.closeContextMenu();
+  }
+
+  @HostListener('window:keydown.escape')
+  onEscapePressed() {
+    if (this.selectedUserId() !== null) {
+      this.closeChat();
+      this.closeContextMenu();
+    }
+  }
+
+  deleteConversation(userId: string) {
+    this.closeContextMenu();
+    this.toastService.confirm(
+      'Delete Support Chat?',
+      'Are you sure you want to permanently delete this support conversation history? This will delete all messages for both you and the user.',
+      () => {
+        this.adminService.deleteSupportChat(userId)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: (res) => {
+              if (res.is_success) {
+                this.toastService.show('Chat Deleted', 'The conversation history has been permanently removed.', 'success');
+                if (this.selectedUserId() === userId) {
+                  this.selectedUserId.set(null);
+                }
+                this.fetchMessages(true);
+              } else {
+                this.toastService.show('Error', res.message || 'Failed to delete support chat.', 'error');
+              }
+            },
+            error: () => {
+              this.toastService.show('Error', 'Failed to delete support chat. Server error.', 'error');
+            }
+          });
+      },
+      { confirmLabel: 'Delete', type: 'error', icon: 'trash' }
+    );
   }
 }
 
