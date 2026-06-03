@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { FormFieldErrorComponent } from '../../../shared/components/form/form-field-error/form-field-error.component';
@@ -41,11 +41,19 @@ export class RegisterComponent implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private toastService = inject(ToastService);
 
   banDetails = signal<BanDetails | null>(null);
 
   ngOnInit() {
+    // Check for query parameters (Google Auth callback code)
+    this.route.queryParams.subscribe(params => {
+      const code = params['code'];
+      if (code) {
+        this.handleGoogleCallback(code);
+      }
+    });
   }
 
   registerForm = this.fb.nonNullable.group({
@@ -136,6 +144,50 @@ export class RegisterComponent implements OnInit {
 
         const errMsg = err.message || 'This email is registered using a password. Please sign in with your email and password.';
         this.toastService.show('Google Login Failed', errMsg, 'error', 'error');
+      }
+    });
+  }
+
+  handleGoogleCallback(code: string) {
+    this.isLoading = true;
+    this.registerForm.disable();
+    const redirectUri = window.location.origin + window.location.pathname;
+
+    this.authService.exchangeGoogleCode(code, redirectUri).subscribe({
+      next: (res) => {
+        if (res.data?.ban_reason) {
+          this.isLoading = false;
+          this.registerForm.enable();
+          const details: BanDetails = {
+            ban_reason: res.data.ban_reason,
+            ban_expires_at: res.data.ban_expires_at,
+            is_permanent: !!res.data.is_permanent
+          };
+          this.banDetails.set(details);
+          this.router.navigate([], { queryParams: { code: null }, queryParamsHandling: 'merge' });
+          return;
+        }
+
+        this.toastService.show(res.message || 'Welcome Back', 'Redirecting to your dashboard...', 'success', 'check');
+        const isAdmin = res.data?.roles?.includes('ADMIN');
+        this.router.navigate([isAdmin ? '/admin/dashboard' : '/dashboard']);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.registerForm.enable();
+
+        if (err.status === 403 && err.error?.data?.ban_reason) {
+          const details: BanDetails = err.error.data;
+          this.authService.storeBanDetails(details);
+          this.banDetails.set(details);
+          this.authService.clearBanDetails();
+          this.router.navigate([], { queryParams: { code: null }, queryParamsHandling: 'merge' });
+          return;
+        }
+
+        const errMsg = err.message || 'This email is registered using a password. Please sign in with your email and password.';
+        this.toastService.show('Google Login Failed', errMsg, 'error', 'error');
+        this.router.navigate([], { queryParams: { code: null }, queryParamsHandling: 'merge' });
       }
     });
   }

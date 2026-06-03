@@ -445,20 +445,40 @@
     height: 56px;
     width: 100%;
     border-radius: 14px;
-    border: 1px solid var(--border-color);
-    background: transparent;
+    border: none;
+    background: rgba(0, 0, 0, 0.03);
     color: var(--text-primary);
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
-    transition: all 200ms ease;
+    cursor: pointer;
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .google-btn:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.07);
+  }
+
+  .google-btn:active:not(:disabled) {
+    transform: scale(0.985);
+  }
+
+  .google-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   [data-theme="dark"] .google-btn {
     background: rgba(255, 255, 255, 0.05);
   }
+
+  [data-theme="dark"] .google-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+
 
 
 
