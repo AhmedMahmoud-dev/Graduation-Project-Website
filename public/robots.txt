@@ -9,4 +9,4 @@ Disallow: /settings
 Disallow: /admin
 Disallow: /auth/reset-password
 
-Sitemap: https://graduation-project-website-eight.vercel.app/sitemap.xml
+Sitemap: https://emotra.vercel.app/sitemap.xml
