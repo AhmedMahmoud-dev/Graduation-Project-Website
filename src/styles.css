@@ -272,7 +272,11 @@
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center px-6 py-3 font-semibold rounded-full text-white bg-[color:var(--brand-primary)] shadow-[var(--shadow)];
+    @apply inline-flex items-center justify-center px-6 py-3 font-semibold rounded-full text-white bg-[color:var(--brand-primary)] shadow-[var(--shadow)] transition-all duration-200;
+  }
+
+  .btn-primary:hover {
+    background-color: color-mix(in srgb, var(--brand-primary) 88%, white 12%);
   }
 
   .btn-secondary {
