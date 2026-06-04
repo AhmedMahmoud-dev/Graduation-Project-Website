@@ -46,7 +46,6 @@ export class AuthService {
   resetEmailInitiated = signal<string | null>(null);
 
   isAppInitialized = signal(false);
-  isLoggingOut = signal(false);
   private isUnloading = false;
 
   private logout$ = new Subject<void>();
@@ -327,37 +326,17 @@ export class AuthService {
   logout(isForced: boolean = false): void {
     if (this.isBrowser) {
       if (!isForced) {
-        this.isLoggingOut.set(true);
-        
-        // Wait for the backend logout request to complete, or timeout after 1.5 seconds
-        // so the user is never stuck if the network is down
-        const performLocalLogout = () => {
-          this.clearAllAuth();
-          this.alertsService.stopSignalR();
-          this.clearBanDetails();
-          this.isLoggingOut.set(false);
-          this.router.navigate(['/auth/login']);
-        };
-
-        const timer = setTimeout(performLocalLogout, 1500); // safety fallback
-
+        // Fire-and-forget server-side cookie deletion
         this.http.post(`${environment.apiUrl}/api/auth/logout`, {}, { withCredentials: true }).subscribe({
-          next: () => {
-            clearTimeout(timer);
-            performLocalLogout();
-          },
-          error: (err) => {
-            console.error('Logout request failed', err);
-            clearTimeout(timer);
-            performLocalLogout(); // still log out locally on failure
-          }
+          error: (err) => console.error('Logout request failed', err)
         });
-      } else {
-        // Forced logout (e.g. session expired, banned) - do it immediately without delay
-        this.clearAllAuth();
-        this.alertsService.stopSignalR();
-        this.router.navigate(['/auth/login']);
       }
+      this.clearAllAuth();
+      this.alertsService.stopSignalR();
+      if (!isForced) {
+        this.clearBanDetails(); // Clear existing ban notices only on intentional logout
+      }
+      this.router.navigate(['/auth/login']);
     }
   }
 
