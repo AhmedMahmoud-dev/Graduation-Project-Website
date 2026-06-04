@@ -14,6 +14,8 @@ import { AlertService } from './alert.service';
 import { AdminService } from './admin.service';
 import { QuotaStore } from '../stores/quota.store';
 import { AppCacheService } from './app-cache.service';
+import { FeedbackService } from './feedback.service';
+import { ToastService } from './toast.service';
 
 @Injectable({
   providedIn: 'root'
@@ -29,6 +31,8 @@ export class AuthService {
   private adminService = inject(AdminService);
   private quotaStore = inject(QuotaStore);
   private appCache = inject(AppCacheService);
+  private feedbackService = inject(FeedbackService);
+  private toastService = inject(ToastService);
 
   private isBrowser = isPlatformBrowser(this.platformId);
 
@@ -42,6 +46,7 @@ export class AuthService {
   resetEmailInitiated = signal<string | null>(null);
 
   isAppInitialized = signal(false);
+  isLoggingOut = signal(false);
   private isUnloading = false;
 
   private logout$ = new Subject<void>();
@@ -321,12 +326,38 @@ export class AuthService {
    */
   logout(isForced: boolean = false): void {
     if (this.isBrowser) {
-      this.clearAllAuth();
-      this.alertsService.stopSignalR();
       if (!isForced) {
-        this.clearBanDetails(); // Clear existing ban notices only on intentional logout
+        this.isLoggingOut.set(true);
+        
+        // Wait for the backend logout request to complete, or timeout after 1.5 seconds
+        // so the user is never stuck if the network is down
+        const performLocalLogout = () => {
+          this.clearAllAuth();
+          this.alertsService.stopSignalR();
+          this.clearBanDetails();
+          this.isLoggingOut.set(false);
+          this.router.navigate(['/auth/login']);
+        };
+
+        const timer = setTimeout(performLocalLogout, 1500); // safety fallback
+
+        this.http.post(`${environment.apiUrl}/api/auth/logout`, {}, { withCredentials: true }).subscribe({
+          next: () => {
+            clearTimeout(timer);
+            performLocalLogout();
+          },
+          error: (err) => {
+            console.error('Logout request failed', err);
+            clearTimeout(timer);
+            performLocalLogout(); // still log out locally on failure
+          }
+        });
+      } else {
+        // Forced logout (e.g. session expired, banned) - do it immediately without delay
+        this.clearAllAuth();
+        this.alertsService.stopSignalR();
+        this.router.navigate(['/auth/login']);
       }
-      this.router.navigate(['/auth/login']);
     }
   }
 
@@ -368,6 +399,7 @@ export class AuthService {
 
     this.logout$.next();
     this.quotaStore.clearQuota();
+    this.feedbackService.clearSystemFeedbackCache();
 
     // Core keys that MUST be removed
     const coreKeys = [
@@ -436,13 +468,13 @@ export class AuthService {
       tap(() => {
         this.isAppInitialized.set(true);
         const user = this.getCurrentUser();
-        if (user?.token) {
+        if (user) {
           if (!this.isAdmin()) {
             this.alertsService.fetchStats();
             this.alertsService.fetchSettings();
             this.quotaStore.loadQuota();
           }
-          this.alertsService.initSignalR(user.token);
+          this.alertsService.initSignalR(user.token || '');
         }
       }),
       catchError((error) => {
@@ -491,7 +523,7 @@ export class AuthService {
     if (!this.isBrowser) return false;
 
     const user = this.currentUser();
-    if (!user || !user.token || !user.expires_at) return false;
+    if (!user || !user.expires_at) return false;
 
     try {
       const expiry = new Date(user.expires_at);
@@ -519,11 +551,7 @@ export class AuthService {
     if (raw) {
       try {
         const user = JSON.parse(raw) as AuthUser;
-        const tokenKey = adminData ? 'emotra_admin_token' : environment.tokenKey;
-        const token = localStorage.getItem(tokenKey);
-        if (token) {
-          user.token = token;
-        }
+        user.token = '';
         return user;
       } catch (e) {
         return null;
@@ -539,16 +567,15 @@ export class AuthService {
     if (!this.isBrowser) return;
 
     const isAdmin = user.roles?.includes('ADMIN');
-    const tokenKey = isAdmin ? 'emotra_admin_token' : environment.tokenKey;
     const userKey = isAdmin ? 'emotra_admin_user' : environment.userKey;
 
-    localStorage.setItem(tokenKey, user.token);
-    
-    // Security: Do not redundantly store the JWT in the user JSON payload
+    // Security: Do not store the JWT in client-side storage
     const { token, ...userWithoutToken } = user;
     localStorage.setItem(userKey, JSON.stringify(userWithoutToken));
     
-    this.currentUser.set(user);
+    // Keep user state matching current configuration
+    const userState = { ...user, token: '' };
+    this.currentUser.set(userState);
   }
 
   /**

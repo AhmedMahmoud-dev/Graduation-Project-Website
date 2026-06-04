@@ -301,248 +301,242 @@
 
 <!-- Ban User Modal -->
 @if (isBanModalOpen()) {
-<div class="fixed inset-0 z-[100] overflow-y-auto animate-in fade-in duration-300">
+<div class="fixed inset-0 z-[100] overflow-hidden flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
   <!-- Backdrop -->
   <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" (click)="closeBanModal()"></div>
 
-  <!-- Modal Positioner -->
-  <div class="min-h-full flex items-center justify-center p-4 sm:p-6 py-12 pointer-events-none">
+  <!-- Modal Card -->
+  <div
+    class="relative w-full max-w-lg max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-4rem)] flex flex-col bg-[color:var(--color-surface)] border border-[color:var(--color-border)] rounded-[1.25rem] shadow-2xl animate-in zoom-in-95 duration-300 pointer-events-auto ban-modal-container z-10">
+    <!-- Modal Header -->
     <div
-      class="relative w-full max-w-lg bg-[color:var(--color-surface)] border border-[color:var(--color-border)] rounded-[1.25rem] shadow-2xl animate-in zoom-in-95 duration-300 pointer-events-auto ban-modal-container">
-      <!-- Modal Header -->
-      <div
-        class="px-6 py-5 border-b border-[color:var(--color-border)] flex justify-between items-center bg-[color:var(--bg-secondary)] rounded-t-[1.25rem]">
-        <div>
-          <h2 class="text-xl font-extrabold font-heading text-[color:var(--text-primary)]">Ban User</h2>
-          <p class="modal-user-email text-[11px] font-bold text-[color:var(--text-muted)] tracking-wider mt-0.5">{{
-            selectedUserForBan()?.email }}</p>
-          @if (isUserOnline(selectedUserForBan()!)) {
-          <span class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest mt-1 text-success">
-            <span class="w-1.5 h-1.5 rounded-full bg-[color:var(--color-success)]"></span>
-            User is online now
-          </span>
+      class="px-4 sm:px-6 py-4 sm:py-5 border-b border-[color:var(--color-border)] flex justify-between items-center bg-[color:var(--bg-secondary)] rounded-t-[1.25rem] gap-3">
+      <div class="min-w-0 flex-1">
+        <h2 class="text-lg sm:text-xl font-extrabold font-heading text-[color:var(--text-primary)] leading-tight">Ban User</h2>
+        <p class="modal-user-email text-[11px] font-bold text-[color:var(--text-muted)] tracking-wider mt-0.5 break-all">{{
+          selectedUserForBan()?.email }}</p>
+        @if (isUserOnline(selectedUserForBan()!)) {
+        <span class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest mt-1 text-success">
+          <span class="w-1.5 h-1.5 rounded-full bg-[color:var(--color-success)]"></span>
+          User is online now
+        </span>
+        }
+      </div>
+      <button (click)="closeBanModal()"
+        class="p-2 hover:bg-[color:var(--bg-hover)] rounded-xl transition-all text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)] shrink-0">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <form [formGroup]="banForm" (ngSubmit)="confirmBan()" class="bg-[color:var(--color-surface)] rounded-b-[1.25rem] flex flex-col min-h-0 flex-1">
+      <div class="p-6 space-y-7 overflow-y-auto min-h-0 flex-1">
+        <!-- Reason Dropdown -->
+        <div class="flex flex-col gap-2">
+          <h4 class="text-[0.6875rem] font-[800] text-[color:var(--text-muted)] uppercase tracking-[0.08em] m-0">Ban
+            Reason</h4>
+          <div class="relative z-[40]">
+            <app-dropdown-menu [options]="banReasons" [selectedValue]="banForm.get('reason')?.value"
+              placeholder="Select a reason" (selectedValueChange)="onBanReasonChange($event)">
+            </app-dropdown-menu>
+          </div>
+          @if (banForm.get('reason')?.touched && banForm.get('reason')?.invalid) {
+          <p class="text-[10px] text-[color:var(--color-danger)] font-bold uppercase tracking-wide">Please select a
+            reason
+            for the ban.</p>
           }
         </div>
-        <button (click)="closeBanModal()"
-          class="p-2 hover:bg-[color:var(--bg-hover)] rounded-xl transition-all text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)]">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
-        </button>
+
+        <!-- Custom Reason (only if 'Other' selected) -->
+        @if (banForm.get('reason')?.value === 'Other') {
+        <div class="flex flex-col gap-2 animate-in slide-in-from-top-2 duration-300">
+          <h4 class="text-[0.6875rem] font-[800] text-[color:var(--text-muted)] uppercase tracking-[0.08em] m-0">
+            Specify
+            Reason</h4>
+          <input type="text" formControlName="otherReason" placeholder="Enter custom reason..."
+            class="ban-reason-input">
+        </div>
+        }
+
+        <!-- Duration Dropdown -->
+        <div class="flex flex-col gap-2">
+          <h4 class="text-[0.6875rem] font-[800] text-[color:var(--text-muted)] uppercase tracking-[0.08em] m-0">Ban
+            Duration</h4>
+          <div class="relative z-[30]">
+            <app-dropdown-menu [options]="banDurations" [selectedValue]="banForm.get('duration')?.value"
+              placeholder="Select duration" (selectedValueChange)="onBanDurationChange($event)">
+            </app-dropdown-menu>
+          </div>
+          @if (banForm.get('duration')?.touched && banForm.get('duration')?.invalid) {
+          <p class="text-[10px] text-[color:var(--color-danger)] font-bold uppercase tracking-wide">Please select a
+            duration.</p>
+          }
+        </div>
+
       </div>
 
-      <form [formGroup]="banForm" (ngSubmit)="confirmBan()" class="bg-[color:var(--color-surface)] rounded-b-[1.25rem]">
-        <div class="p-6 space-y-7">
-          <!-- Reason Dropdown -->
-          <div class="flex flex-col gap-2">
-            <h4 class="text-[0.6875rem] font-[800] text-[color:var(--text-muted)] uppercase tracking-[0.08em] m-0">Ban
-              Reason</h4>
-            <div class="relative z-[40]">
-              <app-dropdown-menu [options]="banReasons" [selectedValue]="banForm.get('reason')?.value"
-                placeholder="Select a reason" (selectedValueChange)="onBanReasonChange($event)">
-              </app-dropdown-menu>
-            </div>
-            @if (banForm.get('reason')?.touched && banForm.get('reason')?.invalid) {
-            <p class="text-[10px] text-[color:var(--color-danger)] font-bold uppercase tracking-wide">Please select a
-              reason
-              for the ban.</p>
-            }
-          </div>
-
-          <!-- Custom Reason (only if 'Other' selected) -->
-          @if (banForm.get('reason')?.value === 'Other') {
-          <div class="flex flex-col gap-2 animate-in slide-in-from-top-2 duration-300">
-            <h4 class="text-[0.6875rem] font-[800] text-[color:var(--text-muted)] uppercase tracking-[0.08em] m-0">
-              Specify
-              Reason</h4>
-            <input type="text" formControlName="otherReason" placeholder="Enter custom reason..."
-              class="ban-reason-input">
-          </div>
+      <!-- Modal Footer -->
+      <div class="modal-footer p-6 pt-4 border-t border-[color:var(--color-border)] shrink-0">
+        <button type="button" (click)="closeBanModal()"
+          class="flex-1 py-3.5 rounded-xl border border-[color:var(--color-border)] text-[color:var(--text-primary)] font-bold text-sm hover:bg-[color:var(--bg-secondary)] transition-all">
+          Cancel
+        </button>
+        <button type="submit" [disabled]="banForm.invalid || isUpdating()"
+          class="flex-1 py-3.5 rounded-xl bg-[color:var(--color-danger)] text-white font-bold text-sm shadow-lg shadow-[color:var(--color-danger)]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+          @if (isUpdating()) {
+          <span class="flex items-center justify-center gap-2">
+            <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+              </path>
+            </svg>
+            Processing...
+          </span>
+          } @else {
+          Confirm Suspension
           }
-
-          <!-- Duration Dropdown -->
-          <div class="flex flex-col gap-2">
-            <h4 class="text-[0.6875rem] font-[800] text-[color:var(--text-muted)] uppercase tracking-[0.08em] m-0">Ban
-              Duration</h4>
-            <div class="relative z-[30]">
-              <app-dropdown-menu [options]="banDurations" [selectedValue]="banForm.get('duration')?.value"
-                placeholder="Select duration" (selectedValueChange)="onBanDurationChange($event)">
-              </app-dropdown-menu>
-            </div>
-            @if (banForm.get('duration')?.touched && banForm.get('duration')?.invalid) {
-            <p class="text-[10px] text-[color:var(--color-danger)] font-bold uppercase tracking-wide">Please select a
-              duration.</p>
-            }
-          </div>
-
-        </div>
-
-        <!-- Modal Footer -->
-        <div class="modal-footer p-6 pt-4 border-t border-[color:var(--color-border)]">
-          <button type="button" (click)="closeBanModal()"
-            class="flex-1 py-3.5 rounded-xl border border-[color:var(--color-border)] text-[color:var(--text-primary)] font-bold text-sm hover:bg-[color:var(--bg-secondary)] transition-all">
-            Cancel
-          </button>
-          <button type="submit" [disabled]="banForm.invalid || isUpdating()"
-            class="flex-1 py-3.5 rounded-xl bg-[color:var(--color-danger)] text-white font-bold text-sm shadow-lg shadow-[color:var(--color-danger)]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-            @if (isUpdating()) {
-            <span class="flex items-center justify-center gap-2">
-              <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                </path>
-              </svg>
-              Processing...
-            </span>
-            } @else {
-            Confirm Suspension
-            }
-          </button>
-        </div>
-      </form>
-</div>
+        </button>
+      </div>
+    </form>
   </div>
 </div>
 }
 
 <!-- Manage Quota Modal -->
 @if (isQuotaModalOpen()) {
-<div class="fixed inset-0 z-[100] overflow-y-auto">
+<div class="fixed inset-0 z-[100] overflow-hidden flex items-center justify-center p-4 sm:p-6">
   <!-- Backdrop -->
   <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" (click)="closeQuotaModal()"></div>
 
-  <!-- Modal Positioner -->
-  <div class="min-h-full flex items-center justify-center p-4 sm:p-6 py-12 pointer-events-none">
+  <!-- Modal Card -->
+  <div
+    class="relative w-full max-w-lg max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-4rem)] flex flex-col bg-[color:var(--color-surface)] border border-[color:var(--color-border)] rounded-[1.25rem] shadow-2xl pointer-events-auto ban-modal-container z-10">
+    <!-- Modal Header -->
     <div
-      class="relative w-full max-w-lg bg-[color:var(--color-surface)] border border-[color:var(--color-border)] rounded-[1.25rem] shadow-2xl pointer-events-auto ban-modal-container">
-      <!-- Modal Header -->
-      <div
-        class="px-6 py-5 border-b border-[color:var(--color-border)] flex justify-between items-center bg-[color:var(--bg-secondary)] rounded-t-[1.25rem]">
-        <div>
-          <h2 class="text-xl font-extrabold font-heading text-[color:var(--text-primary)]">Manage Quota Limits</h2>
-          <p class="modal-user-email text-[11px] font-bold text-[color:var(--text-muted)] tracking-wider mt-0.5">{{
-            selectedUserForQuota()?.first_name }} {{ selectedUserForQuota()?.last_name }} · {{
-            selectedUserForQuota()?.email }}</p>
-        </div>
-        <button (click)="closeQuotaModal()"
-          class="p-2 hover:bg-[color:var(--bg-hover)] rounded-xl transition-all text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)]">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
-        </button>
+      class="px-4 sm:px-6 py-4 sm:py-5 border-b border-[color:var(--color-border)] flex justify-between items-center bg-[color:var(--bg-secondary)] rounded-t-[1.25rem] gap-3">
+      <div class="min-w-0 flex-1">
+        <h2 class="text-lg sm:text-xl font-extrabold font-heading text-[color:var(--text-primary)] leading-tight">Manage Quota Limits</h2>
+        <p class="modal-user-email text-[11px] font-bold text-[color:var(--text-muted)] tracking-wider mt-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-1.5 break-all sm:break-normal">
+          <span>{{ selectedUserForQuota()?.first_name }} {{ selectedUserForQuota()?.last_name }}</span>
+          <span class="hidden sm:inline">·</span>
+          <span class="text-[10px] sm:text-[11px] font-medium sm:font-bold opacity-80 sm:opacity-100">{{ selectedUserForQuota()?.email }}</span>
+        </p>
       </div>
-
-      @if (isLoadingQuota()) {
-      <div class="p-12">
-        <app-loading-state message="Fetching Quota Details..." size="sm" [fullPage]="false"></app-loading-state>
-      </div>
-      } @else {
-        @if (userQuotaDetails(); as details) {
-        <form [formGroup]="quotaForm" (ngSubmit)="saveQuotaLimits()" class="bg-[color:var(--color-surface)] rounded-b-[1.25rem]">
-          <div class="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
-
-            <!-- Usage Limits Overview -->
-            <div class="p-4 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--bg-secondary)] space-y-3.5">
-              <h4 class="text-[0.6875rem] font-[800] text-[color:var(--text-muted)] uppercase tracking-[0.08em] m-0">Weekly Quota Usage</h4>
-
-              <!-- Text Usage -->
-              <div class="space-y-1.5">
-                <div class="flex justify-between text-xs font-bold">
-                  <span class="text-[color:var(--text-secondary)]">Text Analysis</span>
-                  <span class="text-[color:var(--text-primary)]">{{ details.text.used }} / {{ details.text.limit }} Tokens</span>
-                </div>
-                <div class="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">
-                  <div class="h-full bg-blue-500 rounded-full" [style.width.%]="details.text.used_percentage"></div>
-                </div>
-              </div>
-
-              <!-- Audio Usage -->
-              <div class="space-y-1.5">
-                <div class="flex justify-between text-xs font-bold">
-                  <span class="text-[color:var(--text-secondary)]">Audio Analysis</span>
-                  <span class="text-[color:var(--text-primary)]">{{ details.audio.used | number:'1.0-1' }}s / {{ details.audio.limit | number:'1.0-1' }}s</span>
-                </div>
-                <div class="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">
-                  <div class="h-full bg-purple-500 rounded-full" [style.width.%]="details.audio.used_percentage"></div>
-                </div>
-              </div>
-
-              <!-- Image Usage -->
-              <div class="space-y-1.5">
-                <div class="flex justify-between text-xs font-bold">
-                  <span class="text-[color:var(--text-secondary)]">Image Analysis</span>
-                  <span class="text-[color:var(--text-primary)]">{{ details.image.used }} / {{ details.image.limit }} Images</span>
-                </div>
-                <div class="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">
-                  <div class="h-full bg-emerald-500 rounded-full" [style.width.%]="details.image.used_percentage"></div>
-                </div>
-              </div>
-
-              <!-- Video Usage -->
-              <div class="space-y-1.5">
-                <div class="flex justify-between text-xs font-bold">
-                  <span class="text-[color:var(--text-secondary)]">Video Analysis</span>
-                  <span class="text-[color:var(--text-primary)]">{{ details.video.used | number:'1.0-1' }}s / {{ details.video.limit | number:'1.0-1' }}s</span>
-                </div>
-                <div class="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">
-                  <div class="h-full bg-rose-500 rounded-full" [style.width.%]="details.video.used_percentage"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Form Inputs to Edit Limits -->
-            <div class="space-y-4">
-              <h4 class="text-[0.6875rem] font-[800] text-[color:var(--text-muted)] uppercase tracking-[0.08em] m-0">Edit Weekly Limits</h4>
-
-              <div class="grid grid-cols-2 gap-4">
-                <!-- Text Limit -->
-                <div class="flex flex-col gap-1.5">
-                  <label class="text-[10px] font-bold text-[color:var(--text-secondary)] uppercase tracking-wider">Text Limit (Tokens)</label>
-                  <input type="number" formControlName="textTokensLimit" class="quota-input" min="0" (wheel)="$event.preventDefault()">
-                </div>
-
-                <!-- Audio Limit -->
-                <div class="flex flex-col gap-1.5">
-                  <label class="text-[10px] font-bold text-[color:var(--text-secondary)] uppercase tracking-wider">Audio Limit (Sec)</label>
-                  <input type="number" formControlName="audioSecondsLimit" class="quota-input" min="0" (wheel)="$event.preventDefault()">
-                </div>
-
-                <!-- Image Limit -->
-                <div class="flex flex-col gap-1.5">
-                  <label class="text-[10px] font-bold text-[color:var(--text-secondary)] uppercase tracking-wider">Image Limit (Count)</label>
-                  <input type="number" formControlName="imageCountLimit" class="quota-input" min="0" (wheel)="$event.preventDefault()">
-                </div>
-
-                <!-- Video Limit -->
-                <div class="flex flex-col gap-1.5">
-                  <label class="text-[10px] font-bold text-[color:var(--text-secondary)] uppercase tracking-wider">Video Limit (Sec)</label>
-                  <input type="number" formControlName="videoSecondsLimit" class="quota-input" min="0" (wheel)="$event.preventDefault()">
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Modal Footer -->
-          <div class="modal-footer p-6 pt-4 border-t border-[color:var(--color-border)]">
-            <button type="button" (click)="closeQuotaModal()"
-              class="flex-1 py-3.5 rounded-xl border border-[color:var(--color-border)] text-[color:var(--text-primary)] font-bold text-sm hover:bg-[color:var(--bg-secondary)] transition-all">
-              Cancel
-            </button>
-            <button type="submit" [disabled]="quotaForm.invalid || isUpdating()"
-              class="flex-1 py-3.5 rounded-xl bg-[color:var(--brand-primary)] text-white font-bold text-sm shadow-lg shadow-[color:var(--brand-primary)]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-              @if (isUpdating()) {
-              Save Changes
-              } @else {
-              Save Changes
-              }
-            </button>
-          </div>
-        </form>
-        }
-      }
+      <button (click)="closeQuotaModal()"
+        class="p-2 hover:bg-[color:var(--bg-hover)] rounded-xl transition-all text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)] shrink-0">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </button>
     </div>
+
+    @if (isLoadingQuota()) {
+    <div class="p-12 shrink-0">
+      <app-loading-state message="Fetching Quota Details..." size="sm" [fullPage]="false"></app-loading-state>
+    </div>
+    } @else {
+      @if (userQuotaDetails(); as details) {
+      <form [formGroup]="quotaForm" (ngSubmit)="saveQuotaLimits()" class="bg-[color:var(--color-surface)] rounded-b-[1.25rem] flex flex-col min-h-0 flex-1">
+        <div class="p-6 space-y-6 overflow-y-auto min-h-0 flex-1">
+
+          <!-- Usage Limits Overview -->
+          <div class="p-4 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--bg-secondary)] space-y-3.5">
+            <h4 class="text-[0.6875rem] font-[800] text-[color:var(--text-muted)] uppercase tracking-[0.08em] m-0">Weekly Quota Usage</h4>
+
+            <!-- Text Usage -->
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs font-bold">
+                <span class="text-[color:var(--text-secondary)]">Text Analysis</span>
+                <span class="text-[color:var(--text-primary)]">{{ details.text.used }} / {{ details.text.limit }} Tokens</span>
+              </div>
+              <div class="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">
+                <div class="h-full bg-blue-500 rounded-full" [style.width.%]="details.text.used_percentage"></div>
+              </div>
+            </div>
+
+            <!-- Audio Usage -->
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs font-bold">
+                <span class="text-[color:var(--text-secondary)]">Audio Analysis</span>
+                <span class="text-[color:var(--text-primary)]">{{ details.audio.used | number:'1.0-1' }}s / {{ details.audio.limit | number:'1.0-1' }}s</span>
+              </div>
+              <div class="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">
+                <div class="h-full bg-purple-500 rounded-full" [style.width.%]="details.audio.used_percentage"></div>
+              </div>
+            </div>
+
+            <!-- Image Usage -->
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs font-bold">
+                <span class="text-[color:var(--text-secondary)]">Image Analysis</span>
+                <span class="text-[color:var(--text-primary)]">{{ details.image.used }} / {{ details.image.limit }} Images</span>
+              </div>
+              <div class="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">
+                <div class="h-full bg-emerald-500 rounded-full" [style.width.%]="details.image.used_percentage"></div>
+              </div>
+            </div>
+
+            <!-- Video Usage -->
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs font-bold">
+                <span class="text-[color:var(--text-secondary)]">Video Analysis</span>
+                <span class="text-[color:var(--text-primary)]">{{ details.video.used | number:'1.0-1' }}s / {{ details.video.limit | number:'1.0-1' }}s</span>
+              </div>
+              <div class="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">
+                <div class="h-full bg-rose-500 rounded-full" [style.width.%]="details.video.used_percentage"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Form Inputs to Edit Limits -->
+          <div class="space-y-4">
+            <h4 class="text-[0.6875rem] font-[800] text-[color:var(--text-muted)] uppercase tracking-[0.08em] m-0">Edit Weekly Limits</h4>
+
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Text Limit -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-bold text-[color:var(--text-secondary)] uppercase tracking-wider">Text Limit (Tokens)</label>
+                <input type="number" formControlName="textTokensLimit" class="quota-input" min="0" (wheel)="$event.preventDefault()">
+              </div>
+
+              <!-- Audio Limit -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-bold text-[color:var(--text-secondary)] uppercase tracking-wider">Audio Limit (Sec)</label>
+                <input type="number" formControlName="audioSecondsLimit" class="quota-input" min="0" (wheel)="$event.preventDefault()">
+              </div>
+
+              <!-- Image Limit -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-bold text-[color:var(--text-secondary)] uppercase tracking-wider">Image Limit (Count)</label>
+                <input type="number" formControlName="imageCountLimit" class="quota-input" min="0" (wheel)="$event.preventDefault()">
+              </div>
+
+              <!-- Video Limit -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-bold text-[color:var(--text-secondary)] uppercase tracking-wider">Video Limit (Sec)</label>
+                <input type="number" formControlName="videoSecondsLimit" class="quota-input" min="0" (wheel)="$event.preventDefault()">
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer p-6 pt-4 border-t border-[color:var(--color-border)] shrink-0">
+          <button type="button" (click)="closeQuotaModal()"
+            class="flex-1 py-3.5 rounded-xl border border-[color:var(--color-border)] text-[color:var(--text-primary)] font-bold text-sm hover:bg-[color:var(--bg-secondary)] transition-all">
+            Cancel
+          </button>
+          <button type="submit" [disabled]="quotaForm.invalid || isUpdating()"
+            class="flex-1 py-3.5 rounded-xl bg-[color:var(--brand-primary)] text-white font-bold text-sm shadow-lg shadow-[color:var(--brand-primary)]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            Save Changes
+          </button>
+        </div>
+      </form>
+      }
+    }
   </div>
 </div>
 }

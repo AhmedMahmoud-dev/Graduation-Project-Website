@@ -62,7 +62,8 @@ export class AlertsService {
       .withUrl(`${environment.apiUrl}/hubs/notifications`, {
         accessTokenFactory: () => token,
         // Allow falling back to Long Polling if WebSockets are blocked/unstable
-        skipNegotiation: false
+        skipNegotiation: false,
+        withCredentials: true // Attach HttpOnly credentials for WebSocket handshake
       })
       .configureLogging(LogLevel.Warning)
       .withAutomaticReconnect()
@@ -351,7 +352,14 @@ export class AlertsService {
 
   private isUserAuthenticated(): boolean {
     if (typeof window === 'undefined') return false;
-    const token = localStorage.getItem(environment.tokenKey);
-    return !!token;
+    const user = localStorage.getItem(environment.userKey) || localStorage.getItem('emotra_admin_user');
+    if (!user) return false;
+    try {
+      const parsed = JSON.parse(user);
+      const expiry = new Date(parsed.expires_at);
+      return expiry > new Date();
+    } catch {
+      return false;
+    }
   }
 }

@@ -314,16 +314,9 @@
 }
 
 .modal-user-email {
-  white-space: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  display: block;
+  white-space: normal;
+  word-break: break-word;
   max-width: 100%;
-}
-
-.modal-user-email::-webkit-scrollbar {
-  display: none;
 }
 
 .ban-reason-input {

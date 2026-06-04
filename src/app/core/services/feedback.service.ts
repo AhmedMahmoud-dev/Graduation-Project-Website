@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, of } from 'rxjs';
+import { Observable, catchError, of, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
 import {
@@ -21,6 +21,8 @@ export class FeedbackService {
 
   private readonly FEEDBACK_STORAGE_KEY = 'emotra_feedback';
   private readonly SYSTEM_FEEDBACK_STORAGE_KEY = 'emotra_system_feedback';
+
+  private currentSystemFeedbackCache: ApiResponse<SystemFeedbackResponse | null> | null = null;
 
   // ==========================================
   // 0. Caching Logic
@@ -128,7 +130,20 @@ export class FeedbackService {
    */
   submitSystemFeedback(request: SystemFeedbackRequest): Observable<ApiResponse<SystemFeedbackResponse>> {
     const url = `${this.baseUrl}/api/system-feedback`;
-    return this.http.post<ApiResponse<SystemFeedbackResponse>>(url, request);
+    return this.http.post<ApiResponse<SystemFeedbackResponse>>(url, request).pipe(
+      tap(res => {
+        if (res.is_success && res.data) {
+          this.currentSystemFeedbackCache = {
+            is_success: true,
+            data: res.data,
+            message: res.message || '',
+            status_code: res.status_code,
+            errors: res.errors || null,
+            timestamp: res.timestamp
+          };
+        }
+      })
+    );
   }
 
   /**
@@ -148,16 +163,31 @@ export class FeedbackService {
    * Retrieves the current user's system feedback (testimonial) if one exists.
    * Handles 404 cleanly by returning null.
    */
-  getCurrentSystemFeedback(): Observable<ApiResponse<SystemFeedbackResponse | null>> {
+  getCurrentSystemFeedback(forceRefresh = false): Observable<ApiResponse<SystemFeedbackResponse | null>> {
+    if (!forceRefresh && this.currentSystemFeedbackCache) {
+      return of(this.currentSystemFeedbackCache);
+    }
     const url = `${this.baseUrl}/api/system-feedback/current`;
     return this.http.get<ApiResponse<SystemFeedbackResponse | null>>(url).pipe(
+      tap(res => {
+        if (res.is_success) {
+          this.currentSystemFeedbackCache = res;
+        }
+      }),
       catchError(err => {
         if (err.status === 404) {
-          return of({ is_success: true, data: null, message: 'No system feedback found' } as any);
+          const res = { is_success: true, data: null, message: 'No system feedback found' } as any;
+          this.currentSystemFeedbackCache = res;
+          return of(res);
         }
         throw err;
       })
     );
+  }
+
+  clearSystemFeedbackCache(): void {
+    this.currentSystemFeedbackCache = null;
+    this.removeCachedSystemFeedback();
   }
 
   getMyFeedbackHistory(

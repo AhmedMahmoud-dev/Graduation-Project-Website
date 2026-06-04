@@ -17,17 +17,10 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
 
   let authReq = req;
 
-  // 2. Attach JWT token ONLY for the main .NET API, not for ML backend microservices.
-  //    ML backends (text/audio/image/video) are standalone Python services that don't
-  //    use JWT auth. Sending Authorization headers to them triggers CORS preflight
-  //    failures since they don't include Authorization in Access-Control-Allow-Headers.
   const isMainApi = req.url.startsWith(environment.apiUrl);
-  const user = authService.currentUser();
-  if (isMainApi && !isAuthEndpoint && user?.token) {
+  if (isMainApi) {
     authReq = req.clone({
-      setHeaders: {
-        Authorization: `Bearer ${user.token}`
-      }
+      withCredentials: true
     });
   }
 

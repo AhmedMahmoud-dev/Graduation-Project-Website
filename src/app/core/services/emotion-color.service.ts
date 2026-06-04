@@ -51,7 +51,13 @@ export class EmotionColorService {
    */
   highlightJson(data: any): string {
     if (!data) return '';
-    const json = JSON.stringify(data, null, 2);
+    let json = JSON.stringify(data, null, 2);
+    
+    // HTML-escape special characters to prevent DOM-based XSS
+    json = json.replace(/&/g, '&amp;')
+               .replace(/</g, '&lt;')
+               .replace(/>/g, '&gt;');
+
     return json.replace(
       /(\"(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*\"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
       (match) => {

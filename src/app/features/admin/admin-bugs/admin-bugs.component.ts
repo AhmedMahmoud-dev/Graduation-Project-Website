@@ -139,10 +139,10 @@ export class AdminBugsComponent implements OnInit {
 
   fetchBugs(isBackground: boolean = false): void {
     if (!isBackground) {
-      if (this.bugs().length === 0) {
-        this.isLoading.set(true);
-      } else {
+      if (this.bugs().length > 0 || !this.isLoading()) {
         this.isRefreshing.set(true);
+      } else {
+        this.isLoading.set(true);
       }
     }
     this.error.set(null);
