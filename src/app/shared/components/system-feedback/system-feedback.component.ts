@@ -47,9 +47,10 @@ export class SystemFeedbackComponent implements OnInit {
 
     const url = this.currentUrl();
     const isLandingPage = url === '/' || url === '' || url.split('?')[0] === '/' || url.startsWith('/#');
+    const isModelsPage = url.startsWith('/models') || url.split('?')[0].startsWith('/models');
 
-    // 1. Never show on landing page
-    if (isLandingPage) return false;
+    // 1. Never show on landing page or models documentation pages
+    if (isLandingPage || isModelsPage) return false;
 
     // 2. Only show for authenticated users
     const user = this.authService.currentUser();

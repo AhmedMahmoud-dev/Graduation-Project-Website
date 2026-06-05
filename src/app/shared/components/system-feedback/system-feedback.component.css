@@ -12,14 +12,14 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1rem 1.75rem;
-  background: var(--feedback-gradient);
-  color: white;
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, var(--color-primary) 0%, color-mix(in srgb, var(--color-primary) 80%, var(--color-accent)) 100%);
+  color: #ffffff;
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
+  border: none;
+  box-shadow: 0 10px 25px -5px color-mix(in srgb, var(--color-primary) 30%, transparent);
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
 }
 
@@ -33,7 +33,7 @@
 }
 
 .floating-trigger:hover {
-  box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 15px 30px -5px color-mix(in srgb, var(--color-primary) 40%, transparent);
 }
 
 .floating-trigger:hover::before {
@@ -134,7 +134,11 @@ app-tooltip {
   .floating-trigger {
     bottom: 1.5rem;
     right: 1.5rem;
-    padding: 0.875rem 1.25rem;
+    padding: 0;
+    width: 3.25rem;
+    height: 3.25rem;
+    justify-content: center;
+    border-radius: 50%;
   }
   
   .floating-trigger span {
