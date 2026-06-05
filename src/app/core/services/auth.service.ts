@@ -530,9 +530,7 @@ export class AuthService {
     if (raw) {
       try {
         const user = JSON.parse(raw) as AuthUser;
-        const isAdmin = user.roles?.includes('ADMIN');
-        const tokenKey = isAdmin ? 'emotra_admin_token' : environment.tokenKey;
-        user.token = localStorage.getItem(tokenKey) || '';
+        user.token = '';
         return user;
       } catch (e) {
         return null;
@@ -542,17 +540,10 @@ export class AuthService {
   }
 
   /**
-   * Get JWT token for fallback header authorization
+   * Get JWT token for fallback header authorization (disabled for security)
    */
   getToken(): string {
-    if (!this.isBrowser) return '';
-    const user = this.currentUser();
-    if (user && user.token) return user.token;
-
-    const adminData = localStorage.getItem('emotra_admin_user');
-    const isAdmin = adminData ? true : false;
-    const tokenKey = isAdmin ? 'emotra_admin_token' : environment.tokenKey;
-    return localStorage.getItem(tokenKey) || '';
+    return '';
   }
 
   /**
@@ -563,18 +554,13 @@ export class AuthService {
 
     const isAdmin = user.roles?.includes('ADMIN');
     const userKey = isAdmin ? 'emotra_admin_user' : environment.userKey;
-    const tokenKey = isAdmin ? 'emotra_admin_token' : environment.tokenKey;
 
-    // Store JWT token locally as a fallback for cross-domain mobile clients where cookies are blocked
-    if (user.token) {
-      localStorage.setItem(tokenKey, user.token);
-    }
-
+    // Security: Do not store the JWT in client-side storage
     const { token, ...userWithoutToken } = user;
     localStorage.setItem(userKey, JSON.stringify(userWithoutToken));
     
     // Keep user state matching current configuration
-    const userState = { ...user };
+    const userState = { ...user, token: '' };
     this.currentUser.set(userState);
   }
 

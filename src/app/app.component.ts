@@ -7,11 +7,13 @@ import { FaviconService } from './core/services/favicon.service';
 import { AnalysisBgService } from './core/services/analysis-bg.service';
 import { ShortcutHelpComponent } from './shared/components/shortcut-help/shortcut-help.component';
 import { ShortcutService } from './core/services/shortcut.service';
+import { SmartSuggestionComponent } from './shared/components/smart-suggestion/smart-suggestion.component';
+import { SuggestionService } from './core/services/suggestion.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, ToastComponent, ShortcutHelpComponent],
+  imports: [RouterOutlet, ToastComponent, ShortcutHelpComponent, SmartSuggestionComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -22,6 +24,7 @@ export class AppComponent implements OnInit {
   private faviconService = inject(FaviconService); // Initialize dynamic favicon
   private analysisBgService = inject(AnalysisBgService);
   private shortcutService = inject(ShortcutService); // Initialize global shortcut listeners
+  private suggestionService = inject(SuggestionService); // Initialize global suggestions engine
 
   ngOnInit(): void {
     // Initial application of colors is already handled by effects in ColorSettingsService
