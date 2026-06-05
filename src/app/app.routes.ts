@@ -8,6 +8,7 @@ import { AuthLayoutComponent } from './layouts/auth-layout/auth-layout.component
 import { LoginComponent } from './features/auth/login/login.component';
 import { RegisterComponent } from './features/auth/register/register.component';
 import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password.component';
+import { GoogleCallbackComponent } from './features/auth/google-callback/google-callback.component';
 import { AppLayoutComponent } from './layouts/app-layout/app-layout.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { AnalysisComponent } from './features/analysis/analysis.component';
@@ -51,6 +52,7 @@ export const routes: Routes = [
       { path: 'login', component: LoginComponent },
       { path: 'register', component: RegisterComponent },
       { path: 'forgot-password', component: ForgotPasswordComponent },
+      { path: 'google/callback', component: GoogleCallbackComponent },
       { path: 'reset-password', canActivate: [resetPasswordGuard], loadComponent: () => import('./features/auth/reset-password/reset-password.component').then(m => m.ResetPasswordComponent) },
       { path: '', redirectTo: 'login', pathMatch: 'full' }
     ]

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
@@ -20,7 +20,7 @@ import { GoogleButtonComponent } from '../../../shared/components/form/google-bu
   templateUrl: './app-login.html',
   styleUrl: './app-login.css'
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
@@ -30,15 +30,22 @@ export class LoginComponent implements OnInit {
 
   banDetails = signal<BanDetails | null>(null);
   accountDeleted = signal(false);
+  private messageListener?: (event: MessageEvent) => void;
 
   ngOnInit() {
-    // Check for query parameters (Google Auth callback code)
-    this.route.queryParams.subscribe(params => {
-      const code = params['code'];
-      if (code) {
-        this.handleGoogleCallback(code);
-      }
-    });
+    // Listen for the authorization code from the Google login popup window
+    if (typeof window !== 'undefined') {
+      this.messageListener = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+
+        if (event.data?.type === 'google-auth-callback' && event.data?.code) {
+          this.handleGoogleCallback(event.data.code);
+        } else if (event.data?.type === 'google-auth-error' && event.data?.error) {
+          this.toastService.show('Google Sign-In Failed', event.data.error, 'error', 'error');
+        }
+      };
+      window.addEventListener('message', this.messageListener);
+    }
 
     // Check for Ban Details
     const details = this.authService.getBanDetails();
@@ -52,6 +59,12 @@ export class LoginComponent implements OnInit {
     if (typeof window !== 'undefined' && sessionStorage.getItem('emotra_account_deleted') === 'true') {
       this.accountDeleted.set(true);
       sessionStorage.removeItem('emotra_account_deleted');
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.messageListener && typeof window !== 'undefined') {
+      window.removeEventListener('message', this.messageListener);
     }
   }
 
@@ -147,7 +160,7 @@ export class LoginComponent implements OnInit {
   handleGoogleCallback(code: string) {
     this.isLoading = true;
     this.loginForm.disable();
-    const redirectUri = window.location.origin + window.location.pathname;
+    const redirectUri = window.location.origin + '/auth/google/callback';
 
     this.authService.exchangeGoogleCode(code, redirectUri).subscribe({
       next: (res) => {
@@ -160,7 +173,6 @@ export class LoginComponent implements OnInit {
             is_permanent: !!res.data.is_permanent
           };
           this.banDetails.set(details);
-          this.router.navigate([], { queryParams: { code: null }, queryParamsHandling: 'merge' });
           return;
         }
 
@@ -177,13 +189,11 @@ export class LoginComponent implements OnInit {
           this.authService.storeBanDetails(details);
           this.banDetails.set(details);
           this.authService.clearBanDetails();
-          this.router.navigate([], { queryParams: { code: null }, queryParamsHandling: 'merge' });
           return;
         }
 
         const errMsg = err.message || 'This email is registered using a password. Please sign in with your email and password.';
         this.toastService.show('Google Login Failed', errMsg, 'error', 'error');
-        this.router.navigate([], { queryParams: { code: null }, queryParamsHandling: 'merge' });
       }
     });
   }

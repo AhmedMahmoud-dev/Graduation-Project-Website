@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
@@ -37,7 +37,7 @@ function passwordMatchValidator(): ValidatorFn {
   templateUrl: './app-register.html',
   styleUrl: './app-register.css'
 })
-export class RegisterComponent implements OnInit {
+export class RegisterComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
@@ -45,15 +45,28 @@ export class RegisterComponent implements OnInit {
   private toastService = inject(ToastService);
 
   banDetails = signal<BanDetails | null>(null);
+  private messageListener?: (event: MessageEvent) => void;
 
   ngOnInit() {
-    // Check for query parameters (Google Auth callback code)
-    this.route.queryParams.subscribe(params => {
-      const code = params['code'];
-      if (code) {
-        this.handleGoogleCallback(code);
-      }
-    });
+    // Listen for the authorization code from the Google login popup window
+    if (typeof window !== 'undefined') {
+      this.messageListener = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+
+        if (event.data?.type === 'google-auth-callback' && event.data?.code) {
+          this.handleGoogleCallback(event.data.code);
+        } else if (event.data?.type === 'google-auth-error' && event.data?.error) {
+          this.toastService.show('Google Sign-In Failed', event.data.error, 'error', 'error');
+        }
+      };
+      window.addEventListener('message', this.messageListener);
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.messageListener && typeof window !== 'undefined') {
+      window.removeEventListener('message', this.messageListener);
+    }
   }
 
   registerForm = this.fb.nonNullable.group({
@@ -151,7 +164,7 @@ export class RegisterComponent implements OnInit {
   handleGoogleCallback(code: string) {
     this.isLoading = true;
     this.registerForm.disable();
-    const redirectUri = window.location.origin + window.location.pathname;
+    const redirectUri = window.location.origin + '/auth/google/callback';
 
     this.authService.exchangeGoogleCode(code, redirectUri).subscribe({
       next: (res) => {
@@ -164,7 +177,6 @@ export class RegisterComponent implements OnInit {
             is_permanent: !!res.data.is_permanent
           };
           this.banDetails.set(details);
-          this.router.navigate([], { queryParams: { code: null }, queryParamsHandling: 'merge' });
           return;
         }
 
@@ -181,13 +193,11 @@ export class RegisterComponent implements OnInit {
           this.authService.storeBanDetails(details);
           this.banDetails.set(details);
           this.authService.clearBanDetails();
-          this.router.navigate([], { queryParams: { code: null }, queryParamsHandling: 'merge' });
           return;
         }
 
         const errMsg = err.message || 'This email is registered using a password. Please sign in with your email and password.';
         this.toastService.show('Google Login Failed', errMsg, 'error', 'error');
-        this.router.navigate([], { queryParams: { code: null }, queryParamsHandling: 'merge' });
       }
     });
   }
