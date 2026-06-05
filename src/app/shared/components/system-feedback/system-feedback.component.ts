@@ -42,6 +42,9 @@ export class SystemFeedbackComponent implements OnInit {
 
   // Computed visibility: Show on all pages EXCEPT landing, ONLY for logged-in users who HAVEN'T submitted yet
   showFloatingButton = computed(() => {
+    // 0. Hide if toggled off via shortcut
+    if (this.uiService.isRateButtonHidden()) return false;
+
     const url = this.currentUrl();
     const isLandingPage = url === '/' || url === '' || url.split('?')[0] === '/' || url.startsWith('/#');
 

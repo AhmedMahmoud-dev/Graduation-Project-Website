@@ -1,0 +1,159 @@
+@if (isOpen()) {
+<!-- Backdrop -->
+<div class="shortcut-backdrop" (click)="close()"></div>
+
+<!-- Modal Container -->
+<div class="shortcut-modal animate-fade-in" role="dialog" aria-labelledby="shortcut-title" aria-modal="true">
+  
+  <!-- Header -->
+  <div class="shortcut-header">
+    <div class="shortcut-header-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+        <line x1="6" y1="8" x2="6" y2="8"></line>
+        <line x1="10" y1="8" x2="10" y2="8"></line>
+        <line x1="14" y1="8" x2="14" y2="8"></line>
+        <line x1="18" y1="8" x2="18" y2="8"></line>
+        <line x1="6" y1="12" x2="6" y2="12"></line>
+        <line x1="10" y1="12" x2="10" y2="12"></line>
+        <line x1="14" y1="12" x2="14" y2="12"></line>
+        <line x1="18" y1="12" x2="18" y2="12"></line>
+        <line x1="7" y1="16" x2="17" y2="16"></line>
+      </svg>
+    </div>
+    <div class="shortcut-header-text">
+      <h2 id="shortcut-title" class="shortcut-heading">Keyboard Shortcuts</h2>
+      <p class="shortcut-subheading">Accelerate your workflow with Alt combinations</p>
+    </div>
+    <button class="shortcut-close" (click)="close()" type="button" aria-label="Close">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Body -->
+  <div class="shortcut-body">
+    
+    <!-- Analysis Section -->
+    <div class="shortcut-group">
+      <h3 class="group-title">Analysis Hub</h3>
+      <div class="shortcut-list">
+        <div class="shortcut-item">
+          <span class="shortcut-label">Text Analysis</span>
+          <div class="shortcut-keys">
+            <kbd>Alt</kbd> + <kbd>T</kbd>
+          </div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Audio Analysis</span>
+          <div class="shortcut-keys">
+            <kbd>Alt</kbd> + <kbd>A</kbd>
+          </div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Image Analysis</span>
+          <div class="shortcut-keys">
+            <kbd>Alt</kbd> + <kbd>I</kbd>
+          </div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Video Analysis</span>
+          <div class="shortcut-keys">
+            <kbd>Alt</kbd> + <kbd>V</kbd>
+          </div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Analysis Hub Overview</span>
+          <div class="shortcut-keys">
+            <kbd>Alt</kbd> + <kbd>U</kbd>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Section -->
+    <div class="shortcut-group">
+      <h3 class="group-title">Navigation</h3>
+      <div class="shortcut-list">
+        <div class="shortcut-item">
+          <span class="shortcut-label">Dashboard</span>
+          <div class="shortcut-keys">
+            <kbd>Alt</kbd> + <kbd>D</kbd>
+          </div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">History Log</span>
+          <div class="shortcut-keys">
+            <kbd>Alt</kbd> + <kbd>H</kbd>
+          </div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Compare Analyses</span>
+          <div class="shortcut-keys">
+            <kbd>Alt</kbd> + <kbd>C</kbd>
+          </div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Settings Page</span>
+          <div class="shortcut-keys">
+            <kbd>Alt</kbd> + <kbd>S</kbd>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Section -->
+    <div class="shortcut-group md:col-span-2">
+      <h3 class="group-title">Utilities & Actions</h3>
+      <div class="shortcut-list grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="shortcut-item">
+          <span class="shortcut-label">Toggle Theme (Light/Dark)</span>
+          <div class="shortcut-keys">
+            <kbd>Alt</kbd> + <kbd>L</kbd>
+          </div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Toggle Feedback Modal</span>
+          <div class="shortcut-keys">
+            <kbd>Alt</kbd> + <kbd>F</kbd>
+          </div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Toggle Rate Button Visibility</span>
+          <div class="shortcut-keys">
+            <kbd>Alt</kbd> + <kbd>B</kbd>
+          </div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Toggle Shortcuts Help</span>
+          <div class="shortcut-keys">
+            <kbd>Alt</kbd> + <kbd>/</kbd> <span class="mx-1 text-xs opacity-50">or</span> <kbd>K</kbd>
+          </div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Close Help Modal</span>
+          <div class="shortcut-keys">
+            <kbd>Esc</kbd>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer Info -->
+  <div class="shortcut-footer">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="16" x2="12" y2="12"></line>
+      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+    </svg>
+    <span>Keyboard shortcuts are automatically disabled while typing in input fields.</span>
+  </div>
+
+</div>
+}

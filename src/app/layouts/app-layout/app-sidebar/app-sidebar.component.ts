@@ -10,6 +10,7 @@ import { TooltipComponent } from '../../../shared/components/tooltip/tooltip.com
 
 import { ThemeService } from '../../../core/services/theme.service';
 import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.component';
+import { ShortcutService } from '../../../core/services/shortcut.service';
 
 @Component({
   selector: 'app-app-sidebar',
@@ -22,6 +23,7 @@ export class AppSidebarComponent {
   public authService = inject(AuthService);
   private router = inject(Router);
   private sanitizer = inject(DomSanitizer);
+  private shortcutService = inject(ShortcutService);
 
 
   get isLandingPage(): boolean {
@@ -180,6 +182,7 @@ export class AppSidebarComponent {
   toggleSidebar() { this.isExpanded.update(v => !v); }
   toggleMobile() { this.mobileOpen.update(v => !v); }
   closeMobile() { this.mobileOpen.set(false); }
+  toggleShortcutsHelp() { this.shortcutService.toggleHelpModal(); }
 
   handleNavClick() {
     if (this.isMobile()) this.closeMobile();

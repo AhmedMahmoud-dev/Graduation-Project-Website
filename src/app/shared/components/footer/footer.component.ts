@@ -26,6 +26,7 @@ export class FooterSectionComponent implements OnInit {
   currentTheme = this.themeService.currentTheme;
   currentUser = this.authService.currentUser;
   hasFeedback = signal(false);
+  isRateButtonHidden = this.uiService.isRateButtonHidden;
   isAdmin = computed(() => this.currentUser()?.roles?.includes('ADMIN'));
 
   get showFeedbackLink(): boolean {

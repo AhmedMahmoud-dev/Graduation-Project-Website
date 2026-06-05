@@ -156,6 +156,29 @@
   <div class="p-3 shrink-0 border-t border-[color:var(--color-border)]">
 
     @if (currentUser()) {
+    <button (click)="$event.stopPropagation(); toggleShortcutsHelp(); handleNavClick()"
+      class="flex items-center rounded-xl text-[color:var(--color-text-muted)] hover:bg-[color:var(--bg-surface)] hover:text-[color:var(--color-text)] transition-all group relative cursor-pointer h-12 mb-2 w-full text-left focus:outline-none">
+      <div class="w-12 h-12 shrink-0 flex items-center justify-center transition-transform group-active:scale-90">
+        <svg class="w-[24px] h-[24px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+          <line x1="6" y1="8" x2="6" y2="8"></line>
+          <line x1="10" y1="8" x2="10" y2="8"></line>
+          <line x1="14" y1="8" x2="14" y2="8"></line>
+          <line x1="18" y1="8" x2="18" y2="8"></line>
+          <line x1="6" y1="12" x2="6" y2="12"></line>
+          <line x1="10" y1="12" x2="10" y2="12"></line>
+          <line x1="14" y1="12" x2="14" y2="12"></line>
+          <line x1="18" y1="12" x2="18" y2="12"></line>
+          <line x1="7" y1="16" x2="17" y2="16"></line>
+        </svg>
+      </div>
+      <span class="transition-opacity duration-300 whitespace-nowrap font-semibold text-sm"
+        [ngClass]="(!isExpanded() && !isMobile()) ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100 w-auto ml-1'">
+        Shortcuts
+      </span>
+      <app-tooltip text="Keyboard Shortcuts (Alt+/)" position="right" [visible]="!isExpanded() && !isMobile()"></app-tooltip>
+    </button>
+
     <a routerLink="/settings" (click)="$event.stopPropagation(); handleNavClick()"
       class="flex items-center rounded-xl text-[color:var(--color-text-muted)] hover:bg-[color:var(--bg-surface)] hover:text-[color:var(--color-text)] transition-all group relative cursor-pointer h-12 mb-2">
       <div class="w-12 h-12 shrink-0 flex items-center justify-center transition-transform group-active:scale-90">
