@@ -40,3 +40,8 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Graduation Project custom ignores
+/Diagrams/
+/prompts/
+/Prompts/
