@@ -10,11 +10,11 @@
     },
     {
       "src": "/image/(.*)",
-      "dest": "http://51.21.194.19:8004/emotion/image/$1"
+      "dest": "http://51.21.194.19:8004/$1"
     },
     {
       "src": "/video/(.*)",
-      "dest": "http://51.21.194.19:8004/emotion/video/$1"
+      "dest": "http://51.21.194.19:8004/$1"
     },
     {
       "handle": "filesystem"
