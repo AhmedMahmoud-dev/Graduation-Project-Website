@@ -9,6 +9,14 @@
       "dest": "http://13.51.255.179:8001/$1"
     },
     {
+      "src": "/image/(.*)",
+      "dest": "http://51.21.194.19:8004/emotion/image/$1"
+    },
+    {
+      "src": "/video/(.*)",
+      "dest": "http://51.21.194.19:8004/emotion/video/$1"
+    },
+    {
       "handle": "filesystem"
     },
     {
