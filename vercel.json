@@ -1,6 +1,14 @@
 {
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "https://emotion-detection.runasp.net/api/$1"
+    },
+    {
+      "src": "/hubs/(.*)",
+      "dest": "https://emotion-detection.runasp.net/hubs/$1"
+    },
+    {
       "src": "/text/(.*)",
       "dest": "http://16.171.68.186/$1"
     },

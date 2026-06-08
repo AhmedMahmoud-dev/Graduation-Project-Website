@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: "https://emotion-detection.runasp.net",
+  apiUrl: "https://emotra.vercel.app",
   // apiUrl: "https://localhost:7249",
   // textApiUrl: "http://13.63.140.123:8000",
   // audioApiUrl: "http://13.51.255.179:8001",
