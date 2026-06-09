@@ -75,17 +75,7 @@ export class FeedbackHistoryListComponent {
   remainingCount = computed(() => this.totalCount() - this.allItems().length);
 
   constructor() {
-    // 1. Refresh list in background when feedback modal is closed 
-    effect(() => {
-      const isOpen = this.uiService.isOpen();
-      untracked(() => {
-        if (!isOpen) {
-          this.loadFeedback(true, this.currentPage()); // silent refresh of current page
-        }
-      });
-    });
-
-    // 2. React to search query and sort order changes from parent
+    // 1. React to search query and sort order changes from parent
     effect(() => {
       const search = this.searchQuery();
       const sort = this.sortOrder();
