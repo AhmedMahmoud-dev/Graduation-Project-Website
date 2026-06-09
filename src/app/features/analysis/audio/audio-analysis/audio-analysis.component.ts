@@ -316,7 +316,7 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
       const item = items[0];
       if (item.kind === 'file') {
         const type = item.type;
-        const acceptedTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm', 'audio/x-m4a', 'audio/mp3', 'audio/mp4'];
+        const acceptedTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm', 'audio/x-m4a', 'audio/mp3', 'audio/mp4', 'video/webm'];
 
         // Some systems don't provide type during drag for all files
         // We consider it invalid if we HAVE a type and it's NOT in our list
@@ -344,9 +344,16 @@ export class AudioAnalysisComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const acceptedTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm', 'audio/x-m4a'];
-    if (!acceptedTypes.includes(file.type) && !file.name.endsWith('.m4a')) {
-      const msg = 'Unsupported file format. Please use MP3, WAV, OGG, or M4A.';
+    const acceptedTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm', 'audio/x-m4a', 'audio/mp3', 'audio/mp4', 'video/webm'];
+    const nameLower = file.name.toLowerCase();
+    const isAcceptedExtension = nameLower.endsWith('.m4a') || 
+                                nameLower.endsWith('.webm') || 
+                                nameLower.endsWith('.mp3') || 
+                                nameLower.endsWith('.wav') || 
+                                nameLower.endsWith('.ogg');
+
+    if (!acceptedTypes.includes(file.type) && !isAcceptedExtension) {
+      const msg = 'Unsupported file format. Please use MP3, WAV, OGG, M4A, or WEBM.';
       this.error.set(msg);
       this.toastService.show('Format Error', msg, 'error', 'error');
       return;
