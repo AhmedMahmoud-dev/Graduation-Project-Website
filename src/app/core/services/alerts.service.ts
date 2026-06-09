@@ -59,7 +59,7 @@ export class AlertsService {
     }
 
     this.hubConnection = new HubConnectionBuilder()
-      .withUrl(`${environment.apiUrl}/hubs/notifications`, {
+      .withUrl(`${environment.hubUrl}/hubs/notifications`, {
         accessTokenFactory: () => token,
         // Allow falling back to Long Polling if WebSockets are blocked/unstable
         skipNegotiation: false,

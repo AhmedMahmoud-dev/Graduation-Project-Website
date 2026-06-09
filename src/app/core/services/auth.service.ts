@@ -438,21 +438,24 @@ export class AuthService {
       return of(null);
     }
 
-    const isAdmin = this.isAdmin();
-    const url = isAdmin
-      ? `${environment.apiUrl}/api/admin/health`
-      : `${environment.apiUrl}/api/alerts/stats`;
+    const url = `${environment.apiUrl}/api/auth/session`;
 
-    return this.http.get(url).pipe(
-      tap(() => {
+    return this.http.get<ApiResponse<AuthUser>>(url).pipe(
+      tap((res) => {
         this.isAppInitialized.set(true);
-        const user = this.getCurrentUser();
-        if (user) {
+        if (res.is_success && res.data) {
+          const user = res.data;
+          
+          // Re-save user info to localStorage (clearing token for client security)
+          this.saveAuth(user);
+
           if (!this.isAdmin()) {
             this.alertsService.fetchStats();
             this.alertsService.fetchSettings();
             this.quotaStore.loadQuota();
           }
+          
+          // Initialize SignalR using the active JWT token returned in the body
           this.alertsService.initSignalR(user.token || '');
         }
       }),
