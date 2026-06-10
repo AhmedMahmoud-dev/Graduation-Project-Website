@@ -1,0 +1,29 @@
+Chapter 7: References
+This chapter contains the official, consolidated list of academic publications, industrial documentation, and software libraries utilized to ground the conceptual frameworks, artificial intelligence pipelines, and architectural patterns of the Emotra system.
+The references are organized and annotated to map directly back to their specific integration points within the system's core text, audio, image, and video detection modalities.
+7.1 Annotated Academic Bibliography
+[1] Savchenko, A. V. "Facial Expression and Emotion Recognition in the Wild Using Lightweight Convolutional Neural Networks." Sensors, vol. 21, no. 23, 2021, p. 8138. https://doi.org/10.3390/s21238138
+●	Project Integration: Serves as the primary theoretical and algorithmic source for the visual microservice's deep learning backbone. This paper details the pre-trained HSEmotion library and the lightweight enet_b0_8_best_vgaf model running on EfficientNet-B0, which enables high-accuracy facial emotion recognition under dynamic lighting conditions (detailed in Section 4.5.1.2).
+[2] Ma, Z., Zhou, Y., Wang, Z., and Zhang, S. "emotion2vec: Self-Supervised Speech Emotion Representation Learning." arXiv preprint arXiv:2312.15185, 2023. https://doi.org/10.48550/arXiv.2312.15185
+●	Project Integration: The foundational research behind the acoustic microservice's vocal affect recognition engine. It underpins the self-supervised raw waveform representation model (iic/emotion2vec_plus_base) used within our FastAPI audio service to bypass traditional handcrafted features (detailed in Section 4.4.1).
+[3] Radford, Alec, et al. "Robust Speech Recognition via Large-Scale Weak Supervision." International Conference on Machine Learning (ICML), 2023, p. 28490-28508.
+●	Project Integration: Backs up the paralinguistic and semantic text extraction pipelines. This paper validates the robustness of OpenAI's sequence-to-sequence Whisper model, which acts as the transcription engine translating raw audio signals into synchronized lexical segments (detailed in Section 4.4.1).
+[4] Liu, Yinhan, et al. "RoBERTa: A Robustly Optimized BERT Pretraining Approach." arXiv preprint arXiv:1907.11692, 2019.
+●	Project Integration: Grounds the semantic processing framework of the natural language pipeline. It serves as the model architecture reference for the underlying NLP transformer backbone used for sentence-level text emotion classification (j-hartmann/emotion-english-distilroberta-base) (detailed in Section 4.3.1).
+[5] Wojke, Nicolai, Bewley, Alex, and Papp, Dieter. "Simple Online and Realtime Tracking with a Deep Association Metric." IEEE International Conference on Image Processing (ICIP), 2017, p. 3645-3649.
+●	Project Integration: Provides the mathematical tracking logic used in multi-face environments. This paper is the primary source for the visual microservice's Stage 2 spatial-temporal tracking pipeline, ensuring that individuals in a video stream maintain unique emotion timeline indexes (detailed in Section 4.5.3).
+[6] McFee, Brian, et al. "librosa: Audio and Music Signal Analysis in Python." Proceedings of the 14th Python in Science Conference, 2015, p. 18-25.
+●	Project Integration: Establishes the digital signal processing baseline for the paralinguistic engine. It is referenced for spectral feature extraction, sampling rate standardizations, silent trimming heuristics, and sliding-window frame division (detailed in Section 4.4.2).
+[7] Bradski, G. "The OpenCV Library." Dr. Dobb's Journal of Software Tools, 2000.
+●	Project Integration: Crucial baseline for computer vision utilities. It is cited for the frame decoding pipelines, the Single Shot MultiBox Detector (SSD) face localization stage, and frame-skipping optimizations based on Mean Absolute Difference (MAD) calculations (detailed in Section 4.5.1.1 & Section 4.5.2.2).
+7.2 Framework, Platform, and Visual Documentation
+[8] Microsoft Corporation. "ASP.NET Core SignalR Overview: Real-time web functionality for developers." Microsoft Learn. https://learn.microsoft.com/en-us/aspnet/core/signalr/introduction
+●	Project Integration: Grounds the bidirectional real-time communication system. It is referenced for the construction of ASP.NET Core communication hubs, live status synchronization, active warning pushes, and security-enforced force-logouts (detailed in Section 1.2.1 & Section 1.7.1).
+[9] Angular Team. "Angular Framework Documentation." Google Developer Portal. https://angular.dev
+●	Project Integration: Standard framework guide for client-side architectures. It is cited for our single-page application structure, RxJS-based reactive state management, visual modality dashboards, and route guard parameters (detailed in Section 3.3.3.1).
+[10] FastAPI Team. "FastAPI Web Framework Documentation." https://fastapi.tiangolo.com
+●	Project Integration: Standard developer API manual utilized to construct our loosely coupled microservices. It is referenced for high-performance python endpoints handling multi-form binary uploads and JSON schema exchanges (detailed in Section 4.1.1).
+[11] Apache Software Foundation. "Apache ECharts: A Declarative Visual Library for Interactive Charts." https://echarts.apache.org
+●	Project Integration: Primary technology documentation for our frontend timeline visualization layer. This guide defines the implementation of interactive line graphs, area overlays, gauge meters, and emotion polarity metrics (detailed in Section 1.4.2 & Section 1.7.1).
+[12] ONNX Runtime Authors. "ONNX Runtime: Cross-Platform, High-Performance ML/DL Model Inference." https://onnxruntime.ai
+●	Project Integration: Reference resource for our deep learning execution optimization layer. It details the acceleration mechanisms used to speed up sentence classification, audio parsing, and frame evaluation on standard CPUs (detailed in Section 4.1 & Section 4.1.2).

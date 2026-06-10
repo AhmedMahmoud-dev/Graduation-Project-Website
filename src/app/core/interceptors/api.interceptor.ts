@@ -17,7 +17,7 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
 
   let authReq = req;
 
-  const isMainApi = req.url.startsWith(environment.apiUrl);
+  const isMainApi = req.url.startsWith(environment.apiUrl) && req.url.toLowerCase().includes('/api/');
   if (isMainApi) {
     authReq = req.clone({
       withCredentials: true
