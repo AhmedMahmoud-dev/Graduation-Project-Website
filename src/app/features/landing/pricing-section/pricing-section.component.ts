@@ -10,7 +10,7 @@ export class PricingSectionComponent {
   constructor(private router: Router) {}
 
   freeFeatures = [
-    '10 Daily Analyses',
+    // '10 Daily Analyses',
     'Text & Audio Models',
     'Analysis History',
     'Compare Results',
