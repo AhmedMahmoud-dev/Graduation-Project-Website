@@ -7,13 +7,12 @@ import { FaviconService } from './core/services/favicon.service';
 import { AnalysisBgService } from './core/services/analysis-bg.service';
 import { ShortcutHelpComponent } from './shared/components/shortcut-help/shortcut-help.component';
 import { ShortcutService } from './core/services/shortcut.service';
-import { SmartSuggestionComponent } from './shared/components/smart-suggestion/smart-suggestion.component';
 import { SuggestionService } from './core/services/suggestion.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, ToastComponent, ShortcutHelpComponent, SmartSuggestionComponent],
+  imports: [RouterOutlet, ToastComponent, ShortcutHelpComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
